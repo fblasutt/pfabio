@@ -18,28 +18,22 @@ def simNoUncer_interp(reform, policyA1, policyC, policyh, V, par):
     apath = np.nan+ np.zeros((par.T + 1,1))        # assets at start of each period, decided 1 period ahead and so includes period T+1
     
     
-    # GET ASSET GRID
-    [MinAss, MaxAss] = co.getMinAndMaxAss(reform, par)
-    
-    Agrid = np.nan+ np.zeros((par.T+1, par.numPtsA))
-    for t in range(par.T+1):  # 1:par.T + 1 -> 0:par.T
-         Agrid[t, :] = np.transpose(np.linspace(MinAss[t], MaxAss[t], par.numPtsA))
-    
+    # Initial condition
     apath[0, 0] = par.startA; 
     
     
     # Obtain paths using the initial condition and the policy and value functions
     
-    for t in range(par.T):  # loop through time periods for a particular individual
+    for t in range(par.T-1):  # loop through time periods for a particular individual
     
-        vpath[t  , 0] = pchip_interpolate(Agrid[t,:], V[t, :], apath[t,0])
-        apath[t+1, 0] = pchip_interpolate(Agrid[t,:], policyA1[t,:], apath[t,0])
+        vpath[t  , 0] = pchip_interpolate(par.agrid, V[t, :], apath[t,0])
+        apath[t+1, 0] = pchip_interpolate(policyA1[t,:], par.agrid, apath[t,0])
         
-        cpath[t, 0] = pchip_interpolate(Agrid[t,:], policyC[t,:], apath[t,0])
-        hpath[t, 0] = pchip_interpolate(Agrid[t,:], policyh[t,:], apath[t,0])
+        cpath[t, 0] = pchip_interpolate(policyA1[t,:], policyC[t,:], apath[t,0])
+        hpath[t, 0] = pchip_interpolate(policyA1[t,:], policyh[t,:], apath[t,0])
         Epath[t, 0] = hpath[t, 0]*par.w;
         
-        Epath_tau[t,0] = hpath[t,0]*par.w*(1+par.tau[t,reform+0])
+        Epath_tau[t,0] = hpath[t,0]*par.w*(1+par.tau)
         
         if reform == 0:
             EPpath[t, 0] = Epath[t,0]/par.E_bar_now

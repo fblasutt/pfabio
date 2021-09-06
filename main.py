@@ -97,48 +97,7 @@ plt.ylabel("Gross Earnings over time")
 plt.show()
 
 
-# 5
-fig = plt.figure(figsize=(10,4)) 
-plt.plot(t,EPpath_1, t, EPpath_behav_1, t, EPpath_0)
-plt.xlabel("Age")
-plt.legend(('Reform - Inc. Caregiver Credits', 'Reform - Excl. Caregiver Credits', 'No Reform'))
-plt.ylabel("Earning Points over time")
-plt.show()
 
-
-# 6
-fig = plt.figure(figsize=(10,4)) 
-plt.plot(t,EPpath_c_1, 'blue', t, EPpath_c_0, 'red')
-plt.xlabel("Age")
-plt.legend(('Reform','No Reform'))
-plt.ylabel("Cumulative Earning Points")
-plt.show()
-
-
-# 7
-fig = plt.figure(figsize=(10,4)) 
-plt.plot(t,EPpath_m_c_1, t, EPpath_behav_m_c_1, t, EPpath_m_c_0)
-plt.xlabel("Age")
-plt.legend(('Reform - Incl. Caregiver Credits', 'Reform - Excl. Caregiver Credits', 'No Reform'))
-plt.ylabel('Cumulative Earning Points (Monetary)')
-plt.show()
-
-
-# 8
-fig = plt.figure(figsize=(10,4)) 
-plt.plot(t,par.tau[:,1], 'blue', t, par.tau[:,0], 'red')
-plt.xlabel("Age")
-plt.legend(('Reform','No Reform'))
-plt.ylabel("Pension wage subsidy over time")
-plt.show()
-
-
-# 9
-fig = plt.figure(figsize=(10,4)) 
-plt.plot(t,Epath_1-Epath_0, 'blue')
-plt.xlabel("Age")
-plt.ylabel('Reform-No Reform Earnings Difference')
-plt.show()
 
 
 # 10
@@ -157,6 +116,3 @@ plt.xlabel("Age")
 plt.legend(('Reform','No Reform'))
 plt.ylabel('Value Function over time')
 plt.show()
-
-
-
