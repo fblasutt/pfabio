@@ -1,15 +1,8 @@
-# Yifan - 2 Sept 2021 - This is the main program to run
-# execute it with co.py and sol.py in the same folder
-# ------------------------------------------------------------------------ 
-# Pension model (follow Costas Dias)
-# ------------------------------------------------------------------------ 
-#
-# change: matlab function getGrid is not used (np.linspace used)
-# change: gridpoint is not iterated
-# change: function gentax added
-#
-#
-#
+# Fabio: life cycle model of consumption, savings anf FLS
+#        It also features a separate budget for pension benefits,
+#        following the reform of the German pension system
+
+
 ######################################
 # Preamble
 ######################################
@@ -29,18 +22,19 @@ import sol
 import sim
 import matplotlib.pyplot as plt
 import numpy as np
+
 # set up parameters
 par = co.setup()
-# grid points set to 20, change par.numPtsA to change this
+
 
 
 ########################################
 # solve the model
 ########################################
 reform = 1
-[policyA1_1, policyh_1, policyC_1, V_1] = sol.solveEulerEquation(reform, par)
+[policyA1_1, policyh_1, policyC_1, V_1, policyp_1] = sol.solveEulerEquation(reform, par)
 reform = 0
-[policyA1_0, policyh_0, policyC_0, V_0] = sol.solveEulerEquation(reform, par)
+[policyA1_0, policyh_0, policyC_0, V_0, policyp_0] = sol.solveEulerEquation(reform, par)
 
 
 ########################################

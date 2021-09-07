@@ -4,6 +4,7 @@ import numpy as np
 #import tools
 from scipy.interpolate import pchip_interpolate
 from scipy.optimize import root
+from interpolation.splines import UCGrid
 
 def setup():
     class par: pass
@@ -11,7 +12,7 @@ def setup():
     # Economic Environment: set parameters
     par.T = 55           # Number of time periods
     par.R = 35           # Retirement period
-    par.r = 0.0155        # Interest rate
+    par.r = 0.015        # Interest rate
     par.delta = 0.015    # Discount rate
     par.beta = 10        # Utility weight on leisure
     par.gamma_c = 1      # risk parameter on consumption
@@ -21,7 +22,6 @@ def setup():
     par.E_bar_now = 30000  # Average earnings
     par.q = 0            # Fixed cost of participation
     par.rho = 350        # Dollar value of points
-    par.startA = 10000   # Assets people start life with
     par.tau = .2         # marginal tax rate
 
     # precision parameters
@@ -31,10 +31,19 @@ def setup():
     par.maxHours = 1880
 
     # 2. GENERATE GRID
-    # par.interpMethod = 'pchip'  # interpolation methods (no longer used)
+    
+    # Assets
     par.numPtsA = 20
     par.agrid=np.linspace(0,250000,par.numPtsA)
+    par.startA = 10000   # Assets people start life with
     
+    # Pension points
+    par.numPtsP = 30
+    par.pgrid=np.linspace(0,par.R,par.numPtsP) # max one point per year in the law...
+    par.startP = 1   # points people start life with
+    
+    #Multidimensional grid
+    par.mgrid=UCGrid((par.agrid[0],par.agrid[-1],par.numPtsA),(par.pgrid[0],par.pgrid[-1],par.numPtsP))
     return par
 
 

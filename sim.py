@@ -4,6 +4,9 @@ import numpy as np
 import co
 from scipy.interpolate import pchip_interpolate
 
+from interpolation.splines import  eval_linear
+#https://www.econforge.org/interpolation.py/
+
 def simNoUncer_interp(reform, policyA1, policyC, policyh, V, par):
     # Arguments for output
     cpath = np.nan+ np.zeros((par.T, 1))           # consumption
@@ -15,22 +18,25 @@ def simNoUncer_interp(reform, policyA1, policyC, policyh, V, par):
     EPpath_behav = np.nan+ np.zeros((par.T, 1))    # earning points path
     EPpath_behav_c = np.nan+ np.zeros((par.T, 1))  # cumulative earning points path
     vpath = np.nan+ np.zeros((par.T, 1))           # value
-    apath = np.nan+ np.zeros((par.T + 1,1))        # assets at start of each period, decided 1 period ahead and so includes period T+1
+    apath = np.nan+ np.zeros((par.T + 1,1))        # assets at start of each period, decided 1 period ahead and so includes period T+1   
+    ppath = np.nan+ np.zeros((par.T + 1,1))        # points at start of each period, decided 1 period ahead and so includes period T+1
     
     
     # Initial condition
     apath[0, 0] = par.startA; 
+    ppath[0, 0] = par.startP; 
     
     
     # Obtain paths using the initial condition and the policy and value functions
     
     for t in range(par.T-1):  # loop through time periods for a particular individual
     
-        vpath[t  , 0] = np.interp(apath[t,0], par.agrid,V[t, :])
-        apath[t+1, 0] = np.interp(apath[t,0], par.agrid, policyA1[t,:])
-        
-        cpath[t, 0] = np.interp(apath[t,0], par.agrid,policyC[t,:])
-        hpath[t, 0] = np.interp(apath[t,0], par.agrid,policyh[t,:])
+        point=np.array([apath[t,0],ppath[t,0]]) #where to interpolate
+        vpath[t  , 0] = eval_linear(par.mgrid,V[t,:,:],point)
+        apath[t+1, 0] = eval_linear(par.mgrid,policyA1[t, :,:],point)
+        ppath[t+1, 0]=  ppath[t, 0]
+        cpath[t, 0] = eval_linear(par.mgrid,policyC[t, :,:],point)
+        hpath[t, 0] = eval_linear(par.mgrid,policyh[t, :,:],point)
         Epath[t, 0] = hpath[t, 0]*par.w;
         
         Epath_tau[t,0] = hpath[t,0]*par.w*(1+par.tau)
