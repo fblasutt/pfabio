@@ -11,7 +11,7 @@ def setup():
     # Economic Environment: set parameters
     par.T = 55           # Number of time periods
     par.R = 35           # Retirement period
-    par.r = 0.015        # Interest rate
+    par.r = 0.0155        # Interest rate
     par.delta = 0.015    # Discount rate
     par.beta = 10        # Utility weight on leisure
     par.gamma_c = 1      # risk parameter on consumption
@@ -32,8 +32,8 @@ def setup():
 
     # 2. GENERATE GRID
     # par.interpMethod = 'pchip'  # interpolation methods (no longer used)
-    par.numPtsA = 200
-    par.agrid=np.linspace(0,100000,par.numPtsA)
+    par.numPtsA = 20
+    par.agrid=np.linspace(0,250000,par.numPtsA)
     
     return par
 

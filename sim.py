@@ -26,11 +26,11 @@ def simNoUncer_interp(reform, policyA1, policyC, policyh, V, par):
     
     for t in range(par.T-1):  # loop through time periods for a particular individual
     
-        vpath[t  , 0] = pchip_interpolate(par.agrid, V[t, :], apath[t,0])
-        apath[t+1, 0] = pchip_interpolate(policyA1[t,:], par.agrid, apath[t,0])
+        vpath[t  , 0] = np.interp(apath[t,0], par.agrid,V[t, :])
+        apath[t+1, 0] = np.interp(apath[t,0], par.agrid, policyA1[t,:])
         
-        cpath[t, 0] = pchip_interpolate(policyA1[t,:], policyC[t,:], apath[t,0])
-        hpath[t, 0] = pchip_interpolate(policyA1[t,:], policyh[t,:], apath[t,0])
+        cpath[t, 0] = np.interp(apath[t,0], par.agrid,policyC[t,:])
+        hpath[t, 0] = np.interp(apath[t,0], par.agrid,policyh[t,:])
         Epath[t, 0] = hpath[t, 0]*par.w;
         
         Epath_tau[t,0] = hpath[t,0]*par.w*(1+par.tau)
