@@ -9,7 +9,8 @@ from scipy.optimize import root
 #from scipy.interpolate import interp1d
 from scipy.interpolate import pchip_interpolate
 from numba import jit, njit, prange, int64, float64
-from scipy.interpolate import pchip_interpolate
+
+
 
 def solveEulerEquation(reform, par):
     

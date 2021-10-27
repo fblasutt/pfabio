@@ -4,50 +4,50 @@ import numpy as np
 #import tools
 from scipy.interpolate import pchip_interpolate
 from scipy.optimize import root
-from interpolation.splines import UCGrid
+from interpolation.splines import CGrid
 
-def setup():
-    class par: pass
-
-    # Economic Environment: set parameters
-    par.T = 55           # Number of time periods
-    par.R = 35           # Retirement period
-    par.r = 0.015        # Interest rate
-    par.delta = 0.015    # Discount rate
-    par.beta = 10        # Utility weight on leisure
-    par.gamma_c = 1      # risk parameter on consumption
-    par.gamma_h = 1.525  # risk parameter on labour
-    par.w = 16           # Hourly wage
-    par.y_N = 48000      # Unearned income
-    par.E_bar_now = 30000  # Average earnings
-    par.q = 0            # Fixed cost of participation
-    par.rho = 350        # Dollar value of points
-    par.tau = .2         # marginal tax rate
-
-    # precision parameters
-    par.tol = 1e-7       # max allowed error
-    par.minCons = 1e-5   # min allowed consumption
-    par.minHours = 1e-5  # min allowed hours
-    par.maxHours = 1880
-
-    # 2. GENERATE GRID
+class setup():
     
-    # Assets
-    par.numPtsA = 20
-    par.agrid=np.linspace(0,250000,par.numPtsA)
-    par.startA = 10000   # Assets people start life with
+    def __init__(self):
+
+        # Economic Environment: set parameters
+        self.T = 55           # Number of time periods
+        self.R = 35           # Retirement period
+        self.r = 0.015        # Interest rate
+        self.delta = 0.015    # Discount rate
+        self.beta = 10        # Utility weight on leisure
+        self.gamma_c = 1      # risk parameter on consumption
+        self.gamma_h = 1.525  # risk parameter on labour
+        self.w = 16           # Hourly wage
+        self.y_N = 48000      # Unearned income
+        self.E_bar_now = 30000  # Average earnings
+        self.q = 0            # Fixed cost of participation
+        self.rho = 350        # Dollar value of points
+        self.tau = .2         # marginal tax rate
     
-    # Pension points
-    par.numPtsP = 30
-    par.pgrid=np.linspace(0,par.R,par.numPtsP) # max one point per year in the law...
-    par.startP = 1   # points people start life with
+        # precision parameters
+        self.tol = 1e-7       # max allowed error
+        self.minCons = 1e-5   # min allowed consumption
+        self.minHours = 1e-5  # min allowed hours
+        self.maxHours = 1880
     
-    #Multidimensional grid
-    par.mgrid=UCGrid((par.agrid[0],par.agrid[-1],par.numPtsA),(par.pgrid[0],par.pgrid[-1],par.numPtsP))
-    return par
+        # 2. GENERATE GRID
+        
+        # Assets
+        self.numPtsA = 200
+        self.agrid=np.linspace(0,250000,self.numPtsA)
+        self.startA = 10000   # Assets people start life with
+        
+        # Pension points
+        self.numPtsP = 300
+        self.pgrid=np.linspace(0,self.R,self.numPtsP) # max one point per year in the law...
+        self.startP = 1   # points people start life with
+        
+        #Multidimensional grid
+        self.mgrid=CGrid((self.agrid[0],self.agrid[-1],self.numPtsA),(self.pgrid[0],self.pgrid[-1],self.numPtsP))
+   
 
-
-
+# Define the utility function
 def utility(c,h,par):
 
     if par.gamma_c == 1:
@@ -63,6 +63,9 @@ def utility(c,h,par):
     utils = utils_c + par.beta*utils_h - (h==0)*par.q
 
     return utils
+
+
+
 
   
                      
