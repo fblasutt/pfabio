@@ -37,9 +37,9 @@ def simNoUncer_interp(reform, policyA1, policyC, policyh, V, par):
         ppath[t+1, 0]=  ppath[t, 0]
         cpath[t, 0] = eval_linear(par.mgrid,policyC[t, :,:],point)
         hpath[t, 0] = eval_linear(par.mgrid,policyh[t, :,:],point)
-        Epath[t, 0] = hpath[t, 0]*par.w;
+        Epath[t, 0] = hpath[t, 0]*par.w[t];
         
-        Epath_tau[t,0] = hpath[t,0]*par.w*(1+par.tau)
+        Epath_tau[t,0] = hpath[t,0]*par.w[t]*(1+par.tau)
         
         if reform == 0:
             EPpath[t, 0] = Epath[t,0]/par.E_bar_now

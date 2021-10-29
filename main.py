@@ -18,7 +18,7 @@ except:
 
 # Import package
 import co # user defined functions
-import sol
+import sol#_numba as sol
 import sim
 import matplotlib.pyplot as plt
 import numpy as np
@@ -92,8 +92,6 @@ plt.show()
 
 
 
-
-
 # 10
 fig = plt.figure(figsize=(10,4)) 
 plt.plot(t,apath_1[1:par.T+1], 'blue', t, apath_1[1:par.T+1], 'red')
@@ -109,4 +107,11 @@ plt.plot(t,vpath_1, 'blue', t, vpath_0, 'red')
 plt.xlabel("Age")
 plt.legend(('Reform','No Reform'))
 plt.ylabel('Value Function over time')
+plt.show()
+
+
+fig = plt.figure(figsize=(10,4)) 
+plt.plot(t,cpath_1, 'blue', t, Epath_1, 'red')
+plt.xlabel("Age")
+plt.legend(('c','earn'))
 plt.show()

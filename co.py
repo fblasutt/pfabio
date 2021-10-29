@@ -1,9 +1,6 @@
 # This co.py file stores all miscellaneous functions needed to perform sol.py
-# Yifan Lyu, 30th Aug 2021
+# Fabio Blasutto
 import numpy as np
-#import tools
-from scipy.interpolate import pchip_interpolate
-from scipy.optimize import root
 from interpolation.splines import CGrid
 
 class setup():
@@ -13,30 +10,34 @@ class setup():
         # Economic Environment: set parameters
         self.T = 55           # Number of time periods
         self.R = 35           # Retirement period
-        self.r = 0.015        # Interest rate
-        self.delta = 0.015    # Discount rate
+        self.r = 0.0#15        # Interest rate
+        self.delta = 0.0#15    # Discount rate
         self.beta = 10        # Utility weight on leisure
         self.gamma_c = 1      # risk parameter on consumption
         self.gamma_h = 1.525  # risk parameter on labour
-        self.w = 16           # Hourly wage
-        self.y_N = 48000      # Unearned income
+        self.y_N = 0#48000      # Unearned income
         self.E_bar_now = 30000  # Average earnings
         self.q = 0            # Fixed cost of participation
         self.rho = 350        # Dollar value of points
-        self.tau = .2         # marginal tax rate
+        self.tau = 0.0#.2         # marginal tax rate
+        
+        # Hourly wage
+        self.w=np.zeros(self.T)
+        for t in range(self.T):self.w[t]=1+t*0.4#16
     
         # precision parameters
         self.tol = 1e-7       # max allowed error
         self.minCons = 1e-5   # min allowed consumption
         self.minHours = 1e-5  # min allowed hours
         self.maxHours = 1880
+        
     
         # 2. GENERATE GRID
         
         # Assets
         self.numPtsA = 200
-        self.agrid=np.linspace(0,250000,self.numPtsA)
-        self.startA = 10000   # Assets people start life with
+        self.agrid=np.linspace(0.001,250000,self.numPtsA)
+        self.startA = 0#10000   # Assets people start life with
         
         # Pension points
         self.numPtsP = 300
