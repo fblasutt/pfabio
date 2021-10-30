@@ -10,6 +10,7 @@ from scipy.optimize import root
 from scipy.interpolate import pchip_interpolate
 from numba import jit, njit, prange, int64, float64
 
+
 from interpolation.splines import  eval_linear,UCGrid, CGrid, nodes
 #https://www.econforge.org/interpolation.py/
 
@@ -24,7 +25,7 @@ def solveEulerEquation(reform, par):
     
     agrid_box=np.transpose(np.tile(agrid,(numPtsP,1)))
     
-    policyA1,policyC,policyh,V,policyp = np.empty((5,T, numPtsA, numPtsP))
+    policyA1,policyh,policyC,V,policyp = np.empty((5,T, numPtsA, numPtsP))
         
     
     solveEulerEquation1(policyA1, policyh, policyC, policyp,agrid_box,reform,r,delta,gamma_c,R,tau,beta,w,agrid,y_N,gamma_h,T,numPtsA,numPtsP,pgrid,maxHours)
@@ -32,7 +33,7 @@ def solveEulerEquation(reform, par):
     elapsed = time.time() - time_start    
     print('Finished, Reform =', reform, 'Elapsed time is', elapsed, 'seconds')   
     
-    return policyA1,policyC,policyh,V,policyp
+    return policyA1,policyh,policyC,V,policyp
 
 @njit
 def solveEulerEquation1(policyA1, policyh, policyC, policyp,agrid_box,reform,r,delta,gamma_c,R,tau,\
@@ -43,25 +44,17 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,agrid_box,reform,r,d
         To improve it further: jit it, then use math.power, not *
     """
 
-    
+    for t in range(T-1,-1,-1):
 
-        
-    
-   
-        
-    for t in (np.cumsum(np.ones(T,dtype=np.int32))-1)[::-1]:
-    
         if t == T-1:  # last period
             
-            policyA1[t,:,:] = np.zeros((1,numPtsA, numPtsP));  # optimal savings
-            policyh[t,:,:] = np.zeros((1,numPtsA, numPtsP));  # optimal earnings
+            policyA1[t,:,:] = np.zeros((numPtsA, numPtsP));  # optimal savings
+            policyh[t,:,:] = np.zeros((numPtsA, numPtsP));  # optimal earnings
             policyC[t,:,:] = agrid_box*(1+r) + y_N    # optimal consumption
             policyp[t,:,:]=policyp[t,:,:] # pension points do not change
-           
-            
+                      
         else:
-           
-           
+                      
             #How much consumption today? Use Euler equation
             ce=policyC[t+1,:,:]*((1+r)/(1+delta))**(-1/gamma_c)
             
@@ -73,16 +66,21 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,agrid_box,reform,r,d
             
             #Now, back on the main grid(speed can be improved below...)
             for i in range(numPtsP):
-                policyC[t,:,i]=np.interp(agrid, ae[:,i],ce[:,i])
-                policyh[t,:,i]=100
-                policyA1[t,:,i]=np.interp(agrid, ae[:,i],agrid)
-                 
-                policyp[t,:,i]=policyp[t+1,:,i]
+                
+                #policyC[t,:,i]=np.interp(agrid, ae[:,i],ce[:,i])
+                #policyA1[t,:,i]=np.interp(agrid, ae[:,i],agrid)
+                
+                policyC[t,:,i],policyA1[t,:,i]=solveEulerEquation2(agrid,ae,ce,i)
+                
+            policyh[t,:,:]=100
+            policyp[t,:,:]=policyp[t+1,:,:]
             
-            
-        
-        
-    return policyA1, policyh, policyC, policyp
+@njit           
+def solveEulerEquation2(agrid,ae,ce,i):
+    
+    pC=np.interp(agrid, ae[:,i],ce[:,i])
+    pA=np.interp(agrid, ae[:,i],agrid)
+    return pC,pA
     
 
 

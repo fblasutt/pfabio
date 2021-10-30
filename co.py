@@ -10,8 +10,8 @@ class setup():
         # Economic Environment: set parameters
         self.T = 55           # Number of time periods
         self.R = 35           # Retirement period
-        self.r = 0.0#15        # Interest rate
-        self.delta = 0.0#15    # Discount rate
+        self.r = 0.015        # Interest rate
+        self.delta = 0.015    # Discount rate
         self.beta = 10        # Utility weight on leisure
         self.gamma_c = 1      # risk parameter on consumption
         self.gamma_h = 1.525  # risk parameter on labour

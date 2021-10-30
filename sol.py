@@ -49,17 +49,17 @@ def solveEulerEquation(reform, par):
             ce=policyC[t+1,:,:]*((1+par.r)/(1+par.delta))**(-1/par.gamma_c)
             
             #How much work? This follows from the FOC
-            he=100+0*(t+1>par.R)+ \
-                 0*(t+1<=par.R)*(par.maxHours-(par.w[t]*(1-par.tau)/par.beta*(ce**(-par.gamma_c)))**(-1/par.gamma_h))
+            he=0*(t+1>par.R)+ \
+                 (t+1<=par.R)*(par.maxHours-(par.w[t]*(1-par.tau)/par.beta*(ce**(-par.gamma_c)))**(-1/par.gamma_h))
             
             #How much assets? Just use the BC!
             ae=(agrid_box-par.w[t]*he*(1-par.tau)-par.y_N+ce)/(1+par.r)
             
             #Now, back on the main grid(speed can be improved below...)
             policyC[t,:,:]=np.transpose(np.array([np.interp(par.agrid, ae[:,i],ce[:,i]) for i in range(par.numPtsP)]))
-            policyh[t,:,:]=100+0*(t+1>par.R)+  \
-                 0*(t+1<=par.R)*(par.maxHours-(par.w[t]*(1-par.tau)/par.beta*(policyC[t,:,:]**(-par.gamma_c)))**(-1/par.gamma_h))
-            policyA1[t,:,:]=(1+par.r)*agrid_box+par.w[t]*policyh[t,:,:]*(1-par.tau)+par.y_N-policyC[t,:,:]
+            policyh[t,:,:]=0*(t+1>par.R)+  \
+                 (t+1<=par.R)*(par.maxHours-(par.w[t]*(1-par.tau)/par.beta*(policyC[t,:,:]**(-par.gamma_c)))**(-1/par.gamma_h))
+            #policyA1[t,:,:]=(1+par.r)*agrid_box+par.w[t]*policyh[t,:,:]*(1-par.tau)+par.y_N-policyC[t,:,:]
                  
             
             #policyh[t,:,:]=0*(t+1>par.R)+ \
