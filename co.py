@@ -18,12 +18,12 @@ class setup():
         self.y_N = 0#48000      # Unearned income
         self.E_bar_now = 30000  # Average earnings
         self.q = 0            # Fixed cost of participation
-        self.rho = 0.0#350        # Dollar value of points
+        self.rho =350        # Dollar value of points
         self.tau = 0.0#.2         # marginal tax rate
         
         # Hourly wage
         self.w=np.zeros(self.T)
-        for t in range(self.T):self.w[t]=1+t*0.4#16
+        for t in range(self.T):self.w[t]=6+t*0.2#16
     
         # precision parameters
         self.tol = 1e-7       # max allowed error

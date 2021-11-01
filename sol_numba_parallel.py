@@ -5,8 +5,8 @@
 import time
 import numpy as np
 #from scipy.interpolate import interp1d
-from scipy.optimize import bisect as brentq
-#from quantecon.optimize.root_finding import brentq 
+#from scipy.optimize import bisect as brentq
+from quantecon.optimize.root_finding import brentq 
 from numba import njit, prange
 import numexpr as ne
 from interpolation.splines import CGrid, eval_linear, nodes
@@ -64,99 +64,134 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,pmutil,reform,r,delt
         policy=((t+1 >=3 & t+1 <=10) & (reform))
         
         if policy: 
-            mult_pens=ne.evaluate('(1.5*wt/E_bar_now*pmu/(1+delta)+wt*(1-tau))/beta')
+            mult_pens=ne.evaluate('1.5*wt/E_bar_now*pmu/(1+delta)')
         else:
-            mult_pens=ne.evaluate('(1.0*wt/E_bar_now*pmu/(1+delta)+wt*(1-tau))/beta')
+            mult_pens=ne.evaluate('1.0*wt/E_bar_now*pmu/(1+delta)')
         
+        ################################################
+        #Endogenous gridpoints here
+        ##############################################
         
-        #How much consumption today? Use Euler equation
+        #Get consumption from Eurler Equation
         ce=policyC[t+1,:,:]*mult
         
        
-        #How much work? This follows from the FOC
-        
-        if (t+1<=R):
-            he=ne.evaluate('maxHours-(mult_pens*(ce**(-gamma_c)))**(-1/gamma_h)')
-            if (policy):
-                he_m=ne.evaluate('maxHours-((1.0*wt/E_bar_now*pmu/(1+delta)+wt*(1-tau))/beta*(ce**(-gamma_c)))**(-1/gamma_h)')
-                he[(1.5*he*wt/E_bar_now>1)]=he_m[(1.5*he*wt/E_bar_now>1)]
+        #How much work? This follows from the FOC      
+        if (t+1<=R):            
+            #Not retired
+            he=ne.evaluate('maxHours-((mult_pens+wt*(1-tau)*(ce**(-gamma_c)))/beta)**(-1/gamma_h)')
+            
+            #Check conditions for additional points
+            #if (policy):
+             #   he_m=ne.evaluate('maxHours-((1.0*wt/E_bar_now*pmu/(1+delta)+wt*(1-tau)*(ce**(-gamma_c)))/beta)**(-1/gamma_h)')
+             #   he[(1.5*he*wt/E_bar_now>1)]=he_m[(1.5*he*wt/E_bar_now>1)]
                 
+        #Retired case        
         if (t+1>R):he=np.zeros((numPtsA, numPtsP))
                   
-        #How much assets? Just use the BC!
-        ae=ne.evaluate('(agrid_box-wt*he*(1-tau)-y_N+ce)/(1+r)')
         
-        #How much points should you have?
+        #How much points should you have given the decisions?
+        
+        #Retired
         if (t+1>R): pe=pgrid_box
+        
+        #Not retired
         if (t+1<=R):        
             if policy:
-                hem=np.maximum(np.minimum(1.5*he*wt/E_bar_now,np.ones(np.shape(he))),he*wt/E_bar_now)
+                
+                #For counting points under the reform, check the condition
+                hem=he.copy()#np.maximum(np.minimum(1.5*he*wt/E_bar_now,np.ones(np.shape(he))),he*wt/E_bar_now)
                 pe=ne.evaluate('pgrid_box-hem')
+                
             else:
+                #Normal condition
                 pe=ne.evaluate('pgrid_box-    he*wt/E_bar_now')
+                
+        #How much assets? Just use the Budget constraint!
+        if (t+1<=R):  
+            ae=ne.evaluate('(agrid_box-wt*he*(1-tau)-y_N+ce)/(1+r)')
+        else:
+            ae=ne.evaluate('(agrid_box-rho*pe-y_N+ce)/(1+r)')
             
        
-        # Now, back on the main grid(speed can be improved below...)
+        ################################################
+        # Now interpolate to be back on grid...
+        ###############################################
+        
+        # This gets consumption and assets back on grid
         policyC[t,:,:],policyA1[t,:,:]=solveEulerEquation2(agrid,agrid_box,pgrid_box,ae,ce,pe,numPtsP,numPtsA,\
                                                r,wt,y_N,tau,gamma_c,gamma_h,\
                                                beta,maxHours,t,R,pgrid,rho,E_bar_now,\
                                                mult_pens,mgrid)
             
-        #Obtain optimal hours (if retired, 0 hours)
+        #Given consumption and assets, obtain optimal hours on grid
         Pc=policyC[t,:,:] #Needed for computation below
         if (t+1<=R):
                  policyh[t,:,:]=  \
-                 ne.evaluate('maxHours-(mult_pens*(Pc**(-gamma_c)))**(-1/gamma_h)')
+                 ne.evaluate('maxHours-((mult_pens+wt*(1-tau)*(Pc**(-gamma_c)))/beta)**(-1/gamma_h)')
                  
         #Update marginal utility of having more pension points
         if (t+1>R): 
-            pmutil[t,:,:]=ne.evaluate('pmu/(1+delta)+rho*Pc**(-gamma_c)')
+            pmutil[t,:,:]=ne.evaluate('(pmu+rho*Pc**(-gamma_c))/(1+delta)')
         else:
             pmutil[t,:,:]=ne.evaluate('pmu/(1+delta)')
                
       
-#@njit(parallel=True)           
+@njit(parallel=True)           
 def solveEulerEquation2(agrid,agrid_box,pgrid_box,ae,ce,pe,numPtsP,numPtsA,r,wt,y_N,tau,gamma_c,
                         gamma_h,beta,maxHours,t,R,pgrid,rho,E_bar_now,mult_pens,mgrid):
     
     pCv,pAv,pPv,pC,pA,pP=np.empty((6,numPtsA,numPtsP),dtype=np.float64)
     where=np.empty((numPtsA,numPtsP),dtype=np.bool_)
     
-    
+    #Interpolate to be on the grid of assets
     for i in prange(numPtsP):           
         pCv[:,i]=np.interp(agrid, ae[:,i],ce[:,i])
         pAv[:,i]=np.interp(agrid, ae[:,i],agrid)
         pPv[:,i]=np.interp(agrid, ae[:,i],pe[:,i])
         
+    #Interpolate to be on the grid of pension points    
     for j in prange(numPtsA):           
         pC[j,:]=np.interp(pgrid, pe[j,:],pCv[j,:])
         pA[j,:]=np.interp(pgrid, pe[j,:],pAv[j,:])
         pP[j,:]=np.interp(pgrid, pe[j,:],pPv[j,:])
      
     
-    #Get where constraints are binding
+    ########################################################
+    #Below handle the case of binding borrowing constraints
+    #######################################################
+    
+    #Where does constraints bind?
     for j in prange(numPtsA):
         for i in prange(numPtsP): 
             where[j,i]=(pA[j,i]<=agrid[0])
             
-    #Where constraints are binding, obtain consumption
+    #Update consumption where constraints are binding
     for j in prange(numPtsA):
         for i in prange(numPtsP): 
-            tup=(agrid[j],r,y_N,gamma_c,gamma_h,maxHours,mult_pens[j,i],wt,tau)
-            if where[j,i]:
+            
+            tup=(agrid[j],r,y_N,gamma_c,gamma_h,maxHours,mult_pens[j,i],wt,tau,beta)
+            
+            if where[j,i]:#Here constraints bind...
                 if (t+1>R):
-                    pC[j,i]=(1+r)*agrid[j]+y_N+pgrid[j]*rho
+                    
+                    #If retired...
+                    pC[j,i]=(1+r)*agrid[j]+y_N+pgrid[j]*rho-agrid[0]
                 else:
+                    #If not retired
                     hmin=agrid[j]*(1+r)
-                    hmax=agrid[j]*(1+r)+y_N+maxHours*wt*(1-tau)
-                    pC[j,i]=brentq(minim,hmin,hmax,args=tup)#[0]
+                    hmax=agrid[j]*(1+r)+y_N+maxHours*wt*(1-tau)-agrid[0]
+                    
+                    #Rootfinding on FOCs to get optimal consumption!
+                    #HERE I SHOULD ALSO HANDLE MAX PENSION POINT ISSUE!!!
+                    pC[j,i]=brentq(minim,hmin,hmax,args=tup)[0]
                     
     return pC,pA
 
 
-#@njit
-def minim(x,a,r,y_N,gamma_c,gamma_h,maxHours,mult_pens,w,tau):
-    h=-np.power(np.power(x,-gamma_c)*mult_pens,-1/gamma_h)+maxHours
+@njit
+def minim(x,a,r,y_N,gamma_c,gamma_h,maxHours,mult_pens,w,tau,beta):
+    h=-np.power((np.power(x,-gamma_c)*w*(1-tau)+mult_pens)/beta,-1/gamma_h)+maxHours
     return (1+r)*a+w*h*(1-tau)+y_N-x
     
  
