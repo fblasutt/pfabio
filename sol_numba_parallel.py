@@ -125,10 +125,12 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,pmutil,reform,r,delt
         Pc=policyC[t,:,:] #Needed for computation below
         Pa=policyA1[t,:,:] #Needed for computation below
         if (t+1<=R):
+                 aaa=ne.evaluate('(Pc+Pa-(1+r)*agrid_box-y_N)/(wt*(1-tau))')  
+                 aaa1=ne.evaluate('maxHours-((mult_pens+wt*(1-tau)*(Pc**(-gamma_c)))/beta)**(-1/gamma_h)')
                  policyh[t,:,:]=  \
-                      ne.evaluate('maxHours-((mult_pens+wt*(1-tau)*(Pc**(-gamma_c)))/beta)**(-1/gamma_h)')
-                     #ne.evaluate('(Pc+Pa-(1+r)*agrid_box-y_N)/(wt*(1-tau))')   
-                 
+                      aaa1
+                  
+                 print(np.max(np.abs(aaa-aaa1)))
                 #  
                  #
                  
@@ -139,7 +141,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,pmutil,reform,r,delt
             pmutil[t,:,:]=ne.evaluate('pmu/(1+delta)')
             
         #Check points consistency
-        print((np.mean((pgrid_box+wt*policyh[t,:,:]/E_bar_now-pp)[:,0:2900])))
+        #print((np.mean((pgrid_box+wt*policyh[t,:,:]/E_bar_now-pp)[:,0:2900])))
                
       
 @njit(parallel=True)           
@@ -197,30 +199,30 @@ def solveEulerEquation2(agrid,agrid_box,pgrid_box,ae,ce,pe,numPtsP,numPtsA,r,wt,
     #Below handle the case of binding borrowing constraints
     #######################################################
     
-    # #Where does constraints bind?
-    # for j in prange(numPtsA):
-    #     for i in prange(numPtsP): 
-    #         where[j,i]=(pA[j,i]<=agrid[0])
+    #Where does constraints bind?
+    for j in prange(numPtsA):
+        for i in prange(numPtsP): 
+            where[j,i]=(pA[j,i]<=agrid[0])
             
-    # #Update consumption where constraints are binding
-    # for j in prange(numPtsA):
-    #     for i in prange(numPtsP): 
+    #Update consumption where constraints are binding
+    for j in prange(numPtsA):
+        for i in prange(numPtsP): 
             
-    #         tup=(agrid[j],r,y_N,gamma_c,gamma_h,maxHours,mult_pens[j,i],wt,tau,beta)
+            tup=(agrid[j],r,y_N,gamma_c,gamma_h,maxHours,mult_pens[j,i],wt,tau,beta)
             
-    #         if where[j,i]:#Here constraints bind...
-    #             if (t+1>R):
+            if where[j,i]:#Here constraints bind...
+                if (t+1>R):
                     
-    #                 #If retired...
-    #                 pC[j,i]=(1+r)*agrid[j]+y_N+pgrid[j]*rho-agrid[0]
-    #             else:
-    #                 #If not retired
-    #                 hmin=0.001#agrid[j]*(1+r)+y_N
-    #                 hmax=agrid[j]*(1+r)+y_N+maxHours*wt*(1-tau)-agrid[0]
+                    #If retired...
+                    pC[j,i]=(1+r)*agrid[j]+y_N+pgrid[j]*rho-agrid[0]
+                else:
+                    #If not retired
+                    hmin=0.001#agrid[j]*(1+r)+y_N
+                    hmax=agrid[j]*(1+r)+y_N+maxHours*wt*(1-tau)-agrid[0]
                     
-    #                 #Rootfinding on FOCs to get optimal consumption!
-    #                 #HERE I SHOULD ALSO HANDLE MAX PENSION POINT ISSUE!!!
-    #                 pC[j,i]=brentq(minim,hmin,hmax,args=tup)[0]
+                    #Rootfinding on FOCs to get optimal consumption!
+                    #HERE I SHOULD ALSO HANDLE MAX PENSION POINT ISSUE!!!
+                    pC[j,i]=brentq(minim,hmin,hmax,args=tup)[0]
                     
     return pC,pA,pP
 

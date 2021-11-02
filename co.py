@@ -18,7 +18,7 @@ class setup():
         self.y_N = 0#48000      # Unearned income
         self.E_bar_now = 30000  # Average earnings
         self.q = 0            # Fixed cost of participation
-        self.rho =350        # Dollar value of points
+        self.rho =0#350        # Dollar value of points
         self.tau = 0.0#.2         # marginal tax rate
         
         # Hourly wage
