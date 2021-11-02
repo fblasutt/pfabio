@@ -111,7 +111,7 @@ plt.show()
 
 
 fig = plt.figure(figsize=(10,4)) 
-plt.plot(t,cpath_1, 'blue', t, Epath_1, 'red')
+plt.plot(t,cpath_0, 'blue', t, Epath_0, 'red')
 plt.xlabel("Age")
 plt.legend(('c','earn'))
 plt.show()
