@@ -150,37 +150,10 @@ def solveEulerEquation2(agrid,agrid_box,pgrid_box,ae,ce,pe,numPtsP,numPtsA,r,wt,
     pCv,pAv,pPv,pC,pA,pP,pPg=np.empty((7,numPtsA,numPtsP),dtype=np.float64)
     where=np.empty((numPtsA,numPtsP),dtype=np.bool_)
     
-    # #Interpolate to be on the grid of assets
-    # for i in prange(numPtsP):           
-    #     pCv[:,i]=np.interp(agrid, ae[:,i],ce[:,i])
-    #     pAv[:,i]=np.interp(agrid, ae[:,i],agrid)
-    #     pPv[:,i]=np.interp(agrid, ae[:,i],pe[:,i])
-        
-    # #Interpolate to be on the grid of pension points    
-    # for j in prange(numPtsA):           
-    #     pC[j,:]=np.interp(pgrid, pe[j,:],pCv[j,:])
-    #     pA[j,:]=np.interp(pgrid, pe[j,:],pAv[j,:])
-    #     pP[j,:]=np.interp(pgrid, pe[j,:],pPv[j,:])
-    
-    #     #Interpolate to be on the grid of assets
-    # for i in prange(numPtsP):           
-    #     #pCv[:,i]=np.interp(agrid, ae[:,i],ce[:,i])
-    #     pAv[:,i]=np.interp(agrid, ae[:,i],agrid)
-    #     pPv[:,i]=np.interp(agrid, ae[:,i],pe[:,i])
-    #     #pPg[:,i]=np.interp(agrid, ae[:,i],pgrid)
-        
-    # #for j in prange(numPtsA): 
-    #     #pPg[j,:]=np.interp(pPv[j,:], pe[j,:],pgrid)
-        
-    # #Interpolate to be on the grid of pension points    
-    # for j in prange(numPtsA):           
-    #  #   pC[j,:]=np.interp(pgrid, pPv[j,:],pCv[j,:])
-    #     pA[j,:]=np.interp(pgrid, pPv[j,:],pAv[j,:])
-    #     pP[j,:]=np.interp(pgrid, pPv[j,:],pPg[j,:])
-    
-    if t<5:
-        aaa=1
-    #Consav interpolations
+    #Method of interpolation:
+    #https://www.sciencedirect.com/science/article/pii/S0165188916301920?via%3Dihub
+    #Note that this method could easily be used to handle non-convexities
+        #Consav interpolations
     for j in prange(numPtsA):           
         linear_interp.interp_1d_vec( pe[j,:],ae[j,:],pgrid,pAv[j,:])
         linear_interp.interp_1d_vec( pe[j,:],pgrid,pgrid,pPv[j,:])
@@ -204,47 +177,43 @@ def solveEulerEquation2(agrid,agrid_box,pgrid_box,ae,ce,pe,numPtsP,numPtsA,r,wt,
             for j in prange(numPtsP): 
                 pP[i,j]=max(pP[i,j],pgrid[0])
         
- 
+        
+    #Post decision gridpoints
+    for i in prange(numPtsA-1):        
+         for j in prange(numPtsP-1): 
+             
+            #Limits of the bounding box on the lower triangle
+            mina=min(ae[i,j],ae[i+1,j],ae[i,j+1])
+            maxa=max(ae[i,j],ae[i+1,j],ae[i,j+1])
+            minp=min(pe[i,j],pe[i+1,j],pe[i,j+1])
+            maxp=max(pe[i,j],pe[i+1,j],pe[i,j+1])
+             
+            denom=(pe[i+1,j]-pe[i,j+1])*(ae[i,j]  -ae[i,j+1])+\
+                  (ae[i,j+1]-ae[i+1,j])*(pe[i,j]  -pe[i,j+1])
+            #Grid where you want to interpoalte
+            for ii in prange(numPtsA):        
+                for jj in prange(numPtsP): 
+                    
+                    if (ae[ii,jj]>0) & (pe[ii,jj]>0):
+                        #Get if the point are considering falls within the
+                        #bounding box delimited by the triangle defined above
+                        if ((agrid[ii]>=mina) & (agrid[ii]<maxa)\
+                          & (pgrid[jj]>=minp) & (pgrid[jj]<maxp)): 
+                            
+                            #Get the weights to apply the barycentric interpolation
+                            wa=((pe[i+1,j]-pe[i,j+1])*(agrid[ii]-ae[i,j+1])+\
+                                (ae[i,j+1]-ae[i+1,j])*(pgrid[jj]-pe[i,j+1]))/denom
+                                   
+                            wb=((pe[i,j+1]-pe[i,j  ])*(agrid[ii]-ae[i,j+1])+\
+                                (ae[i,j]-  ae[i,j+1])*(pgrid[jj]-pe[i,j+1]))/denom
+                             
+                            wc=1.0-wa-wb       
+                            pA[ii,jj]=wa*ae[i,j]+wb*ae[i+1,j]+wc*ae[i,j+1]
+                            pP[ii,jj]=wa*pe[i,j]+wb*pe[i+1,j]+wc*pe[i,j+1]
+                            #pC[ii,jj]=wa*ce[i,j]+wb*ce[i+1,j]+wc*ce[i,j+1]
+                            
     
-    # #Normal Interpolate to be on the grid of pension points    
-    # for j in prange(numPtsA):           
-    #     # pCv[j,:]=np.interp(pgrid, pe[j,:],ce[j,:])
-    #     pAv[j,:]=np.interp(pgrid, pe[j,:],ae[j,:])
-    #     pPv[j,:]=np.interp(pgrid, pe[j,:],pgrid)
-        
-    # for i in prange(numPtsP): 
-    #     pPg[:,i]=np.interp(pAv[:,i], ae[:,i],agrid)
-        
-    #Interpolate to be on the grid of assets
-    #for i in prange(numPtsP):           
-      #  pC[:,i]=np.interp(agrid, pAv[:,i],pCv[:,i])
-        #pA[:,i]=np.interp(agrid, pAv[:,i],pPg[:,i])
-      #  pP[:,i]=np.interp(agrid, pAv[:,i],pPv[:,i])
-        
-    #print(np.min(pA))
-        
-    #New interpolation...
    
-    # for j in prange(numPtsA):    
-       
-    #     z,we = interp_npp(pe[j,:],pgrid)
-    #     # pCv[j,:]=np.interp(pgrid, pe[j,:],ce[j,:])
-    #     for zi in prange(numPtsP):
-    #         pAv[j,zi]=ae[j,z[zi]]*(1-we[zi])+ae[j,z[zi]+1]*we[zi]
-    #         pPv[j,zi]=pe[j,z[zi]]*(1-we[zi])+pe[j,z[zi]+1]*we[zi]
-        
-    # for i in prange(numPtsP): 
-    #     z,we = interp_npp(ae[:,i],pAv[:,i])
-    #     for zi in prange(numPtsA):
-    #         pPg[zi,i]=agrid[z[zi]]*(1-we[zi])+agrid[z[zi]+1]*we[zi]
-        
-    # #Interpolate to be on the grid of assets
-    # for i in prange(numPtsP):        
-    #     z,we = interp_npp(pAv[:,i],agrid)
-    #   #  pC[:,i]=np.interp(agrid, pAv[:,i],pCv[:,i])
-    #     for zi in prange(numPtsA):
-    #         pA[zi,i]=pPg[z[zi],i]*(1-we[zi])+pPg[z[zi]+1,i]*we[zi]#np.interp(agrid, pAv[:,i],pPg[:,i])
-    #         pP[zi,i]=pPv[z[zi],i]*(1-we[zi])+pPv[z[zi]+1,i]*we[zi]#np.interp(agrid, pAv[:,i],pPv[:,i])
     
     ########################################################
     #Below handle the case of binding borrowing constraints
@@ -274,7 +243,7 @@ def solveEulerEquation2(agrid,agrid_box,pgrid_box,ae,ce,pe,numPtsP,numPtsA,r,wt,
                 #Rootfinding on FOCs to get optimal consumption!
                 #HERE I SHOULD ALSO HANDLE MAX PENSION POINT ISSUE!!!
                 pC[j,i]=brentq(minim,hmin,hmax,args=tup)[0]
-                    
+                        
     return pC,pA,pP
 
 

@@ -40,7 +40,7 @@ class setup():
         self.startA = 0#10000   # Assets people start life with
         
         # Pension points
-        self.numPtsP = 300
+        self.numPtsP = 10#300
         self.pgrid=np.linspace(0,self.R,self.numPtsP) # max one point per year in the law...
         self.startP = 1   # points people start life with
         
