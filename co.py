@@ -35,12 +35,12 @@ class setup():
         # 2. GENERATE GRID
         
         # Assets
-        self.numPtsA = 200
+        self.numPtsA = 50
         self.agrid=np.linspace(0.001,250000,self.numPtsA)
         self.startA = 0#10000   # Assets people start life with
         
         # Pension points
-        self.numPtsP = 10#300
+        self.numPtsP = 3#300
         self.pgrid=np.linspace(0,self.R,self.numPtsP) # max one point per year in the law...
         self.startP = 1   # points people start life with
         
