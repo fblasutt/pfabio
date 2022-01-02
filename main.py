@@ -18,7 +18,8 @@ except:
 
 # Import package
 import co # user defined functions
-import sol_numba_parallel_bilinear as sol
+import sol_numba_parallel_2egm as sol
+#import sol_numba_parallel_bilinear as sol
 import sim
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,9 +33,9 @@ par = co.setup()
 # solve the model
 ########################################
 reform = 1
-[policyA1_1, policyh_1, policyC_1, V_1, policyp_1] = sol.solveEulerEquation(reform, par)
+[policyA1_1, policyh_1, policyC_1, V_1, policyp_1,which_1] = sol.solveEulerEquation(reform, par)
 reform = 0
-[policyA1_0, policyh_0, policyC_0, V_0, policyp_0] = sol.solveEulerEquation(reform, par)
+[policyA1_0, policyh_0, policyC_0, V_0, policyp_0,which_0] = sol.solveEulerEquation(reform, par)
 
 
 ########################################

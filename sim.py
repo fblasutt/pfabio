@@ -3,7 +3,7 @@
 import numpy as np
 import co
 from scipy.interpolate import pchip_interpolate
-
+from consav import linear_interp
 from interpolation.splines import  eval_linear
 #https://www.econforge.org/interpolation.py/
 
@@ -32,11 +32,11 @@ def simNoUncer_interp(reform, policyA1, policyC, policyh, V, par):
     for t in range(par.T-1):  # loop through time periods for a particular individual
     
         point=np.array([apath[t,0],ppath[t,0]]) #where to interpolate
-        vpath[t  , 0] = eval_linear(par.mgrid,V[t,:,:],point)
-        apath[t+1, 0] = eval_linear(par.mgrid,policyA1[t, :,:],point)
+        vpath[t  , 0] = linear_interp.interp_2d(par.agrid,par.pgrid,V[t,:,:],apath[t,0],ppath[t,0])#eval_linear(par.mgrid,V[t,:,:],point)
+        apath[t+1, 0] = linear_interp.interp_2d(par.agrid,par.pgrid,policyA1[t, :,:],apath[t,0],ppath[t,0])#eval_linear(par.mgrid,policyA1[t, :,:],point)
         ppath[t+1, 0]=  ppath[t, 0]
-        cpath[t, 0] = eval_linear(par.mgrid,policyC[t, :,:],point)
-        hpath[t, 0] = eval_linear(par.mgrid,policyh[t, :,:],point)
+        cpath[t, 0] = linear_interp.interp_2d(par.agrid,par.pgrid,policyC[t, :,:],apath[t,0],ppath[t,0])#eval_linear(par.mgrid,policyC[t, :,:],point)
+        hpath[t, 0] = linear_interp.interp_2d(par.agrid,par.pgrid,policyh[t, :,:],apath[t,0],ppath[t,0])#eval_linear(par.mgrid,policyh[t, :,:],point)
         Epath[t, 0] = hpath[t, 0]*par.w[t];
         
         Epath_tau[t,0] = hpath[t,0]*par.w[t]

@@ -7,12 +7,15 @@ import numpy as np
 #from scipy.interpolate import interp1d
 #from scipy.optimize import bisect as brentq
 from quantecon.optimize.root_finding import brentq 
+from consav import linear_interp
 from numba import njit, prange, jit
 import numexpr as ne
 from interpolation.splines import CGrid, eval_linear, nodes
 import matplotlib.pyplot as plt
 #https://www.econforge.org/interpolation.py/
 
+import upperenvelop
+import co
 from consav import linear_interp
 
 def solveEulerEquation(reform, par):
@@ -24,21 +27,21 @@ def solveEulerEquation(reform, par):
     numPtsP=par.numPtsP;pgrid=par.pgrid;maxHours=par.maxHours;rho=par.rho;E_bar_now=par.E_bar_now;
     mgrid=par.mgrid
     
-    policyA1,policyh,policyC,V,policyp,pmutil = np.empty((6,T, numPtsA, numPtsP))
+    policyA1,policyh,policyC,V,policyp,pmutil,whic = np.empty((7,T, numPtsA, numPtsP))
         
     
-    solveEulerEquation1(policyA1, policyh, policyC, policyp,pmutil,\
+    solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,\
                         reform,r,delta,gamma_c,R,tau,beta,w,agrid,y_N,\
-                        gamma_h,T,numPtsA,numPtsP,pgrid,maxHours,rho,E_bar_now,mgrid)
+                        gamma_h,T,numPtsA,numPtsP,pgrid,maxHours,rho,E_bar_now,mgrid,par)
 
     elapsed = time.time() - time_start    
     print('Finished, Reform =', reform, 'Elapsed time is', elapsed, 'seconds')   
     
-    return policyA1,policyh,policyC,V,policyp
+    return policyA1,policyh,policyC,V,policyp,whic
 
 #@njit(fastmath=True)
-def solveEulerEquation1(policyA1, policyh, policyC, policyp,pmutil,reform,r,delta,gamma_c,R,tau,\
-                        beta,w,agrid,y_N,gamma_h,T,numPtsA,numPtsP,pgrid,maxHours,rho,E_bar_now,mgrid):
+def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform,r,delta,gamma_c,R,tau,\
+                        beta,w,agrid,y_N,gamma_h,T,numPtsA,numPtsP,pgrid,maxHours,rho,E_bar_now,mgrid,par):
     
     # The rest is interior solution
     """ Use the method of endogenous gridpoint to solve the model.
@@ -51,9 +54,9 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,pmutil,reform,r,delt
     policyA1[T-1,:,:] = np.zeros((numPtsA, numPtsP))  # optimal savings
     policyh[T-1,:,:] = np.zeros((numPtsA, numPtsP))   # optimal earnings
     policyC[T-1,:,:] = agrid_box*(1+r) + y_N +\
-                                rho*pgrid_box         # optimal consumption
-    pmutil[T-1,:,:]=\
-        np.power(policyC[T-1,:,:],-gamma_c)*rho       # mu of more pension points
+                                rho*pgrid_box        # optimal consumption
+    pmutil[T-1,:,:]=co.mcutility(policyC[T-1,:,:], par)       # mu of more pension points        
+    V[T-1,:,:]=co.utility(policyC[T-1,:,:],policyh[T-1,:,:],par)
     
     for t in range(T-2,-1,-1):
                          
@@ -78,191 +81,104 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,pmutil,reform,r,delt
         if (t+1<=R):            
             #Not retired
             he=ne.evaluate('maxHours-((mult_pens+wt*(1-tau)*(ce**(-gamma_c)))/beta)**(-1/gamma_h)')
-            
-            #Check conditions for additional points
-            #if (policy):
-             #   he_m=ne.evaluate('maxHours-((1.0*wt/E_bar_now*pmu/(1+delta)+wt*(1-tau)*(ce**(-gamma_c)))/beta)**(-1/gamma_h)')
-             #   he[(1.5*he*wt/E_bar_now>1)]=he_m[(1.5*he*wt/E_bar_now>1)]
-                
+
+        else:        
         #Retired case        
-        if (t+1>R):he=np.zeros((numPtsA, numPtsP))
+            he=np.zeros((numPtsA, numPtsP))
                   
         
         #How much points should you have given the decisions?
-        
+        pe=ne.evaluate('pgrid_box-    he*wt/E_bar_now')     
         #Retired
-        if (t+1>R): pe=pgrid_box
-        
-        # #Not retired
-        # if (t+1<=R):        
-        #     if policy:
-                
-        #         #For counting points under the reform, check the condition
-        #         hem=np.maximum(np.minimum(1.5*he*wt/E_bar_now,np.ones(np.shape(he))),he*wt/E_bar_now)
-        #         pe=ne.evaluate('pgrid_box-hem')
-                
-        #     else:
-        #         #Normal condition
-        #         pe=ne.evaluate('pgrid_box-    he*wt/E_bar_now')
-        pe=ne.evaluate('pgrid_box-    he*wt/E_bar_now')        
-                
+        if (t+1>R): pe=pgrid_box.copy()
+                        
         #How much assets? Just use the Budget constraint!
         if (t+1<=R):  
             ae=ne.evaluate('(agrid_box-wt*he*(1-tau)-y_N+ce)/(1+r)')
         else:
             ae=ne.evaluate('(agrid_box-rho*pe       -y_N+ce)/(1+r)')
-            
-       
+
         ################################################
         # Now interpolate to be back on grid...
         ###############################################
+          
+        which,policyCu,policyhu,Vu,policyCcl,policyhcl,Vcl,policyCca,policyhca,Vca,policyCc,policyhc,Vc=np.zeros((13,numPtsA,numPtsP))
+        holesu,holescl,holesca = np.ones((3,numPtsA,numPtsP))
         
-        # This gets consumption and assets back on grid
-        policyC[t,:,:],policyA1[t,:,:],pp=solveEulerEquation2(agrid,agrid_box,pgrid_box,ae,ce,pe,numPtsP,numPtsA,\
-                                               r,wt,y_N,tau,gamma_c,gamma_h,\
-                                               beta,maxHours,t,R,pgrid,rho,E_bar_now,\
-                                               mult_pens,mgrid)
+        #Not retired
+        if (t+1<=R):     
             
-        #Given consumption and assets, obtain optimal hours on grid
-        Pc=policyC[t,:,:] #Needed for computation below
-        Pa=policyA1[t,:,:] #Needed for computation below
-        if (t+1<=R):
-                 #aaa=ne.evaluate('(Pc+Pa-(1+r)*agrid_box-y_N)/(wt*(1-tau))')  
-                 #aaa1=ne.evaluate('maxHours-((mult_pens+wt*(1-tau)*(Pc**(-gamma_c)))/beta)**(-1/gamma_h)')
-                 policyh[t,:,:]=  ne.evaluate('(Pc+Pa-(1+r)*agrid_box-y_N)/(wt*(1-tau))')  
-                      
+            #Unconstrained
+            upperenvelop.compute(policyCu,policyhu,Vu,holesu,
+                    pe,ae,ce,he,#computed above...
+                    1, #should be 1
+                    V[t+1,:,:],
+                    gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
+            
+            #l constrained
+            upperenvelop.compute(policyCcl,policyhcl,Vcl,holescl,
+                     pe,ae,ce,he,#computed above...
+                     2, #should be 1
+                     V[t+1,:,:],
+                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
+            
+            #A constrained
+            upperenvelop.compute(policyCca,policyhca,Vca,holesca,
+                     pe,ae,ce,he,#computed above...
+                     3, #should be 1
+                     V[t+1,:,:],
+                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
+            
+            #A AND l constrained
+            policyCc=agrid_box*(1+r) + y_N
+            Vc=co.utility(policyCc,policyhc,par)+\
+             1/(1+delta)*np.repeat(V[t+1,0,:],numPtsA).reshape(numPtsA,numPtsP)
+                        
+            # b. upper envelope    
+            seg_max = np.zeros(4)
+            for i_n in range(numPtsA):
+                for i_m in range(numPtsP):
+        
+                    # i. find max
+                    seg_max[0] = Vu[i_n,i_m]
+                    seg_max[1] = Vcl[i_n,i_m]
+                    seg_max[2] = Vca[i_n,i_m]
+                    seg_max[3] = Vc[i_n,i_m]
+        
+                    i = np.argmax(seg_max)
+                    which[i_n,i_m]=i
+                    V[t,i_n,i_m]=seg_max[i]
                     
+                    if i == 0:
+                        policyC[t,i_n,i_m] = policyCu[i_n,i_m]
+                        policyh[t,i_n,i_m] = policyhu[i_n,i_m]
+                    elif i == 1:
+                        policyC[t,i_n,i_m] = policyCcl[i_n,i_m]
+                        policyh[t,i_n,i_m] = policyhcl[i_n,i_m]
+                    elif i == 2:
+                        policyC[t,i_n,i_m] = policyCca[i_n,i_m]
+                        policyh[t,i_n,i_m] = policyhca[i_n,i_m]
+                    elif i == 3:
+                        policyC[t,i_n,i_m] = policyCc[i_n,i_m]
+                        policyh[t,i_n,i_m] = policyhc[i_n,i_m]
+                        
+            #Complete
+            policyA1[t,:,:]=agrid_box*(1+r)+y_N+wt*(1-tau)*policyh[t,:,:]-policyC[t,:,:]
+            whic[t,:,:]=which
+        #Retired
+        else:
+            
+            for i in range(numPtsP):               
+                linear_interp.interp_1d_vec(ae[:,i],agrid,agrid,policyA1[t,:,i])#np.interp(agrid, ae[:,i],agrid)
+                policyC[t,:,i] =agrid*(1+r)+rho*pe[:,i]+y_N-policyA1[t,:,i]
+                policyh[t,:,i] =he[:,i]
+                V[t,:,i]=co.utility(policyC[t,:,i],policyh[t,:,i],par)+\
+                     (1/(1+delta))*np.interp(policyA1[t,:,i],agrid,V[t+1,:,i])
+            
         #Update marginal utility of having more pension points
+        Pc=policyC[t,:,:]
         if (t+1>R): 
             pmutil[t,:,:]=ne.evaluate('(pmu+rho*Pc**(-gamma_c))/(1+delta)')
         else:
-            pmutil[t,:,:]=ne.evaluate('pmu/(1+delta)')
-            
-        #Check points consistency
-        #print((np.mean((pgrid_box+wt*policyh[t,:,:]/E_bar_now-pp)[:,0:2900])))
-               
-      
-@njit(parallel=True)           
-def solveEulerEquation2(agrid,agrid_box,pgrid_box,ae,ce,pe,numPtsP,numPtsA,r,wt,y_N,tau,gamma_c,
-                        gamma_h,beta,maxHours,t,R,pgrid,rho,E_bar_now,mult_pens,mgrid):
-    
-    pCv,pAv,pPv,pC,pA,pP,pPg=np.empty((7,numPtsA,numPtsP),dtype=np.float64)
-    where=np.empty((numPtsA,numPtsP),dtype=np.bool_)
-    
-    #Method of interpolation:
-    #https://www.sciencedirect.com/science/article/pii/S0165188916301920?via%3Dihub
-    #Note that this method could easily be used to handle non-convexities
-        #Consav interpolations
-    for j in prange(numPtsA):           
-        linear_interp.interp_1d_vec( pe[j,:],ae[j,:],pgrid,pAv[j,:])
-        linear_interp.interp_1d_vec( pe[j,:],pgrid,pgrid,pPv[j,:])
-        
-    for i in prange(numPtsP): 
-        linear_interp.interp_1d_vec( ae[:,i],agrid,pAv[:,i],pPg[:,i])
-        
-    #Interpolate to be on the grid of assets
-    for i in prange(numPtsP):           
-      #  pC[:,i]=np.interp(agrid, pAv[:,i],pCv[:,i])
-        linear_interp.interp_1d_vec( pAv[:,i],pPg[:,i],agrid,pA[:,i])
-        linear_interp.interp_1d_vec( pAv[:,i],pPv[:,i],agrid,pP[:,i])
-        
-    if np.min(pA)<agrid[0]:
-        for i in prange(numPtsA): 
-            for j in prange(numPtsP): 
-                pA[i,j]=max(pA[i,j],agrid[0])
-                
-    if np.min(pP)<pgrid[0]:
-        for i in prange(numPtsA): 
-            for j in prange(numPtsP): 
-                pP[i,j]=max(pP[i,j],pgrid[0])
-        
-        
-    #Post decision gridpoints
-    for i in prange(numPtsA-1):        
-         for j in prange(numPtsP-1): 
-             
-            #Limits of the bounding box on the lower triangle
-            mina=min(ae[i,j],ae[i+1,j],ae[i,j+1])
-            maxa=max(ae[i,j],ae[i+1,j],ae[i,j+1])
-            minp=min(pe[i,j],pe[i+1,j],pe[i,j+1])
-            maxp=max(pe[i,j],pe[i+1,j],pe[i,j+1])
-             
-            denom=(pe[i+1,j]-pe[i,j+1])*(ae[i,j]  -ae[i,j+1])+\
-                  (ae[i,j+1]-ae[i+1,j])*(pe[i,j]  -pe[i,j+1])
-            #Grid where you want to interpoalte
-            for ii in prange(numPtsA):        
-                for jj in prange(numPtsP): 
-                    
-                    if (ae[ii,jj]>0) & (pe[ii,jj]>0):
-                        #Get if the point are considering falls within the
-                        #bounding box delimited by the triangle defined above
-                        if ((agrid[ii]>=mina) & (agrid[ii]<maxa)\
-                          & (pgrid[jj]>=minp) & (pgrid[jj]<maxp)): 
-                            
-                            #Get the weights to apply the barycentric interpolation
-                            wa=((pe[i+1,j]-pe[i,j+1])*(agrid[ii]-ae[i,j+1])+\
-                                (ae[i,j+1]-ae[i+1,j])*(pgrid[jj]-pe[i,j+1]))/denom
-                                   
-                            wb=((pe[i,j+1]-pe[i,j  ])*(agrid[ii]-ae[i,j+1])+\
-                                (ae[i,j]-  ae[i,j+1])*(pgrid[jj]-pe[i,j+1]))/denom
-                             
-                            wc=1.0-wa-wb       
-                            pA[ii,jj]=wa*ae[i,j]+wb*ae[i+1,j]+wc*ae[i,j+1]
-                            pP[ii,jj]=wa*pe[i,j]+wb*pe[i+1,j]+wc*pe[i,j+1]
-                            #pC[ii,jj]=wa*ce[i,j]+wb*ce[i+1,j]+wc*ce[i,j+1]
-                            
-    
-   
-    
-    ########################################################
-    #Below handle the case of binding borrowing constraints
-    #######################################################
-    
-    #Where does constraints bind?
-    for j in prange(numPtsA):
-        for i in prange(numPtsP): 
-            where[j,i]=(pA[j,i]<=agrid[0])
-            
-    #Update consumption where constraints are binding
-    for j in prange(numPtsA):
-        for i in prange(numPtsP): 
-            
-            tup=(agrid[j],r,y_N,gamma_c,gamma_h,maxHours,mult_pens[j,i],wt,tau,beta,pA[j,i])
-            
-            #if where[j,i]:#Here constraints bind...
-            if (t+1>R):
-                
-                #If retired...
-                pC[j,i]=(1+r)*agrid[j]+y_N+pgrid[i]*rho-max(pA[j,i],agrid[0])
-            else:
-                #If not retired
-                hmin=0.000001#agrid[j]*(1+r)+y_N
-                hmax=agrid[j]*(1+r)+y_N+maxHours*wt*(1-tau)-max(pA[j,i],agrid[0])
-                
-                #Rootfinding on FOCs to get optimal consumption!
-                #HERE I SHOULD ALSO HANDLE MAX PENSION POINT ISSUE!!!
-                pC[j,i]=brentq(minim,hmin,hmax,args=tup)[0]
-                        
-    return pC,pA,pP
-
-
-@njit
-def minim(x,a,r,y_N,gamma_c,gamma_h,maxHours,mult_pens,w,tau,beta,a1):
-    h=-np.power((np.power(x,-gamma_c)*w*(1-tau)+mult_pens)/beta,-1/gamma_h)+maxHours
-    return (1+r)*a+w*h*(1-tau)+y_N-a1-x
-
-
-@njit#(nopython=False)
-def interp_npp(grid,xnew,return_wnext=True,trim=False,trim_half=False):    
-    # this finds grid positions and weights for performing linear interpolation
-    # this implementation uses numpy
-    j=np.empty(grid.shape,dtype=np.int32)
-    wnext=np.empty(grid.shape,dtype=np.float64)
-    #if trim: xnew = np.minimum(grid[-1], np.maximum(grid[0],xnew) )
-    #if trim_half: xnew = np.maximum(grid[0],xnew) 
-    
-    j = np.minimum( np.searchsorted(grid,xnew,side='left')-1, grid.size-2 )
-    wnext = (xnew - grid[j])/(grid[j+1] - grid[j])
-    
-    return j, (1-wnext)#(wnext if return_wnext else 1-wnext) 
+            pmutil[t,:,:]=ne.evaluate('pmu/(1+delta)')     
  

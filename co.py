@@ -2,6 +2,7 @@
 # Fabio Blasutto
 import numpy as np
 from interpolation.splines import CGrid
+from consav.grids import nonlinspace # grids
 
 class setup():
     
@@ -13,7 +14,7 @@ class setup():
         self.r = 0.015        # Interest rate
         self.delta = 0.015    # Discount rate
         self.beta = 10        # Utility weight on leisure
-        self.gamma_c = 1      # risk parameter on consumption
+        self.gamma_c = 1.1      # risk parameter on consumption
         self.gamma_h = 1.525  # risk parameter on labour
         self.y_N = 0#48000      # Unearned income
         self.E_bar_now = 30000  # Average earnings
@@ -35,13 +36,13 @@ class setup():
         # 2. GENERATE GRID
         
         # Assets
-        self.numPtsA = 50
-        self.agrid=np.linspace(0.001,250000,self.numPtsA)
+        self.numPtsA = 400
+        self.agrid=nonlinspace(0.001,250000,self.numPtsA,1)#np.linspace(0.001,250000,self.numPtsA)
         self.startA = 0#10000   # Assets people start life with
         
         # Pension points
-        self.numPtsP = 3#300
-        self.pgrid=np.linspace(0,self.R,self.numPtsP) # max one point per year in the law...
+        self.numPtsP =5#300
+        self.pgrid=nonlinspace(0.0,self.R,self.numPtsP,1)#np.linspace(0,self.R,self.numPtsP)## # max one point per year in the law...
         self.startP = 1   # points people start life with
         
         #Multidimensional grid
@@ -51,10 +52,12 @@ class setup():
 # Define the utility function
 def utility(c,h,par):
 
+    utils_c=-np.inf*np.ones(c.shape)
+    where=(c>0)
     if par.gamma_c == 1:
-        utils_c = np.log(c)
+        utils_c[where] = np.log(c[where])
     else:
-        utils_c = c**(1-par.gamma_c)/(1-par.gamma_c)
+        utils_c[where] = c[where]**(1-par.gamma_c)/(1-par.gamma_c)
 
     if par.gamma_h == 1:
         utils_h = np.log(h)
@@ -64,6 +67,19 @@ def utility(c,h,par):
     utils = utils_c + par.beta*utils_h - (h==0)*par.q
 
     return utils
+
+def mcutility(c,par):
+
+    utils_c=np.inf*np.ones(c.shape)
+    where=(c>0)
+    if par.gamma_c == 1:
+        utils_c[where] = 1/c[where]*par.rho
+    else:
+        utils_c[where] = c[where]**(-par.gamma_c)*par.rho
+
+  
+
+    return utils_c
 
 
 
