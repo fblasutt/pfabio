@@ -163,6 +163,8 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
                         policyh[t,i_n,i_m] = policyhc[i_n,i_m]
                         
             #Complete
+            if(t<10):
+                print(t)
             policyA1[t,:,:]=agrid_box*(1+r)+y_N+wt*(1-tau)*policyh[t,:,:]-policyC[t,:,:]
             whic[t,:,:]=which
         #Retired

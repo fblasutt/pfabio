@@ -36,8 +36,8 @@ class setup():
         # 2. GENERATE GRID
         
         # Assets
-        self.numPtsA = 400
-        self.agrid=nonlinspace(0.001,250000,self.numPtsA,1)#np.linspace(0.001,250000,self.numPtsA)
+        self.numPtsA = 40
+        self.agrid=nonlinspace(0.00001,250000,self.numPtsA,1.0)#np.linspace(0.001,250000,self.numPtsA)
         self.startA = 0#10000   # Assets people start life with
         
         # Pension points

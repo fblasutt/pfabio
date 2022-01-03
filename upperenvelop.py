@@ -5,11 +5,11 @@ from numba import njit
 from consav import linear_interp # for linear interpolation
 
 
-#@njit
+@njit
 def index_func(i_n,i_m,Nn,Nm):
     return i_n*Nm + i_m
 
-#@njit
+@njit
 def compute(out_c,out_d,out_v,holes,
             m,n,c,d,
             num,
@@ -56,11 +56,17 @@ def compute(out_c,out_d,out_v,holes,
                                   m,n,c,d,
                                   Na,Nb,valid,num,w,
                                   gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta)
-
+                    
+                    upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,
+                                  m,n,c,d,
+                                  Na,Nb,valid,num,w,
+                                  gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,egm_extrap_w=-0.5)
+                    
+                    
         # iii. fill holes
         fill_holes(out_c,out_d,out_v,holes,w,num,gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,Nb,Na)
 
-#@njit
+@njit
 def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
                   gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,
                   egm_extrap_add=2,egm_extrap_w=-0.25):
@@ -124,62 +130,63 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
     for i_n in range(in_low,in_high):
         for i_m in range(im_low,im_high):
 
-            # i. common grid values
-            m_now = pgrid[i_m]
-            n_now = agrid[i_n]
+            if holes[i_n,i_m]>0:
+                # i. common grid values
+                m_now = pgrid[i_m]
+                n_now = agrid[i_n]
+    
+                # ii. barycentric coordinates
+                w1 = ((n2-n3)*(m_now-m3) + (m3-m2)*(n_now-n3)) / denom
+                w2 = ((n3-n1)*(m_now-m3) + (m1-m3)*(n_now-n3)) / denom
+                w3 = 1 - w1 - w2
+    
+                # iii. exit if too much outside simplex
+                if w1 < egm_extrap_w or w2 < egm_extrap_w or w3 < egm_extrap_w:
+                      continue
+    
+                # iv. interpolate choices
+                if num == 1: # ucon, interpolate c and d
+    
+                    c_interp = w1*c[i_b_1,i_a_1] + w2*c[i_b_2,i_a_2] + w3*c[i_b_3,i_a_3]
+                    d_interp = w1*d[i_b_1,i_a_1] + w2*d[i_b_2,i_a_2] + w3*d[i_b_3,i_a_3]
+                    a_interp = m_now + d_interp*wt/E_bar_now #m_now - d_interp*wt/E_bar_now                     #points
+                    b_interp = n_now*(1+r) - c_interp + wt*(1-tau)*d_interp + y_N#(n_now + c_interp - wt*(1-tau)*d_interp - y_N)/(1+r) #assets
+    
+                elif num == 2: # dcon, interpolate c
+    
+                    c_interp = w1*c[i_b_1,i_a_1] + w2*c[i_b_2,i_a_2] + w3*c[i_b_3,i_a_3]
+                    d_interp = 0.0
+                    a_interp = m_now#m_now 
+                    b_interp = n_now*(1+r) - c_interp + y_N#(n_now + c_interp - y_N)/(1+r) #assets
+    
+                elif num == 3: # acon, interpolate d
+    
+                    d_interp = w1*d[i_b_1,i_a_1] + w2*d[i_b_2,i_a_2] + w3*d[i_b_3,i_a_3]
+                    a_interp = m_now + d_interp*wt/E_bar_now 
+                    b_interp = 0.0
+                    c_interp = n_now*(1+r)+wt*(1-tau)*d_interp + y_N#n_now+wt*(1-tau)*d_interp + y_N
+                    
+    
+                if c_interp <= 0.0 or d_interp < 0.0 or a_interp < 0 or b_interp < 0:
+                    continue
+    
+                # v. value-of-choice
+                #w_interp = linear_interp.interp_2d(par.grid_b_pd,par.grid_a_pd,w,b_interp,a_interp)
+                #v_interp = utility.func(c_interp,par) + w_interp
+    
+                w_interp = linear_interp.interp_2d(agrid,pgrid,w,b_interp,a_interp)
+                v_interp=c_interp**(1-gamma_c)/(1-gamma_c)+\
+                     beta*(maxHours - d_interp)**(1 - gamma_h) / (1 - gamma_h)+\
+                         1/(1+delta)*w_interp
+                # vi. update if max
+                if v_interp >out_v[i_n,i_m]:
+    
+                    out_v[i_n,i_m] = v_interp
+                    out_c[i_n,i_m] = c_interp
+                    out_d[i_n,i_m] = d_interp
+                    holes[i_n,i_m] = 0
 
-            # ii. barycentric coordinates
-            w1 = ((n2-n3)*(m_now-m3) + (m3-m2)*(n_now-n3)) / denom
-            w2 = ((n3-n1)*(m_now-m3) + (m1-m3)*(n_now-n3)) / denom
-            w3 = 1 - w1 - w2
-
-            # iii. exit if too much outside simplex
-            if w1 < egm_extrap_w or w2 < egm_extrap_w or w3 < egm_extrap_w:
-                  continue
-
-            # iv. interpolate choices
-            if num == 1: # ucon, interpolate c and d
-
-                c_interp = w1*c[i_b_1,i_a_1] + w2*c[i_b_2,i_a_2] + w3*c[i_b_3,i_a_3]
-                d_interp = w1*d[i_b_1,i_a_1] + w2*d[i_b_2,i_a_2] + w3*d[i_b_3,i_a_3]
-                a_interp = m_now + d_interp*wt/E_bar_now #m_now - d_interp*wt/E_bar_now                     #points
-                b_interp = n_now*(1+r) - c_interp + wt*(1-tau)*d_interp + y_N#(n_now + c_interp - wt*(1-tau)*d_interp - y_N)/(1+r) #assets
-
-            elif num == 2: # dcon, interpolate c
-
-                c_interp = w1*c[i_b_1,i_a_1] + w2*c[i_b_2,i_a_2] + w3*c[i_b_3,i_a_3]
-                d_interp = 0.0
-                a_interp = m_now#m_now 
-                b_interp = n_now*(1+r) - c_interp + y_N#(n_now + c_interp - y_N)/(1+r) #assets
-
-            elif num == 3: # acon, interpolate d
-
-                d_interp = w1*d[i_b_1,i_a_1] + w2*d[i_b_2,i_a_2] + w3*d[i_b_3,i_a_3]
-                a_interp = m_now + d_interp*wt/E_bar_now 
-                b_interp = 0.0
-                c_interp = n_now*(1+r)+wt*(1-tau)*d_interp + y_N#n_now+wt*(1-tau)*d_interp + y_N
-                
-
-            if c_interp <= 0.0 or d_interp < 0.0 or a_interp < 0 or b_interp < 0:
-                continue
-
-            # v. value-of-choice
-            #w_interp = linear_interp.interp_2d(par.grid_b_pd,par.grid_a_pd,w,b_interp,a_interp)
-            #v_interp = utility.func(c_interp,par) + w_interp
-
-            w_interp = linear_interp.interp_2d(agrid,pgrid,w,b_interp,a_interp)
-            v_interp=c_interp**(1-gamma_c)/(1-gamma_c)+\
-                 beta*(maxHours - d_interp)**(1 - gamma_h) / (1 - gamma_h)+\
-                     1/(1+delta)*w_interp
-            # vi. update if max
-            if v_interp >out_v[i_n,i_m]:
-
-                out_v[i_n,i_m] = v_interp
-                out_c[i_n,i_m] = c_interp
-                out_d[i_n,i_m] = d_interp
-                holes[i_n,i_m] = 0
-
-#@njit
+@njit
 def fill_holes(out_c,out_d,out_v,holes,w,num,gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,Nn,Nm):
 
     # a. locate global bounding box with content
