@@ -172,6 +172,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
             
             for i in range(numPtsP):               
                 linear_interp.interp_1d_vec(ae[:,i],agrid,agrid,policyA1[t,:,i])#np.interp(agrid, ae[:,i],agrid)
+                policyA1[t,:,i]=np.fmax(policyA1[t,:,i],0.0)
                 policyC[t,:,i] =agrid*(1+r)+rho*pe[:,i]+y_N-policyA1[t,:,i]
                 policyh[t,:,i] =he[:,i]
                 V[t,:,i]=co.utility(policyC[t,:,i],policyh[t,:,i],par)+\

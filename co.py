@@ -36,8 +36,8 @@ class setup():
         # 2. GENERATE GRID
         
         # Assets
-        self.numPtsA = 40
-        self.agrid=nonlinspace(0.00001,250000,self.numPtsA,1.0)#np.linspace(0.001,250000,self.numPtsA)
+        self.numPtsA = 400
+        self.agrid=nonlinspace(-100000,250000,self.numPtsA,1.0)#np.linspace(0.001,250000,self.numPtsA)
         self.startA = 0#10000   # Assets people start life with
         
         # Pension points
@@ -52,7 +52,7 @@ class setup():
 # Define the utility function
 def utility(c,h,par):
 
-    utils_c=-np.inf*np.ones(c.shape)
+    utils_c=-100000000*np.ones(c.shape)
     where=(c>0)
     if par.gamma_c == 1:
         utils_c[where] = np.log(c[where])
@@ -70,7 +70,7 @@ def utility(c,h,par):
 
 def mcutility(c,par):
 
-    utils_c=np.inf*np.ones(c.shape)
+    utils_c=100000000*np.ones(c.shape)
     where=(c>0)
     if par.gamma_c == 1:
         utils_c[where] = 1/c[where]*par.rho
