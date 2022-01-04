@@ -7,6 +7,7 @@ import numpy as np
 #from scipy.interpolate import interp1d
 #from scipy.optimize import bisect as brentq
 from quantecon.optimize.root_finding import brentq 
+from consav.grids import nonlinspace # grids
 from consav import linear_interp
 from numba import njit, prange, jit
 import numexpr as ne
@@ -48,8 +49,13 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         To improve it further: jit it, then use math.power, not *
     """
     
+    #Grid for assets and points
     agrid_box=np.transpose(np.tile(agrid,(numPtsP,1)))
     pgrid_box=np.tile(pgrid,(numPtsA,1))
+    
+    #Grid for consumption
+    cgrid=nonlinspace(agrid[0],agrid[-1]*(1+r)+y_N+np.max(w)*maxHours*(1-tau),numPtsA,1.4)
+    cgrid_box=np.transpose(np.tile(cgrid,(numPtsP,1)))
     
     policyA1[T-1,:,:] = np.zeros((numPtsA, numPtsP))  # optimal savings
     policyh[T-1,:,:] = np.zeros((numPtsA, numPtsP))   # optimal earnings
@@ -60,6 +66,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
     
     for t in range(T-2,-1,-1):
                          
+        
         #Define initial variable for fast coputation later
         pmu=pmutil[t+1,:,:]
         wt=w[t]
@@ -79,22 +86,32 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
              
         #How much work? This follows from the FOC      
         if (t+1<=R):            
-            #Not retired
+            #Not retired,unconstrained
             he=ne.evaluate('maxHours-((mult_pens+wt*(1-tau)*(ce**(-gamma_c)))/beta)**(-1/gamma_h)')
-
+  
+            #Not retired, constrained
+            hec=ne.evaluate('maxHours-((mult_pens+wt*(1-tau)*(cgrid_box**(-gamma_c)))/beta)**(-1/gamma_h)')
         else:        
         #Retired case        
             he=np.zeros((numPtsA, numPtsP))
                   
         
-        #How much points should you have given the decisions?
-        pe=ne.evaluate('pgrid_box-    he*wt/E_bar_now')     
         #Retired
-        if (t+1>R): pe=pgrid_box.copy()
+        if (t+1<=R):
+            
+            #How much points should you have given the decisions? (Un)constrained
+            pe=ne.evaluate('pgrid_box-    he*wt/E_bar_now')  
+            pec=ne.evaluate('pgrid_box-   hec*wt/E_bar_now')  
+            
+        elif (t+1>R): 
+            
+            pe=pgrid_box.copy()
                         
         #How much assets? Just use the Budget constraint!
         if (t+1<=R):  
             ae=ne.evaluate('(agrid_box-wt*he*(1-tau)-y_N+ce)/(1+r)')
+            
+            aec= (cgrid_box - wt*(1-tau)*hec + y_N)/(1+r)
         else:
             ae=ne.evaluate('(agrid_box-rho*pe       -y_N+ce)/(1+r)')
 
@@ -115,16 +132,23 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
                     V[t+1,:,:],
                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
             
-            #l constrained
+            # #l constrained
+            # upperenvelop.compute(policyCcl,policyhcl,Vcl,holescl,
+            #          pe,ae,ce,he,#pec,agrid_box,cgrid_box,hec,#computed above...
+            #          2, #should be 1
+            #          V[t+1,:,:],
+            #          gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
+
+            #A constrained
             upperenvelop.compute(policyCcl,policyhcl,Vcl,holescl,
-                     pe,ae,ce,he,#computed above...
-                     2, #should be 1
+                     pe,ae,ce,he,#pec,aec,cgrid_box,hec,##computed above...
+                     3, #should be 1
                      V[t+1,:,:],
                      gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
             
             #A constrained
             upperenvelop.compute(policyCca,policyhca,Vca,holesca,
-                     pe,ae,ce,he,#computed above...
+                     pec,aec,cgrid_box,hec,#pe,ae,ce,he,#computed above...
                      3, #should be 1
                      V[t+1,:,:],
                      gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
@@ -163,7 +187,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
                         policyh[t,i_n,i_m] = policyhc[i_n,i_m]
                         
             #Complete
-            if(t<10):
+            if(t<5):
                 print(t)
             policyA1[t,:,:]=agrid_box*(1+r)+y_N+wt*(1-tau)*policyh[t,:,:]-policyC[t,:,:]
             whic[t,:,:]=which

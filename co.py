@@ -37,7 +37,7 @@ class setup():
         
         # Assets
         self.numPtsA = 40
-        self.agrid=nonlinspace(0.00001,250000,self.numPtsA,1.0)#np.linspace(0.001,250000,self.numPtsA)
+        self.agrid=nonlinspace(0.00001,250000,self.numPtsA,1.2)#np.linspace(0.001,250000,self.numPtsA)
         self.startA = 0#10000   # Assets people start life with
         
         # Pension points
