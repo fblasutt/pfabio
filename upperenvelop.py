@@ -29,8 +29,8 @@ def compute(out_c,out_d,out_v,holes,
             valid[i_b,i_a] &= (~np.isnan(w[i_b,i_a]))
             valid[i_b,i_a] &= c[i_b,i_a] >= -0.50
             valid[i_b,i_a] &= d[i_b,i_a] >= -0.50
-            valid[i_b,i_a] &= m[i_b,i_a] > -0.1
-            valid[i_b,i_a] &= n[i_b,i_a] > -0.1
+            valid[i_b,i_a] &= m[i_b,i_a] > -50000
+            valid[i_b,i_a] &= n[i_b,i_a] > -50000
             #valid[i_b,i_a] &= m[i_b,i_a] < par.m_max + 1
             #valid[i_b,i_a] &= n[i_b,i_a] < par.n_max + 1
 
@@ -42,7 +42,7 @@ def compute(out_c,out_d,out_v,holes,
     out_d[:,:] = np.nan
     out_v[:,:] = -np.inf
 
-    if valid.sum() >= 100:
+    if valid.sum() >= 0:
         
         # i. allocate holes
         #holes = np.ones((par.Nn,par.Nm))
@@ -56,12 +56,6 @@ def compute(out_c,out_d,out_v,holes,
                                   m,n,c,d,
                                   Na,Nb,valid,num,w,
                                   gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta)
-                    
-                    upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,
-                                  m,n,c,d,
-                                  Na,Nb,valid,num,w,
-                                  gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,egm_extrap_w=-0.5)
-                    
                     
         # iii. fill holes
         fill_holes(out_c,out_d,out_v,holes,w,num,gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,Nb,Na)
@@ -228,8 +222,6 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,gamma_c,maxHours,gamma_h,rho,agrid,
     # b. loop through m, n, k nodes to detect holes
     i_n_max = np.fmin(i_n_max+1,Nn)
     i_m_max = np.fmin(i_m_max+1,Nm)
-    i_n_min=0
-    i_m_min=0
     for i_n in range(i_n_min,i_n_max):
         for i_m in range(i_m_min,i_m_max):
             
