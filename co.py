@@ -19,7 +19,7 @@ class setup():
         self.y_N = 0#48000      # Unearned income
         self.E_bar_now = 30000  # Average earnings
         self.q = 0            # Fixed cost of participation
-        self.rho =0#350        # Dollar value of points
+        self.rho =350        # Dollar value of points
         self.tau = 0.0#.2         # marginal tax rate
         
         # Hourly wage
@@ -37,11 +37,11 @@ class setup():
         
         # Assets
         self.numPtsA = 40
-        self.agrid=nonlinspace(0.00001,250000,self.numPtsA,1.2)#np.linspace(0.001,250000,self.numPtsA)
+        self.agrid=nonlinspace(0.00001,250000,self.numPtsA,1.0)#np.linspace(0.001,250000,self.numPtsA)
         self.startA = 0#10000   # Assets people start life with
         
         # Pension points
-        self.numPtsP =5#300
+        self.numPtsP =35
         self.pgrid=nonlinspace(0.0,self.R,self.numPtsP,1)#np.linspace(0,self.R,self.numPtsP)## # max one point per year in the law...
         self.startP = 1   # points people start life with
         

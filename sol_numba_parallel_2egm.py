@@ -69,13 +69,17 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         
         #Define initial variable for fast coputation later
         pmu=pmutil[t+1,:,:]
+        pmuc=np.reshape(np.repeat(pmu[0,:],numPtsA),(numPtsA,numPtsP),order="F")
+        
         wt=w[t]
         policy=((t+1 >=3) & (t+1 <=10) & (reform==1))
      
         if policy: 
             mult_pens=ne.evaluate('1.5*wt/E_bar_now*pmu/(1+delta)')
+            mult_pensc=ne.evaluate('1.5*wt/E_bar_now*pmuc/(1+delta)')
         else:
             mult_pens=ne.evaluate('1.0*wt/E_bar_now*pmu/(1+delta)')
+            mult_pensc=ne.evaluate('1.0*wt/E_bar_now*pmuc/(1+delta)')
         
         ################################################
         #Endogenous gridpoints here
@@ -90,7 +94,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
             he=ne.evaluate('maxHours-((mult_pens+wt*(1-tau)*(ce**(-gamma_c)))/beta)**(-1/gamma_h)')
   
             #Not retired, constrained
-            hec=ne.evaluate('maxHours-((mult_pens+wt*(1-tau)*(cgrid_box**(-gamma_c)))/beta)**(-1/gamma_h)')
+            hec=ne.evaluate('maxHours-((mult_pensc+wt*(1-tau)*(cgrid_box**(-gamma_c)))/beta)**(-1/gamma_h)')
         else:        
         #Retired case        
             he=np.zeros((numPtsA, numPtsP))
@@ -111,7 +115,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         if (t+1<=R):  
             ae=ne.evaluate('(agrid_box-wt*he*(1-tau)-y_N+ce)/(1+r)')
             
-            aec= (cgrid_box - wt*(1-tau)*hec + y_N)/(1+r)
+            aec=ne.evaluate('(cgrid_box - wt*(1-tau)*hec - y_N)/(1+r)')
         else:
             ae=ne.evaluate('(agrid_box-rho*pe       -y_N+ce)/(1+r)')
 
@@ -141,7 +145,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
 
             #A constrained
             upperenvelop.compute(policyCcl,policyhcl,Vcl,holescl,
-                     pe,ae,ce,he,#pec,aec,cgrid_box,hec,##computed above...
+                     pe,ae,ce,he,##computed above...
                      3, #should be 1
                      V[t+1,:,:],
                      gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
@@ -156,7 +160,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
             #A AND l constrained
             policyCc=agrid_box*(1+r) + y_N
             Vc=co.utility(policyCc,policyhc,par)+\
-             1/(1+delta)*np.repeat(V[t+1,0,:],numPtsA).reshape(numPtsA,numPtsP)
+             1/(1+delta)*np.reshape(np.repeat(V[t+1,0,:],numPtsA),(numPtsA,numPtsP),order="F")#np.repeat(V[t+1,0,:],numPtsA).reshape(numPtsA,numPtsP)
                         
             # b. upper envelope    
             seg_max = np.zeros(4)

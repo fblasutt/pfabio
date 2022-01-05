@@ -5,11 +5,11 @@ from numba import njit
 from consav import linear_interp # for linear interpolation
 
 
-#@njit
+@njit
 def index_func(i_n,i_m,Nn,Nm):
     return i_n*Nm + i_m
 
-#@njit
+@njit
 def compute(out_c,out_d,out_v,holes,
             m,n,c,d,
             num,
@@ -55,18 +55,12 @@ def compute(out_c,out_d,out_v,holes,
                     upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,
                                   m,n,c,d,
                                   Na,Nb,valid,num,w,
-                                  gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta)
-                    
-                    # upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,
-                    #               m,n,c,d,
-                    #               Na,Nb,valid,num,w,
-                    #               gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,egm_extrap_w=-0.5)
-                    
+                                  gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta)                    
                     
         # iii. fill holes
         fill_holes(out_c,out_d,out_v,holes,w,num,gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,Nb,Na)
 
-#@njit
+@njit
 def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
                   gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,
                   egm_extrap_add=2,egm_extrap_w=-0.25):
@@ -171,8 +165,6 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
                     continue
     
                 # v. value-of-choice
-                #w_interp = linear_interp.interp_2d(par.grid_b_pd,par.grid_a_pd,w,b_interp,a_interp)
-                #v_interp = utility.func(c_interp,par) + w_interp
     
                 w_interp = linear_interp.interp_2d(agrid,pgrid,w,b_interp,a_interp)
                 v_interp=c_interp**(1-gamma_c)/(1-gamma_c)+\
@@ -186,7 +178,7 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
                     out_d[i_n,i_m] = d_interp
                     holes[i_n,i_m] = 0
 
-#@njit
+@njit
 def fill_holes(out_c,out_d,out_v,holes,w,num,gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,Nn,Nm):
 
     # a. locate global bounding box with content
@@ -228,8 +220,6 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,gamma_c,maxHours,gamma_h,rho,agrid,
     # b. loop through m, n, k nodes to detect holes
     i_n_max = np.fmin(i_n_max+1,Nn)
     i_m_max = np.fmin(i_m_max+1,Nm)
-    #i_n_min=0
-    #i_m_min=0
     for i_n in range(i_n_min,i_n_max):
         for i_m in range(i_m_min,i_m_max):
             
