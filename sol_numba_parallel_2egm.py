@@ -140,7 +140,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
                     pe,ae,ce,he,#computed above...
                     1, #should be 1
                     V[t+1,:,:],
-                    gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,par) #should be dropeed
+                    gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
             
             # #l constrained
             # upperenvelop.compute(policyCcl,policyhcl,Vcl,holescl,
@@ -154,14 +154,14 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
                      pe,ae,ce,he,#pec,aec,cgrid_box,hec,##computed above...
                      3, #should be 1
                      V[t+1,:,:],
-                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,par) #should be dropeed
+                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
             
             #A constrained
             upperenvelop.compute(policyCca,policyhca,Vca,holesca,
                      pec,aec,cgrid_box,hec,#pe,ae,ce,he,#computed above...
                      3, #should be 1
                      V[t+1,:,:],
-                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,par) #should be dropeed
+                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
             
             #A AND l constrained
             policyCc=agrid_box*(1+r) + y_N
