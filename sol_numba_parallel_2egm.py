@@ -103,11 +103,17 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         #Retired
         if (t+1<=R):
             
-            #How much points should you have given the decisions? (Un)constrained
-            pe=ne.evaluate('pgrid_box-    he*wt/E_bar_now')  
-            pec=ne.evaluate('pgrid_box-   hec*wt/E_bar_now')  
+            if policy:
+                #How much points should you have given the decisions? (Un)constrained
+                pe=ne.evaluate('pgrid_box-    1.5*he*wt/E_bar_now')  
+                pec=ne.evaluate('pgrid_box-   1.5*hec*wt/E_bar_now')
+            else:
+                                #How much points should you have given the decisions? (Un)constrained
+                pe=ne.evaluate('pgrid_box-    he*wt/E_bar_now')  
+                pec=ne.evaluate('pgrid_box-   hec*wt/E_bar_now')
             
         elif (t+1>R): 
+            
             
             pe=pgrid_box.copy()
                         
@@ -134,7 +140,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
                     pe,ae,ce,he,#computed above...
                     1, #should be 1
                     V[t+1,:,:],
-                    gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
+                    gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,par) #should be dropeed
             
             # #l constrained
             # upperenvelop.compute(policyCcl,policyhcl,Vcl,holescl,
@@ -145,17 +151,17 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
 
             #A constrained
             upperenvelop.compute(policyCcl,policyhcl,Vcl,holescl,
-                     pe,ae,ce,he,##computed above...
+                     pe,ae,ce,he,#pec,aec,cgrid_box,hec,##computed above...
                      3, #should be 1
                      V[t+1,:,:],
-                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
+                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,par) #should be dropeed
             
             #A constrained
             upperenvelop.compute(policyCca,policyhca,Vca,holesca,
                      pec,aec,cgrid_box,hec,#pe,ae,ce,he,#computed above...
                      3, #should be 1
                      V[t+1,:,:],
-                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
+                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,par) #should be dropeed
             
             #A AND l constrained
             policyCc=agrid_box*(1+r) + y_N
@@ -169,9 +175,9 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         
                     # i. find max
                     seg_max[0] = Vu[i_n,i_m]
-                    seg_max[1] = Vcl[i_n,i_m]
+                    seg_max[1] = Vcl[i_n,i_m]-np.inf
                     seg_max[2] = Vca[i_n,i_m]
-                    seg_max[3] = Vc[i_n,i_m]
+                    seg_max[3] = Vc[i_n,i_m]-np.inf
         
                     i = np.argmax(seg_max)
                     which[i_n,i_m]=i
@@ -191,8 +197,6 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
                         policyh[t,i_n,i_m] = policyhc[i_n,i_m]
                         
             #Complete
-            if(t<5):
-                print(t)
             policyA1[t,:,:]=agrid_box*(1+r)+y_N+wt*(1-tau)*policyh[t,:,:]-policyC[t,:,:]
             whic[t,:,:]=which
         #Retired
@@ -207,8 +211,14 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
             
         #Update marginal utility of having more pension points
         Pc=policyC[t,:,:]
+        Ph=policyh[t,:,:]
+        points=ne.evaluate('pgrid_box+wt*Ph/E_bar_now')
+        
+        Pmua=np.zeros((numPtsA, numPtsP))
+        for i in range(numPtsP):
+            linear_interp.interp_2d_vec(agrid,pgrid,pmu,policyA1[t,:,i],points[:,i],Pmua[:,i])# #pmu on the grid!!!
         if (t+1>R): 
-            pmutil[t,:,:]=ne.evaluate('(pmu+rho*Pc**(-gamma_c))/(1+delta)')
+            pmutil[t,:,:]=ne.evaluate('(Pmua+rho*Pc**(-gamma_c))/(1+delta)')
         else:
-            pmutil[t,:,:]=ne.evaluate('pmu/(1+delta)')     
+            pmutil[t,:,:]=ne.evaluate('Pmua/(1+delta)')     
  

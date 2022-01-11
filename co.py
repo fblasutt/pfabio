@@ -14,17 +14,17 @@ class setup():
         self.r = 0.015        # Interest rate
         self.delta = 0.015    # Discount rate
         self.beta = 10        # Utility weight on leisure
-        self.gamma_c = 1.1      # risk parameter on consumption
+        self.gamma_c = 1.01   # Risk parameter on consumption
         self.gamma_h = 1.525  # risk parameter on labour
-        self.y_N = 0#48000      # Unearned income
-        self.E_bar_now = 30000  # Average earnings
+        self.y_N = 48000      # Unearned income
+        self.E_bar_now = 30000# Average earnings
         self.q = 0            # Fixed cost of participation
-        self.rho =350        # Dollar value of points
-        self.tau = 0.0#.2         # marginal tax rate
+        self.rho =350         # Dollar value of points
+        self.tau = 0.2         # marginal tax rate
         
         # Hourly wage
         self.w=np.zeros(self.T)
-        for t in range(self.T):self.w[t]=6+t*0.2#16
+        for t in range(self.T):self.w[t]=16#6+t*0.2#16
     
         # precision parameters
         self.tol = 1e-7       # max allowed error
@@ -37,13 +37,13 @@ class setup():
         
         # Assets
         self.numPtsA = 40
-        self.agrid=nonlinspace(0.00001,250000,self.numPtsA,1.0)#np.linspace(0.001,250000,self.numPtsA)
-        self.startA = 0#10000   # Assets people start life with
+        self.agrid=nonlinspace(0.00001,250000,self.numPtsA,1.4)#np.linspace(0.001,250000,self.numPtsA)
+        self.startA = 10000   # Assets people start life with
         
         # Pension points
-        self.numPtsP =35
-        self.pgrid=nonlinspace(0.0,self.R,self.numPtsP,1)#np.linspace(0,self.R,self.numPtsP)## # max one point per year in the law...
-        self.startP = 1   # points people start life with
+        self.numPtsP =40
+        self.pgrid=nonlinspace(0.0,self.R,self.numPtsP,1.4)#np.linspace(0,self.R,self.numPtsP)## # max one point per year in the law...
+        self.startP = 0   # points people start life with
         
         #Multidimensional grid
         self.mgrid=CGrid((self.agrid[0],self.agrid[-1],self.numPtsA),(self.pgrid[0],self.pgrid[-1],self.numPtsP))

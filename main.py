@@ -42,10 +42,10 @@ reform = 0
 # simulate the model
 ########################################
 reform = 1
-[cpath_1, apath_1, hpath_1, Epath_1, Epath_tau_1, vpath_1, EPpath_1, EPpath_c_1, EPpath_m_c_1, EPpath_behav_1, EPpath_behav_c_1, EPpath_behav_m_c_1 ] \
+[ppath_1, cpath_1, apath_1, hpath_1, Epath_1, Epath_tau_1, vpath_1, EPpath_1, EPpath_c_1, EPpath_m_c_1, EPpath_behav_1, EPpath_behav_c_1, EPpath_behav_m_c_1 ] \
     = sim.simNoUncer_interp(reform, policyA1_1, policyC_1, policyh_1, V_1, par)
 reform = 0
-[cpath_0, apath_0, hpath_0, Epath_0, Epath_tau_0, vpath_0, EPpath_0, EPpath_c_0, EPpath_m_c_0, EPpath_behav_0, EPpath_behav_c_0, EPpath_behav_m_c_0 ] \
+[ppath_0, cpath_0, apath_0, hpath_0, Epath_0, Epath_tau_0, vpath_0, EPpath_0, EPpath_c_0, EPpath_m_c_0, EPpath_behav_0, EPpath_behav_c_0, EPpath_behav_m_c_0 ] \
     = sim.simNoUncer_interp(reform, policyA1_0, policyC_0, policyh_0, V_0, par)
   
 
@@ -108,6 +108,14 @@ plt.plot(t,vpath_1, 'blue', t, vpath_0, 'red')
 plt.xlabel("Age")
 plt.legend(('Reform','No Reform'))
 plt.ylabel('Value Function over time')
+plt.show()
+
+# 12
+fig = plt.figure(figsize=(10,4)) 
+plt.plot(t,ppath_1[1:par.T+1], 'blue', t, ppath_0[1:par.T+1], 'red')
+plt.xlabel("Age")
+plt.legend(('Reform','No Reform'))
+plt.ylabel('points')
 plt.show()
 
 

@@ -34,7 +34,6 @@ def simNoUncer_interp(reform, policyA1, policyC, policyh, V, par):
         point=np.array([apath[t,0],ppath[t,0]]) #where to interpolate
         vpath[t  , 0] = linear_interp.interp_2d(par.agrid,par.pgrid,V[t,:,:],apath[t,0],ppath[t,0])#eval_linear(par.mgrid,V[t,:,:],point)
         apath[t+1, 0] = linear_interp.interp_2d(par.agrid,par.pgrid,policyA1[t, :,:],apath[t,0],ppath[t,0])#eval_linear(par.mgrid,policyA1[t, :,:],point)
-        ppath[t+1, 0]=  ppath[t, 0]
         cpath[t, 0] = linear_interp.interp_2d(par.agrid,par.pgrid,policyC[t, :,:],apath[t,0],ppath[t,0])#eval_linear(par.mgrid,policyC[t, :,:],point)
         hpath[t, 0] = linear_interp.interp_2d(par.agrid,par.pgrid,policyh[t, :,:],apath[t,0],ppath[t,0])#eval_linear(par.mgrid,policyh[t, :,:],point)
         Epath[t, 0] = hpath[t, 0]*par.w[t];
@@ -44,14 +43,18 @@ def simNoUncer_interp(reform, policyA1, policyC, policyh, V, par):
         if reform == 0:
             EPpath[t, 0] = Epath[t,0]/par.E_bar_now
             EPpath_behav[t,0] = Epath[t,0]/par.E_bar_now
+            ppath[t+1, 0]=  ppath[t, 0]+par.w[t]*hpath[t, 0]/par.E_bar_now
         else:
-                if t+1 >=3 & t+1 <=10:
-                    EPpath[t, 0] = Epath[t,0]/par.E_bar_now*1.5
-                    EPpath_behav[t,0] = Epath[t,0]/par.E_bar_now
-                else:
-                    EPpath[t, 0] = Epath[t,0]/par.E_bar_now
-                    EPpath_behav[t,0] = Epath[t,0]/par.E_bar_now
-    
+            
+            
+            if ((t+1 >=3) & (t+1 <=10)):
+                EPpath[t, 0] = Epath[t,0]/par.E_bar_now*1.5
+                EPpath_behav[t,0] = Epath[t,0]/par.E_bar_now
+                ppath[t+1, 0]=  ppath[t, 0]+1.5*par.w[t]*hpath[t, 0]/par.E_bar_now
+            else:
+                EPpath[t, 0] = Epath[t,0]/par.E_bar_now
+                EPpath_behav[t,0] = Epath[t,0]/par.E_bar_now
+                ppath[t+1, 0]=  ppath[t, 0]+par.w[t]*hpath[t, 0]/par.E_bar_now
     
     
     EPpath_c[0,0] = EPpath[0,0]+5
@@ -64,5 +67,5 @@ def simNoUncer_interp(reform, policyA1, policyC, policyh, V, par):
     EPpath_m_c = EPpath_c*par.rho
     EPpath_behav_m_c = EPpath_behav_c*par.rho
     
-    return cpath, apath, hpath, Epath, Epath_tau, vpath, EPpath, EPpath_c, EPpath_m_c, EPpath_behav, EPpath_behav_c, EPpath_behav_m_c
+    return ppath, cpath, apath, hpath, Epath, Epath_tau, vpath, EPpath, EPpath_c, EPpath_m_c, EPpath_behav, EPpath_behav_c, EPpath_behav_m_c
 

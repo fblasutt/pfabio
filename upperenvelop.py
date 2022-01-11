@@ -14,11 +14,11 @@ def compute(out_c,out_d,out_v,holes,
             m,n,c,d,
             num,
             w,
-            gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,valt=np.array([[]])):
+            gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,par,valt=np.array([[]])):
     
     # a. infer shape
     Nb,Na = w.shape
-        
+    par.rho
     # b. indicator for valid and interesting choice or not
     valid = np.ones((Nb,Na),dtype=np.bool_)
     for i_b in range(Nb):
