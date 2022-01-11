@@ -19,10 +19,9 @@ except:
 # Import package
 import co # user defined functions
 import sol_numba_parallel_2egm as sol
-#import sol_numba_parallel_bilinear as sol
 import sim
 import matplotlib.pyplot as plt
-import numpy as np
+
 
 # set up parameters
 par = co.setup()

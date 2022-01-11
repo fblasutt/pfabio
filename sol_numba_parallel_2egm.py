@@ -4,50 +4,41 @@
 # Time
 import time
 import numpy as np
-#from scipy.interpolate import interp1d
-#from scipy.optimize import bisect as brentq
-from quantecon.optimize.root_finding import brentq 
 from consav.grids import nonlinspace # grids
 from consav import linear_interp
-from numba import njit, prange, jit
 import numexpr as ne
-from interpolation.splines import CGrid, eval_linear, nodes
-import matplotlib.pyplot as plt
-#https://www.econforge.org/interpolation.py/
-
 import upperenvelop
 import co
-from consav import linear_interp
+
 
 def solveEulerEquation(reform, par):
     
+    #Start counting time
     time_start = time.time()
-    
-    r=par.r;delta=par.delta;gamma_c=par.gamma_c;R=par.R;tau=par.tau;beta=par.beta;
-    w=np.array(par.w);agrid=par.agrid;y_N=par.y_N;gamma_h=par.gamma_h;T=par.T;numPtsA=par.numPtsA
-    numPtsP=par.numPtsP;pgrid=par.pgrid;maxHours=par.maxHours;rho=par.rho;E_bar_now=par.E_bar_now;
-    mgrid=par.mgrid
-    
-    policyA1,policyh,policyC,V,policyp,pmutil,whic = np.empty((7,T, numPtsA, numPtsP))
         
-    
-    solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,\
-                        reform,r,delta,gamma_c,R,tau,beta,w,agrid,y_N,\
-                        gamma_h,T,numPtsA,numPtsP,pgrid,maxHours,rho,E_bar_now,mgrid,par)
+    #Initiate some variables
+    policyA1,policyh,policyC,V,policyp,pmutil,whic = np.empty((7,par.T, par.numPtsA, par.numPtsP))
+     
+    #Call the routing to solve the model
+    solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform,par)
 
+    #End timer and print elapsed time
     elapsed = time.time() - time_start    
     print('Finished, Reform =', reform, 'Elapsed time is', elapsed, 'seconds')   
     
     return policyA1,policyh,policyC,V,policyp,whic
 
 #@njit(fastmath=True)
-def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform,r,delta,gamma_c,R,tau,\
-                        beta,w,agrid,y_N,gamma_h,T,numPtsA,numPtsP,pgrid,maxHours,rho,E_bar_now,mgrid,par):
+def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform,par):
     
     # The rest is interior solution
     """ Use the method of endogenous gridpoint to solve the model.
         To improve it further: jit it, then use math.power, not *
     """
+    #Initialize some variables
+    r=par.r;delta=par.delta;gamma_c=par.gamma_c;R=par.R;tau=par.tau;beta=par.beta;
+    w=np.array(par.w);agrid=par.agrid;y_N=par.y_N;gamma_h=par.gamma_h;T=par.T;numPtsA=par.numPtsA
+    numPtsP=par.numPtsP;pgrid=par.pgrid;maxHours=par.maxHours;rho=par.rho;E_bar_now=par.E_bar_now;
     
     #Grid for assets and points
     agrid_box=np.transpose(np.tile(agrid,(numPtsP,1)))
@@ -57,6 +48,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
     cgrid=nonlinspace(agrid[0],agrid[-1]*(1+r)+y_N+np.max(w)*maxHours*(1-tau),numPtsA,1.4)
     cgrid_box=np.transpose(np.tile(cgrid,(numPtsP,1)))
     
+    #Last period decisions below
     policyA1[T-1,:,:] = np.zeros((numPtsA, numPtsP))  # optimal savings
     policyh[T-1,:,:] = np.zeros((numPtsA, numPtsP))   # optimal earnings
     policyC[T-1,:,:] = agrid_box*(1+r) + y_N +\
@@ -64,6 +56,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
     pmutil[T-1,:,:]=co.mcutility(policyC[T-1,:,:], par)       # mu of more pension points        
     V[T-1,:,:]=co.utility(policyC[T-1,:,:],policyh[T-1,:,:],par)
     
+    #Decisions below
     for t in range(T-2,-1,-1):
                          
         
@@ -140,28 +133,14 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
                     pe,ae,ce,he,#computed above...
                     1, #should be 1
                     V[t+1,:,:],
-                    gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,par) #should be dropeed
-            
-            # #l constrained
-            # upperenvelop.compute(policyCcl,policyhcl,Vcl,holescl,
-            #          pe,ae,ce,he,#pec,agrid_box,cgrid_box,hec,#computed above...
-            #          2, #should be 1
-            #          V[t+1,:,:],
-            #          gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
-
-            #A constrained
-            upperenvelop.compute(policyCcl,policyhcl,Vcl,holescl,
-                     pe,ae,ce,he,#pec,aec,cgrid_box,hec,##computed above...
-                     3, #should be 1
-                     V[t+1,:,:],
-                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,par) #should be dropeed
+                    gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
             
             #A constrained
             upperenvelop.compute(policyCca,policyhca,Vca,holesca,
                      pec,aec,cgrid_box,hec,#pe,ae,ce,he,#computed above...
                      3, #should be 1
                      V[t+1,:,:],
-                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,par) #should be dropeed
+                     gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
             
             #A AND l constrained
             policyCc=agrid_box*(1+r) + y_N
@@ -169,15 +148,15 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
              1/(1+delta)*np.reshape(np.repeat(V[t+1,0,:],numPtsA),(numPtsA,numPtsP),order="F")#np.repeat(V[t+1,0,:],numPtsA).reshape(numPtsA,numPtsP)
                         
             # b. upper envelope    
-            seg_max = np.zeros(4)
+            seg_max = np.zeros(3)
             for i_n in range(numPtsA):
                 for i_m in range(numPtsP):
         
                     # i. find max
                     seg_max[0] = Vu[i_n,i_m]
-                    seg_max[1] = Vcl[i_n,i_m]-np.inf
-                    seg_max[2] = Vca[i_n,i_m]
-                    seg_max[3] = Vc[i_n,i_m]-np.inf
+                    seg_max[1] = Vca[i_n,i_m]
+                    seg_max[2] = Vc[i_n,i_m]
+
         
                     i = np.argmax(seg_max)
                     which[i_n,i_m]=i
@@ -187,12 +166,9 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
                         policyC[t,i_n,i_m] = policyCu[i_n,i_m]
                         policyh[t,i_n,i_m] = policyhu[i_n,i_m]
                     elif i == 1:
-                        policyC[t,i_n,i_m] = policyCcl[i_n,i_m]
-                        policyh[t,i_n,i_m] = policyhcl[i_n,i_m]
-                    elif i == 2:
                         policyC[t,i_n,i_m] = policyCca[i_n,i_m]
                         policyh[t,i_n,i_m] = policyhca[i_n,i_m]
-                    elif i == 3:
+                    elif i == 2:
                         policyC[t,i_n,i_m] = policyCc[i_n,i_m]
                         policyh[t,i_n,i_m] = policyhc[i_n,i_m]
                         

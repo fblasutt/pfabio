@@ -14,11 +14,11 @@ def compute(out_c,out_d,out_v,holes,
             m,n,c,d,
             num,
             w,
-            gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,par,valt=np.array([[]])):
+            gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,valt=np.array([[]])):
     
     # a. infer shape
     Nb,Na = w.shape
-    par.rho
+ 
     # b. indicator for valid and interesting choice or not
     valid = np.ones((Nb,Na),dtype=np.bool_)
     for i_b in range(Nb):
@@ -182,7 +182,6 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
 def fill_holes(out_c,out_d,out_v,holes,w,num,gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,Nn,Nm):
 
     # a. locate global bounding box with content
-    print(np.mean(holes))
     i_n_min = 0
     i_n_max = Nn-1
     min_n = np.inf
@@ -248,8 +247,8 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,gamma_c,maxHours,gamma_h,rho,agrid,
 
                         c_interp = out_c[i_n_close,i_m_close]
                         d_interp = out_d[i_n_close,i_m_close]
-                        a_interp = m_now + d_interp*wt/E_bar_now #m_now - d_interp*wt/E_bar_now                     #points
-                        b_interp = n_now*(1+r) - c_interp + wt*(1-tau)*d_interp + y_N#(n_now + c_interp - wt*(1-tau)*d_interp - y_N)/(1+r) #assets
+                        a_interp = m_now + d_interp*wt/E_bar_now 
+                        b_interp = n_now*(1+r) - c_interp + wt*(1-tau)*d_interp + y_N
 
                     elif num == 2: # dcon, interpolate c
 
@@ -270,9 +269,6 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,gamma_c,maxHours,gamma_h,rho,agrid,
                         continue
 
                     # value-of-choice
-                    #w_interp = linear_interp.interp_2d(par.grid_b_pd,par.grid_a_pd,w,b_interp,a_interp)
-                    #v_interp = utility.func(c_interp,par) + w_interp
-                    
                     w_interp = linear_interp.interp_2d(agrid,pgrid,w,b_interp,a_interp)
                     v_interp=c_interp**(1-gamma_c)/(1-gamma_c)+\
                      beta*(maxHours - d_interp)**(1 - gamma_h) / (1 - gamma_h)+\
