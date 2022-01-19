@@ -1,7 +1,14 @@
 import numpy as np
 from numba import njit
 
-# consav
+###############################################################################
+# This is an adaptation of the CONVSAV packages
+# https://github.com/NumEconCopenhagen/ConsumptionSavingNotebooks/tree/master/03.%20G2EGM
+# related to DruedahlThomas and Jørgensen (2017).
+# It is a way to combine EGM with upper envelop to solve problems with two
+# continuous grids. It uses triangularization for the 2-way interpolation
+###############################################################################
+ 
 from consav import linear_interp # for linear interpolation
 
 
@@ -24,6 +31,7 @@ def compute(out_c,out_d,out_v,holes,
     for i_b in range(Nb):
         for i_a in range(Na):
 
+            #Non-interesting choices below
             valid[i_b,i_a] &= (np.imag(c[i_b,i_a]) == 0)
             valid[i_b,i_a] &= (np.imag(d[i_b,i_a]) == 0)
             valid[i_b,i_a] &= (~np.isnan(w[i_b,i_a]))
@@ -51,13 +59,13 @@ def compute(out_c,out_d,out_v,holes,
         # ii. upperenvelope
         for i_b in range(Nb):
             for i_a in range(Na):
-                for tri in range(2):            
+                for tri in range(2): #consider both upper and lower triangle        
                     upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,
                                   m,n,c,d,
                                   Na,Nb,valid,num,w,
                                   gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta)                    
                     
-        # iii. fill holes
+        # iii. fill holes (technique: nearest neighbor)
         fill_holes(out_c,out_d,out_v,holes,w,num,gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta,Nb,Na)
 
 @njit
@@ -167,7 +175,7 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
                 # v. value-of-choice
     
                 w_interp = linear_interp.interp_2d(agrid,pgrid,w,b_interp,a_interp)
-                v_interp=c_interp**(1-gamma_c)/(1-gamma_c)+\
+                v_interp=np.log(c_interp)+\
                      beta*(maxHours - d_interp)**(1 - gamma_h) / (1 - gamma_h)+\
                          1/(1+delta)*w_interp
                 # vi. update if max
@@ -193,7 +201,7 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,gamma_c,maxHours,gamma_h,rho,agrid,
     max_m = -np.inf
 
     for i_n in range(Nn):
-        for i_m in range(Nm):#?????
+        for i_m in range(Nm):
 
             m_now = pgrid[i_m]
             n_now = agrid[i_n]
@@ -270,7 +278,7 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,gamma_c,maxHours,gamma_h,rho,agrid,
 
                     # value-of-choice
                     w_interp = linear_interp.interp_2d(agrid,pgrid,w,b_interp,a_interp)
-                    v_interp=c_interp**(1-gamma_c)/(1-gamma_c)+\
+                    v_interp=np.log(c_interp)+\
                      beta*(maxHours - d_interp)**(1 - gamma_h) / (1 - gamma_h)+\
                        1/(1+delta)*w_interp
 

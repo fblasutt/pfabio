@@ -47,7 +47,7 @@ def simNoUncer_interp(reform, policyA1, policyC, policyh, V, par):
         else:
             
             
-            if ((t+1 >=3) & (t+1 <=10)):
+            if ((t >=3) & (t <=10)):
                 EPpath[t, 0] = Epath[t,0]/par.E_bar_now*1.5
                 EPpath_behav[t,0] = Epath[t,0]/par.E_bar_now
                 ppath[t+1, 0]=  ppath[t, 0]+1.5*par.w[t]*hpath[t, 0]/par.E_bar_now

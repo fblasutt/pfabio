@@ -18,8 +18,9 @@ except:
 
 # Import package
 import co # user defined functions
-import sol_numba_parallel_2egm as sol
+import sol
 import sim
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -123,3 +124,6 @@ plt.plot(t,cpath_0, 'blue', t, Epath_0, 'red')
 plt.xlabel("Age")
 plt.legend(('c','earn'))
 plt.show()
+
+
+print("Increase in pension points is {}".format(np.mean(np.diff(ppath_1,axis=0)[3:11])/np.mean(np.diff(ppath_0,axis=0)[3:11])-1))
