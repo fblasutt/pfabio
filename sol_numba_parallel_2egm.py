@@ -28,12 +28,12 @@ def solveEulerEquation(reform, par):
     
     return policyA1,policyh,policyC,V,policyp,whic
 
-#@njit(fastmath=True)
 def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform,par):
     
     # The rest is interior solution
     """ Use the method of endogenous gridpoint to solve the model.
-        To improve it further: jit it, then use math.power, not *
+        Note that the grids for assets constrained and not constrained
+        are different to avoid extrapolation
     """
     #Initialize some variables
     r=par.r;delta=par.delta;gamma_c=par.gamma_c;R=par.R;tau=par.tau;beta=par.beta;
@@ -65,8 +65,9 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         pmuc=np.reshape(np.repeat(pmu[0,:],numPtsA),(numPtsA,numPtsP),order="F")
         
         wt=w[t]
-        policy=((t+1 >=3) & (t+1 <=10) & (reform==1))
+        policy=((t >=3) & (t <=10) & (reform==1))
      
+        #Below is the pension-driven incentive to supply more labor
         if policy: 
             mult_pens=ne.evaluate('1.5*wt/E_bar_now*pmu/(1+delta)')
             mult_pensc=ne.evaluate('1.5*wt/E_bar_now*pmuc/(1+delta)')
@@ -89,7 +90,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
             #Not retired, constrained
             hec=ne.evaluate('maxHours-((mult_pensc+wt*(1-tau)*(cgrid_box**(-gamma_c)))/beta)**(-1/gamma_h)')
         else:        
-        #Retired case        
+            #Retired case        
             he=np.zeros((numPtsA, numPtsP))
                   
         
@@ -142,7 +143,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
                      V[t+1,:,:],
                      gamma_c,maxHours,gamma_h,rho,agrid,pgrid,beta,r,wt,tau,y_N,E_bar_now,delta) #should be dropeed
             
-            #A AND l constrained
+            #A AND l constrained (not relevant now...)
             policyCc=agrid_box*(1+r) + y_N
             Vc=co.utility(policyCc,policyhc,par)+\
              1/(1+delta)*np.reshape(np.repeat(V[t+1,0,:],numPtsA),(numPtsA,numPtsP),order="F")#np.repeat(V[t+1,0,:],numPtsA).reshape(numPtsA,numPtsP)

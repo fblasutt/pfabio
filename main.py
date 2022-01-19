@@ -18,7 +18,7 @@ except:
 
 # Import package
 import co # user defined functions
-import sol_numba_parallel_2egm as sol
+import sol
 import sim
 import matplotlib.pyplot as plt
 

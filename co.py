@@ -14,7 +14,7 @@ class setup():
         self.r = 0.015        # Interest rate
         self.delta = 0.015    # Discount rate
         self.beta = 10        # Utility weight on leisure
-        self.gamma_c = 1.01    # risk parameter on consumption
+        self.gamma_c = 1      # risk parameter on consumption!!!Check in upperenvelop if not 1
         self.gamma_h = 1.525  # risk parameter on labour
         self.y_N = 48000      # Unearned income
         self.E_bar_now = 30000  # Average earnings
@@ -38,7 +38,7 @@ class setup():
         # Assets
         self.numPtsA = 40
         self.agrid=nonlinspace(0.00001,250000,self.numPtsA,1.4)#np.linspace(0.001,250000,self.numPtsA)
-        self.startA = 0#10000   # Assets people start life with
+        self.startA = 10000   # Assets people start life with
         
         # Pension points
         self.numPtsP =40
