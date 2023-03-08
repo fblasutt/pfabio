@@ -8,25 +8,25 @@ class setup():
     
     def __init__(self):
 
-        # Economic Environment: set parameters
+        # Economic Environment: set pameters
         self.T = 55           # Number of time periods
         self.R = 35           # Retirement period
         self.r = 0.015        # Interest rate
-        self.delta = 0.015    # Discount rate
-        self.beta = 10        # Utility weight on leisure
-        self.gamma_c = 1      # risk parameter on consumption!!!Check in upperenvelop if not 1
-        self.gamma_h = 1.525  # risk parameter on labour
+        self.δ = 0.015    # Discount rate
+        self.β = 0.00000375        # Utility weight on leisure
+        self.γc = 1      # risk pameter on consumption!!!Check in upperenvelop if not 1
+        self.γh = 1.5785     # risk pameter on labour
         self.y_N = 48000      # Unearned income
         self.E_bar_now = 30000  # Average earnings
-        self.q = 0            # Fixed cost of participation
-        self.rho =350#0.3#350       # Dollar value of points
-        self.tau = 0.2#.2         # marginal tax rate
+        self.q = 0            # Fixed cost of pticipation
+        self.ρ =350#0.3#350       # Dollar value of points
+        self.τ = 0.2#.2         # marginal tax rate
         
         # Hourly wage
         self.w=np.zeros(self.T)
         for t in range(self.T):self.w[t]=16#6+t*0.2#16
     
-        # precision parameters
+        # precision pameters
         self.tol = 1e-7       # max allowed error
         self.minCons = 1e-5   # min allowed consumption
         self.minHours = 1e-5  # min allowed hours
@@ -50,32 +50,32 @@ class setup():
    
 
 # Define the utility function
-def utility(c,h,par):
+def utility(c,h,p):
 
     utils_c=-np.inf*np.ones(c.shape)
     where=(c>0)
-    if par.gamma_c == 1:
+    if p.γc == 1:
         utils_c[where] = np.log(c[where])
     else:
-        utils_c[where] = c[where]**(1-par.gamma_c)/(1-par.gamma_c)
+        utils_c[where] = c[where]**(1-p.γc)/(1-p.γc)
 
-    if par.gamma_h == 1:
+    if p.γh == 1:
         utils_h = np.log(h)
     else:
-        utils_h = (par.maxHours - h)**(1 - par.gamma_h) / (1 - par.gamma_h)
+        utils_h = (h)**(1+1/p.γh) / (1+1/p.γh)#(h)**(1+1/p.γh) / (1+1/p.γh)
 
-    utils = utils_c + par.beta*utils_h - (h==0)*par.q
+    utils = utils_c - p.β*utils_h - (h==0)*p.q
 
     return utils
 
-def mcutility(c,par):
+def mcutility(c,p):
 
     utils_c=np.inf*np.ones(c.shape)
     where=(c>0)
-    if par.gamma_c == 1:
-        utils_c[where] = 1/c[where]*par.rho
+    if p.γc == 1:
+        utils_c[where] = 1/c[where]*p.ρ
     else:
-        utils_c[where] = c[where]**(-par.gamma_c)*par.rho
+        utils_c[where] = c[where]**(-p.γc)*p.ρ
 
   
 
