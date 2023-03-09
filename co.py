@@ -13,7 +13,7 @@ class setup():
         self.R = 35           # Retirement period
         self.r = 0.015        # Interest rate
         self.δ = 0.015    # Discount rate
-        self.β = 0.00000375        # Utility weight on leisure
+        self.β = 10        # Utility weight on leisure
         self.γc = 1      # risk pameter on consumption!!!Check in upperenvelop if not 1
         self.γh = 1.5785     # risk pameter on labour
         self.y_N = 48000      # Unearned income
@@ -62,9 +62,9 @@ def utility(c,h,p):
     if p.γh == 1:
         utils_h = np.log(h)
     else:
-        utils_h = (h)**(1+1/p.γh) / (1+1/p.γh)#(h)**(1+1/p.γh) / (1+1/p.γh)
+        utils_h = (p.maxHours-h)**(1-p.γh) / (1-p.γh)#(h)**(1+1/p.γh) / (1+1/p.γh)
 
-    utils = utils_c - p.β*utils_h - (h==0)*p.q
+    utils = utils_c + p.β*utils_h - (h==0)*p.q
 
     return utils
 

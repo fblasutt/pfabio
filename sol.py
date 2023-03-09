@@ -87,10 +87,10 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         #How much work? This follows from the FOC      
         if (t+1<=R):            
             #Not retired,unconstrained
-            he=ne.evaluate('((mult_pens+wt*(1-τ)*(ce**(-γc)))/β)**(γh)')
+            he=ne.evaluate('maxHours-((mult_pens+wt*(1-τ)*(ce**(-γc)))/β)**(-1/γh)')
   
             #Not retired, constrained
-            hec=ne.evaluate('((mult_pensc+wt*(1-τ)*(cgrid_box**(-γc)))/β)**(γh)')
+            hec=ne.evaluate('maxHours-((mult_pensc+wt*(1-τ)*(cgrid_box**(-γc)))/β)**(-1/γh)')
         else:        
             #Retired case        
             he=np.zeros((numPtsA, numPtsP))
@@ -138,14 +138,14 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
                     pe,ae,ce,he,#computed above...
                     1, # which foc to take in upperenvelop
                     V[t+1,:,:],
-                    γc,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ) 
+                    γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ) 
             
             #A constrained
             upperenvelop.compute(policyCca,policyhca,Vca,holesca,
                      pec,aec,cgrid_box,hec,#computed above...
                      3, # which foc to take in upperenvelop
                      V[t+1,:,:],
-                     γc,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ) 
+                     γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ) 
             
             #A AND l constrained (not relevant now...)
             policyCc=agrid_box*(1+r) + y_N
@@ -183,7 +183,8 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         else:
             
             for i in range(numPtsP):               
-                linear_interp.interp_1d_vec(ae[:,i],agrid,agrid,policyA1[t,:,i])#np.interp(agrid, ae[:,i],agrid)
+                #linear_interp.interp_1d_vec(ae[:,i],agrid,agrid,policyA1[t,:,i])#np.interp(agrid, ae[:,i],agrid)
+                policyA1[t,:,i]=np.interp(agrid, ae[:,i],agrid)
                 policyC[t,:,i] =agrid*(1+r)+ρ*pe[:,i]+y_N-policyA1[t,:,i]
                 policyh[t,:,i] =he[:,i]
                 V[t,:,i]=co.utility(policyC[t,:,i],policyh[t,:,i],p)+\

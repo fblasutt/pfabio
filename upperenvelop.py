@@ -21,7 +21,7 @@ def compute(out_c,out_d,out_v,holes,
             m,n,c,d,
             num,
             w,
-            γc,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,valt=np.array([[]])):
+            γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,valt=np.array([[]])):
     
     # a. infer shape
     Nb,Na = w.shape
@@ -63,14 +63,14 @@ def compute(out_c,out_d,out_v,holes,
                     upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,
                                   m,n,c,d,
                                   Na,Nb,valid,num,w,
-                                  γc,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ)                    
+                                  γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ)                    
                     
         # iii. fill holes (technique: nearest neighbor)
-        fill_holes(out_c,out_d,out_v,holes,w,num,γc,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,Nb,Na)
+        fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,Nb,Na)
 
 @njit
 def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
-                  γc,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,
+                  γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,
                   egm_extrap_add=2,egm_extrap_w=-0.25):
     
     # a. simplex in (a,b)-space (or similar with constrained choices)
@@ -175,8 +175,8 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
                 # v. value-of-choice
     
                 w_interp = linear_interp.interp_2d(agrid,pgrid,w,b_interp,a_interp)
-                v_interp=np.log(c_interp)-\
-                     β*(d_interp)**(1 + 1/γh) / (1 + 1/γh)+\
+                v_interp=np.log(c_interp)+\
+                     β*(d_interp)**(1 - γh) / (1 - γh)+\
                          1/(1+δ)*w_interp
                 # vi. update if max
                 if v_interp >out_v[i_n,i_m]:
@@ -187,7 +187,7 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
                     holes[i_n,i_m] = 0
 
 @njit
-def fill_holes(out_c,out_d,out_v,holes,w,num,γc,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,Nn,Nm):
+def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,Nn,Nm):
 
     # a. locate global bounding box with content
     i_n_min = 0
@@ -278,8 +278,8 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,γc,γh,ρ,agrid,pgrid,β,r,wt,τ,y
 
                     # value-of-choice
                     w_interp = linear_interp.interp_2d(agrid,pgrid,w,b_interp,a_interp)
-                    v_interp=np.log(c_interp)-\
-                     β*(d_interp)**(1 + 1/γh) / (1 + 1/γh)+\
+                    v_interp=np.log(c_interp)+\
+                     β*(maxHours-d_interp)**(1 - γh) / (1 - γh)+\
                        1/(1+δ)*w_interp
 
                     # update if better
