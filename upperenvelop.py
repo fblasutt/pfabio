@@ -24,31 +24,32 @@ def compute(out_c,out_d,out_v,holes,
             γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,valt=np.array([[]])):
     
     # a. infer shape
-    Nb,Na = w.shape
+    Nb,Na,nw = w.shape
  
     # b. indicator for valid and interesting choice or not
-    valid = np.ones((Nb,Na),dtype=np.bool_)
+    valid = np.ones((Nb,Na,nw),dtype=np.bool_)
     for i_b in range(Nb):
         for i_a in range(Na):
+            for i_w in range(nw):
 
-            #Non-interesting choices below
-            valid[i_b,i_a] &= (np.imag(c[i_b,i_a]) == 0)
-            valid[i_b,i_a] &= (np.imag(d[i_b,i_a]) == 0)
-            valid[i_b,i_a] &= (~np.isnan(w[i_b,i_a]))
-            valid[i_b,i_a] &= c[i_b,i_a] >= -0.50
-            valid[i_b,i_a] &= d[i_b,i_a] >= -0.50
-            #valid[i_b,i_a] &= m[i_b,i_a] > -0.1
-            #valid[i_b,i_a] &= n[i_b,i_a] > -0.1
-            #valid[i_b,i_a] &= m[i_b,i_a] < par.m_max + 1
-            #valid[i_b,i_a] &= n[i_b,i_a] < par.n_max + 1
-
-            if valt.size > 0:
-                valid[i_b,i_a] &= w[i_b,i_a] > valt[i_b,i_a]
+                #Non-interesting choices below
+                valid[i_b,i_a,i_w] &= (np.imag(c[i_b,i_a,i_w]) == 0)
+                valid[i_b,i_a,i_w] &= (np.imag(d[i_b,i_a,i_w]) == 0)
+                valid[i_b,i_a,i_w] &= (~np.isnan(w[i_b,i_a,i_w]))
+                valid[i_b,i_a,i_w] &= c[i_b,i_a,i_w] >= -0.50
+                valid[i_b,i_a,i_w] &= d[i_b,i_a,i_w] >= -0.50
+                #valid[i_b,i_a] &= m[i_b,i_a] > -0.1
+                #valid[i_b,i_a] &= n[i_b,i_a] > -0.1
+                #valid[i_b,i_a] &= m[i_b,i_a] < par.m_max + 1
+                #valid[i_b,i_a] &= n[i_b,i_a] < par.n_max + 1
+    
+                #if valt.size > 0:
+                #    valid[i_b,i_a,i_w] &= w[i_b,i_a,i_w] > valt[i_b,i_a,i_w]
 
     # c. upper envelope
-    out_c[:,:] = np.nan
-    out_d[:,:] = np.nan
-    out_v[:,:] = -np.inf
+    out_c[:,:,:] = np.nan
+    out_d[:,:,:] = np.nan
+    out_v[:,:,:] = -np.inf
 
     if valid.sum() >= 0:
         
@@ -59,17 +60,18 @@ def compute(out_c,out_d,out_v,holes,
         # ii. upperenvelope
         for i_b in range(Nb):
             for i_a in range(Na):
-                for tri in range(2): #consider both upper and lower triangle        
-                    upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,
-                                  m,n,c,d,
-                                  Na,Nb,valid,num,w,
-                                  γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ)                    
-                    
+                for i_w in range(nw):
+                    for tri in range(2): #consider both upper and lower triangle        
+                        upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,
+                                      m,n,c,d,
+                                      Na,Nb,valid,num,w,
+                                      γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ)                    
+                        
         # iii. fill holes (technique: nearest neighbor)
-        fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,Nb,Na)
+        fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,Nb,Na,nw)
 
 @njit
-def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
+def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,num,w,
                   γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,
                   egm_extrap_add=2,egm_extrap_w=-0.25):
     
@@ -93,17 +95,17 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
         i_b_3 = i_b
         i_a_3 = i_a+1
     
-    if ~valid[i_b_1,i_a_1] or ~valid[i_b_2,i_a_2] or ~valid[i_b_3,i_a_3]:
+    if ~valid[i_b_1,i_a_1,i_w] or ~valid[i_b_2,i_a_2,i_w] or ~valid[i_b_3,i_a_3,i_w]:
         return
    
     # b. simplex in (m,n)-space
-    m1 = m[i_b_1,i_a_1]
-    m2 = m[i_b_2,i_a_2]
-    m3 = m[i_b_3,i_a_3]
+    m1 = m[i_b_1,i_a_1,i_w]
+    m2 = m[i_b_2,i_a_2,i_w]
+    m3 = m[i_b_3,i_a_3,i_w]
 
-    n1 = n[i_b_1,i_a_1]
-    n2 = n[i_b_2,i_a_2]
-    n3 = n[i_b_3,i_a_3]
+    n1 = n[i_b_1,i_a_1,i_w]
+    n2 = n[i_b_2,i_a_2,i_w]
+    n3 = n[i_b_3,i_a_3,i_w]
 
     # c. boundary box values and indices in common grid
     m_max = np.fmax(m1,np.fmax(m2,m3))
@@ -132,7 +134,7 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
     for i_n in range(in_low,in_high):
         for i_m in range(im_low,im_high):
 
-            if holes[i_n,i_m]>0:
+            if holes[i_n,i_m,i_w]>0:
                 # i. common grid values
                 m_now = pgrid[i_m]
                 n_now = agrid[i_n]
@@ -149,24 +151,24 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
                 # iv. interpolate choices
                 if num == 1: # ucon, interpolate c and d
     
-                    c_interp = w1*c[i_b_1,i_a_1] + w2*c[i_b_2,i_a_2] + w3*c[i_b_3,i_a_3]
-                    d_interp = w1*d[i_b_1,i_a_1] + w2*d[i_b_2,i_a_2] + w3*d[i_b_3,i_a_3]
-                    a_interp = m_now + d_interp*wt/E_bar_now #m_now - d_interp*wt/E_bar_now                     #points
-                    b_interp = n_now*(1+r) - c_interp + wt*(1-τ)*d_interp + y_N#(n_now + c_interp - wt*(1-τ)*d_interp - y_N)/(1+r) #assets
+                    c_interp = w1*c[i_b_1,i_a_1,i_w] + w2*c[i_b_2,i_a_2,i_w] + w3*c[i_b_3,i_a_3,i_w]
+                    d_interp = w1*d[i_b_1,i_a_1,i_w] + w2*d[i_b_2,i_a_2,i_w] + w3*d[i_b_3,i_a_3,i_w]
+                    a_interp = m_now + d_interp*wt[i_w]/E_bar_now #m_now - d_interp*wt[i_w]/E_bar_now                     #points
+                    b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*d_interp + y_N#(n_now + c_interp - wt*(1-τ)*d_interp - y_N)/(1+r) #assets
     
                 elif num == 2: # dcon, interpolate c
     
-                    c_interp = w1*c[i_b_1,i_a_1] + w2*c[i_b_2,i_a_2] + w3*c[i_b_3,i_a_3]
+                    c_interp = w1*c[i_b_1,i_a_1,i_w] + w2*c[i_b_2,i_a_2,i_w] + w3*c[i_b_3,i_a_3,i_w]
                     d_interp = 0.0
                     a_interp = m_now#m_now 
                     b_interp = n_now*(1+r) - c_interp + y_N#(n_now + c_interp - y_N)/(1+r) #assets
     
                 elif num == 3: # acon, interpolate d
     
-                    d_interp = w1*d[i_b_1,i_a_1] + w2*d[i_b_2,i_a_2] + w3*d[i_b_3,i_a_3]
-                    a_interp = m_now + d_interp*wt/E_bar_now 
+                    d_interp = w1*d[i_b_1,i_a_1,i_w] + w2*d[i_b_2,i_a_2,i_w] + w3*d[i_b_3,i_a_3,i_w]
+                    a_interp = m_now + d_interp*wt[i_w]/E_bar_now 
                     b_interp = 0.0
-                    c_interp = n_now*(1+r)+wt*(1-τ)*d_interp + y_N#n_now+wt*(1-τ)*d_interp + y_N
+                    c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*d_interp + y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
                     
     
                 if c_interp <= 0.0 or d_interp < 0.0 or a_interp < 0 or b_interp < 0:
@@ -174,20 +176,20 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,m,n,c,d,Na,Nb,valid,num,w,
     
                 # v. value-of-choice
     
-                w_interp = linear_interp.interp_2d(agrid,pgrid,w,b_interp,a_interp)
+                w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w],b_interp,a_interp)
                 v_interp=np.log(c_interp)+\
                      β*(d_interp)**(1 - γh) / (1 - γh)+\
                          1/(1+δ)*w_interp
                 # vi. update if max
-                if v_interp >out_v[i_n,i_m]:
+                if v_interp >out_v[i_n,i_m,i_w]:
     
-                    out_v[i_n,i_m] = v_interp
-                    out_c[i_n,i_m] = c_interp
-                    out_d[i_n,i_m] = d_interp
-                    holes[i_n,i_m] = 0
+                    out_v[i_n,i_m,i_w] = v_interp
+                    out_c[i_n,i_m,i_w] = c_interp
+                    out_d[i_n,i_m,i_w] = d_interp
+                    holes[i_n,i_m,i_w] = 0
 
 @njit
-def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,Nn,Nm):
+def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,Nn,Nm,nw):
 
     # a. locate global bounding box with content
     i_n_min = 0
@@ -202,90 +204,93 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,
 
     for i_n in range(Nn):
         for i_m in range(Nm):
+            for i_w in range(nw):
 
-            m_now = pgrid[i_m]
-            n_now = agrid[i_n]
-
-            if holes[i_n,i_m] == 1: continue
-
-            if m_now < min_m:
-                min_m = m_now
-                i_m_min = i_m
-
-            if m_now > max_m:
-                max_m = m_now
-                i_m_max = i_m
-
-            if n_now < min_n:
-                min_n = n_now
-                i_n_min = i_n
-            
-            if n_now > max_n:
-                max_n = n_now
-                i_n_max = i_n
+                
+                m_now = pgrid[i_m]
+                n_now = agrid[i_n]
+    
+                if holes[i_n,i_m,i_w] == 1: continue
+    
+                if m_now < min_m:
+                    min_m = m_now
+                    i_m_min = i_m
+    
+                if m_now > max_m:
+                    max_m = m_now
+                    i_m_max = i_m
+    
+                if n_now < min_n:
+                    min_n = n_now
+                    i_n_min = i_n
+                
+                if n_now > max_n:
+                    max_n = n_now
+                    i_n_max = i_n
 
     # b. loop through m, n, k nodes to detect holes
     i_n_max = np.fmin(i_n_max+1,Nn)
     i_m_max = np.fmin(i_m_max+1,Nm)
     for i_n in range(i_n_min,i_n_max):
         for i_m in range(i_m_min,i_m_max):
+            for i_w in range(nw):
             
-            if holes[i_n,i_m] == 0: # if not hole
-                continue
-
-            m_now = pgrid[i_m]
-            n_now = agrid[i_n]
-            m_add = 2
-            n_add = 2
-        
-            # loop over points close by
-            i_n_close_min = np.fmax(0,i_n-n_add)
-            i_n_close_max = np.fmin(i_n+n_add+1,Nn)
-
-            i_m_close_min = np.fmax(0,i_m-m_add)
-            i_m_close_max = np.fmin(i_m+m_add+1,Nm)
-
-            for i_n_close in range(i_n_close_min,i_n_close_max):
-                for i_m_close in range(i_m_close_min,i_m_close_max):
-
-                    if holes[i_n_close,i_m_close] == 1: # if itself a hole
-                        continue
-
-                    if num == 1: # ucon, interpolate c and d
-
-                        c_interp = out_c[i_n_close,i_m_close]
-                        d_interp = out_d[i_n_close,i_m_close]
-                        a_interp = m_now + d_interp*wt/E_bar_now 
-                        b_interp = n_now*(1+r) - c_interp + wt*(1-τ)*d_interp + y_N
-
-                    elif num == 2: # dcon, interpolate c
-
-                        c_interp = out_c[i_n_close,i_m_close]
-                        d_interp = 0.0
-                        a_interp = m_now#m_now 
-                        b_interp = n_now*(1+r) - c_interp + y_N#(n_now + c_interp - y_N)/(1+r) #assets
-
-                    elif num == 3: # acon, interpolate d
-
-                        d_interp = out_d[i_n_close,i_m_close]
-                        a_interp = m_now + d_interp*wt/E_bar_now 
-                        b_interp = 0.0
-                        c_interp = n_now*(1+r)+wt*(1-τ)*d_interp + y_N#n_now+wt*(1-τ)*d_interp + y_N
-                        
-
-                    if c_interp <= 0.0 or d_interp < 0.0 or a_interp < 0 or b_interp < 0:
-                        continue
-
-                    # value-of-choice
-                    w_interp = linear_interp.interp_2d(agrid,pgrid,w,b_interp,a_interp)
-                    v_interp=np.log(c_interp)+\
-                     β*(maxHours-d_interp)**(1 - γh) / (1 - γh)+\
-                       1/(1+δ)*w_interp
-
-                    # update if better
-                    if v_interp > out_v[i_n,i_m]:
-
-                        out_v[i_n,i_m] = v_interp
-                        out_c[i_n,i_m] = c_interp
-                        out_d[i_n,i_m] = d_interp
+                if holes[i_n,i_m,i_w] == 0: # if not hole
+                    continue
+    
+                m_now = pgrid[i_m]
+                n_now = agrid[i_n]
+                m_add = 2
+                n_add = 2
+            
+                # loop over points close by
+                i_n_close_min = np.fmax(0,i_n-n_add)
+                i_n_close_max = np.fmin(i_n+n_add+1,Nn)
+    
+                i_m_close_min = np.fmax(0,i_m-m_add)
+                i_m_close_max = np.fmin(i_m+m_add+1,Nm)
+    
+                for i_n_close in range(i_n_close_min,i_n_close_max):
+                    for i_m_close in range(i_m_close_min,i_m_close_max):
+    
+                        if holes[i_n_close,i_m_close,i_w] == 1: # if itself a hole
+                            continue
+    
+                        if num == 1: # ucon, interpolate c and d
+    
+                            c_interp = out_c[i_n_close,i_m_close,i_w]
+                            d_interp = out_d[i_n_close,i_m_close,i_w]
+                            a_interp = m_now + d_interp*wt[i_w]/E_bar_now 
+                            b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*d_interp + y_N
+    
+                        elif num == 2: # dcon, interpolate c
+    
+                            c_interp = out_c[i_n_close,i_m_close,i_w]
+                            d_interp = 0.0
+                            a_interp = m_now#m_now 
+                            b_interp = n_now*(1+r) - c_interp + y_N#(n_now + c_interp - y_N)/(1+r) #assets
+    
+                        elif num == 3: # acon, interpolate d
+    
+                            d_interp = out_d[i_n_close,i_m_close,i_w]
+                            a_interp = m_now + d_interp*wt[i_w]/E_bar_now 
+                            b_interp = 0.0
+                            c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*d_interp + y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
+                            
+    
+                        if c_interp <= 0.0 or d_interp < 0.0 or a_interp < 0 or b_interp < 0:
+                            continue
+    
+                        # value-of-choice
+                        w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w],b_interp,a_interp)
+                        v_interp=np.log(c_interp)+\
+                         β*(maxHours-d_interp)**(1 - γh) / (1 - γh)+\
+                           1/(1+δ)*w_interp
+    
+                        # update if better
+                        if v_interp > out_v[i_n,i_m,i_w]:
+    
+                            out_v[i_n,i_m,i_w] = v_interp
+                            out_c[i_n,i_m,i_w] = c_interp
+                            out_d[i_n,i_m,i_w] = d_interp
     

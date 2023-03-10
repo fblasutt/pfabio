@@ -3,6 +3,7 @@
 import numpy as np
 from interpolation.splines import CGrid
 from consav.grids import nonlinspace # grids
+from quantecon.markov.approximation import rouwenhorst
 
 class setup():
     
@@ -23,8 +24,18 @@ class setup():
         self.τ = 0.2#.2         # marginal tax rate
         
         # Hourly wage
-        self.w=np.zeros(self.T)
-        for t in range(self.T):self.w[t]=16#6+t*0.2#16
+        self.wM=np.zeros(self.T)
+        for t in range(self.T):self.wM[t]=16
+        
+        # Hourly wage dispersion
+        self.nw=3
+        self.σ=0.2 #dispersion of wages
+        self.wv=rouwenhorst(self.nw, 0.0, self.σ,0.0).state_values
+        
+        #Create actual wages
+        self.w=np.zeros((self.T,self.nw))
+        for t in range(self.T):self.w[t,:]=np.exp(np.log(self.wM[t])+0*self.wv)
+        
     
         # precision pameters
         self.tol = 1e-7       # max allowed error

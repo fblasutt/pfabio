@@ -32,29 +32,29 @@ def simNoUncer_interp(reform, policyA1, policyC, policyh, V, p):
     for t in range(p.T-1):  # loop through time periods for a pticular individual
     
         point=np.array([apath[t,0],ppath[t,0]]) #where to interpolate
-        vpath[t  , 0] = linear_interp.interp_2d(p.agrid,p.pgrid,V[t,:,:],apath[t,0],ppath[t,0])#eval_linear(p.mgrid,V[t,:,:],point)
-        apath[t+1, 0] = linear_interp.interp_2d(p.agrid,p.pgrid,policyA1[t, :,:],apath[t,0],ppath[t,0])#eval_linear(p.mgrid,policyA1[t, :,:],point)
-        cpath[t, 0] = linear_interp.interp_2d(p.agrid,p.pgrid,policyC[t, :,:],apath[t,0],ppath[t,0])#eval_linear(p.mgrid,policyC[t, :,:],point)
-        hpath[t, 0] = linear_interp.interp_2d(p.agrid,p.pgrid,policyh[t, :,:],apath[t,0],ppath[t,0])#eval_linear(p.mgrid,policyh[t, :,:],point)
-        Epath[t, 0] = hpath[t, 0]*p.w[t];
+        vpath[t  , 0] = linear_interp.interp_2d(p.agrid,p.pgrid,V[t,:,:,0],apath[t,0],ppath[t,0])#eval_linear(p.mgrid,V[t,:,:],point)
+        apath[t+1, 0] = linear_interp.interp_2d(p.agrid,p.pgrid,policyA1[t, :,:,0],apath[t,0],ppath[t,0])#eval_linear(p.mgrid,policyA1[t, :,:],point)
+        cpath[t, 0] = linear_interp.interp_2d(p.agrid,p.pgrid,policyC[t, :,:,0],apath[t,0],ppath[t,0])#eval_linear(p.mgrid,policyC[t, :,:],point)
+        hpath[t, 0] = linear_interp.interp_2d(p.agrid,p.pgrid,policyh[t, :,:,0],apath[t,0],ppath[t,0])#eval_linear(p.mgrid,policyh[t, :,:],point)
+        Epath[t, 0] = hpath[t, 0]*p.w[t,0];
         
-        Epath_τ[t,0] = hpath[t,0]*p.w[t]
+        Epath_τ[t,0] = hpath[t,0]*p.w[t,0]
         
         if reform == 0:
             EPpath[t, 0] = Epath[t,0]/p.E_bar_now
             EPpath_behav[t,0] = Epath[t,0]/p.E_bar_now
-            ppath[t+1, 0]=  ppath[t, 0]+p.w[t]*hpath[t, 0]/p.E_bar_now
+            ppath[t+1, 0]=  ppath[t, 0]+p.w[t,0]*hpath[t, 0]/p.E_bar_now
         else:
             
             
             if ((t >=3) & (t <=10)):
                 EPpath[t, 0] = Epath[t,0]/p.E_bar_now*1.5
                 EPpath_behav[t,0] = Epath[t,0]/p.E_bar_now
-                ppath[t+1, 0]=  ppath[t, 0]+1.5*p.w[t]*hpath[t, 0]/p.E_bar_now
+                ppath[t+1, 0]=  ppath[t, 0]+1.5*p.w[t,0]*hpath[t, 0]/p.E_bar_now
             else:
                 EPpath[t, 0] = Epath[t,0]/p.E_bar_now
                 EPpath_behav[t,0] = Epath[t,0]/p.E_bar_now
-                ppath[t+1, 0]=  ppath[t, 0]+p.w[t]*hpath[t, 0]/p.E_bar_now
+                ppath[t+1, 0]=  ppath[t, 0]+p.w[t,0]*hpath[t, 0]/p.E_bar_now
     
     
     EPpath_c[0,0] = EPpath[0,0]+5

@@ -17,7 +17,7 @@ def solveEulerEquation(reform, p):
     time_start = time.time()
         
     #Initiate some variables
-    policyA1,policyh,policyC,V,policyp,pmutil,whic = np.empty((7,p.T, p.numPtsA, p.numPtsP))
+    policyA1,policyh,policyC,V,policyp,pmutil,whic = np.empty((7,p.T, p.numPtsA, p.numPtsP,p.nw))
      
     #Call the routing to solve the model
     solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform,p)
@@ -39,34 +39,39 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
     """
     #Initialize some variables
     r=p.r;δ=p.δ;γc=p.γc;R=p.R;τ=p.τ;β=p.β;
-    w=np.array(p.w);agrid=p.agrid;y_N=p.y_N;γh=p.γh;T=p.T;numPtsA=p.numPtsA
+    w=np.array(p.w);agrid=p.agrid;y_N=p.y_N;γh=p.γh;T=p.T;numPtsA=p.numPtsA;nw=p.nw;
     numPtsP=p.numPtsP;pgrid=p.pgrid;maxHours=p.maxHours;ρ=p.ρ;E_bar_now=p.E_bar_now;
     
     #Grid for assets and points
-    agrid_box=np.transpose(np.tile(agrid,(numPtsP,1)))
-    pgrid_box=np.tile(pgrid,(numPtsA,1))
+    agrid_box=np.repeat(np.transpose(np.tile(agrid,(numPtsP,1)))[:,:,np.newaxis],nw,axis=2)
+
+    
+    pgrid_box=np.repeat(np.tile(pgrid,(numPtsA,1))[:,:,np.newaxis],nw,axis=2)
     
     #Grid for consumption
     cgrid=nonlinspace(agrid[0],agrid[-1]*(1+r)+y_N+np.max(w)*maxHours*(1-τ),numPtsA,1.4)
-    cgrid_box=np.transpose(np.tile(cgrid,(numPtsP,1)))
+    cgrid_box=np.repeat(np.transpose(np.tile(cgrid,(numPtsP,1)))[:,:,np.newaxis],nw,axis=2)
     
     #Last period decisions below
-    policyA1[T-1,:,:] = np.zeros((numPtsA, numPtsP))  # optimal savings
-    policyh[T-1,:,:] = np.zeros((numPtsA, numPtsP))   # optimal earnings
-    policyC[T-1,:,:] = agrid_box*(1+r) + y_N +\
+    policyA1[T-1,:,:,:] = np.zeros((numPtsA, numPtsP,nw))  # optimal savings
+    policyh[T-1,:,:,:] = np.zeros((numPtsA, numPtsP,nw))   # optimal earnings
+    policyC[T-1,:,:,:] = agrid_box*(1+r) + y_N +\
                                 ρ*pgrid_box        # optimal consumption
-    pmutil[T-1,:,:]=co.mcutility(policyC[T-1,:,:], p)       # mu of more pension points        
-    V[T-1,:,:]=co.utility(policyC[T-1,:,:],policyh[T-1,:,:],p)
+    pmutil[T-1,:,:,:]=co.mcutility(policyC[T-1,:,:,:], p)       # mu of more pension points        
+    V[T-1,:,:,:]=co.utility(policyC[T-1,:,:,:],policyh[T-1,:,:,:],p)
     
     #Decisions below
     for t in range(T-2,-1,-1):
                          
+        #Grid for wages
+        wbox=np.repeat(np.repeat(w[t,np.newaxis,:],numPtsP,axis=0)[np.newaxis,:,:],numPtsA,axis=0)
+        
         
         #Define initial variable for fast coputation later
-        pmu=pmutil[t+1,:,:]
-        pmuc=np.reshape(np.repeat(pmu[0,:],numPtsA),(numPtsA,numPtsP),order="F")
+        pmu=pmutil[t+1,:,:,:]
+        pmuc=np.repeat(pmu[0,np.newaxis,:,:],numPtsA,axis=0)
         
-        wt=w[t]
+        wt=w[t,:]
         policy=((t >=3) & (t <=10) & (reform==1))
      
         #Below is the pension-driven incentive to supply more labor
@@ -82,7 +87,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         ##############################################
         
         #Get consumption from Eurler Equation
-        ce=policyC[t+1,:,:]*np.power(((1+r)/(1+δ)),(-1/γc))
+        ce=policyC[t+1,:,:,:]*np.power(((1+r)/(1+δ)),(-1/γc))
              
         #How much work? This follows from the FOC      
         if (t+1<=R):            
@@ -93,7 +98,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
             hec=ne.evaluate('maxHours-((mult_pensc+wt*(1-τ)*(cgrid_box**(-γc)))/β)**(-1/γh)')
         else:        
             #Retired case        
-            he=np.zeros((numPtsA, numPtsP))
+            he=np.zeros((numPtsA, numPtsP,nw))
                   
         
         #Retired
@@ -125,8 +130,8 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         # Now interpolate to be back on grid...
         ###############################################
           
-        which,policyCu,policyhu,Vu,policyCcl,policyhcl,Vcl,policyCca,policyhca,Vca,policyCc,policyhc,Vc=np.zeros((13,numPtsA,numPtsP))
-        holesu,holescl,holesca = np.ones((3,numPtsA,numPtsP))
+        which,policyCu,policyhu,Vu,policyCcl,policyhcl,Vcl,policyCca,policyhca,Vca,policyCc,policyhc,Vc=np.zeros((13,numPtsA,numPtsP,nw))
+        holesu,holescl,holesca = np.ones((3,numPtsA,numPtsP,nw))
         
         #Not retired
         if (t+1<=R):     
@@ -137,67 +142,70 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
             upperenvelop.compute(policyCu,policyhu,Vu,holesu,
                     pe,ae,ce,he,#computed above...
                     1, # which foc to take in upperenvelop
-                    V[t+1,:,:],
+                    V[t+1,:,:,:],
                     γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ) 
             
             #A constrained
             upperenvelop.compute(policyCca,policyhca,Vca,holesca,
                      pec,aec,cgrid_box,hec,#computed above...
                      3, # which foc to take in upperenvelop
-                     V[t+1,:,:],
+                     V[t+1,:,:,:],
                      γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ) 
             
             #A AND l constrained (not relevant now...)
             policyCc=agrid_box*(1+r) + y_N
             Vc=co.utility(policyCc,policyhc,p)+\
-             1/(1+δ)*np.reshape(np.repeat(V[t+1,0,:],numPtsA),(numPtsA,numPtsP),order="F")
+             1/(1+δ)*np.repeat(V[t+1,0,np.newaxis,:,:],numPtsA,axis=0)
                         
             # b. upper envelope    
             seg_max = np.zeros(3)
             for i_n in range(numPtsA):
                 for i_m in range(numPtsP):
+                    for i_w in range(nw):
         
-                    # i. find max
-                    seg_max[0] = Vu[i_n,i_m]
-                    seg_max[1] = Vca[i_n,i_m]
-                    seg_max[2] = Vc[i_n,i_m]
-   
-                    i = np.argmax(seg_max)
-                    which[i_n,i_m]=i
-                    V[t,i_n,i_m]=seg_max[i]
-                    
-                    if i == 0:
-                        policyC[t,i_n,i_m] = policyCu[i_n,i_m]
-                        policyh[t,i_n,i_m] = policyhu[i_n,i_m]
-                    elif i == 1:
-                        policyC[t,i_n,i_m] = policyCca[i_n,i_m]
-                        policyh[t,i_n,i_m] = policyhca[i_n,i_m]
-                    elif i == 2:
-                        policyC[t,i_n,i_m] = policyCc[i_n,i_m]
-                        policyh[t,i_n,i_m] = policyhc[i_n,i_m]
+                        # i. find max
+                        seg_max[0] = Vu[i_n,i_m,i_w]
+                        seg_max[1] = Vca[i_n,i_m,i_w]
+                        seg_max[2] = Vc[i_n,i_m,i_w]
+       
+                        i = np.argmax(seg_max)
+                        which[i_n,i_m,i_w]=i
+                        V[t,i_n,i_m,i_w]=seg_max[i]
+                        
+                        if i == 0:
+                            policyC[t,i_n,i_m,i_w] = policyCu[i_n,i_m,i_w]
+                            policyh[t,i_n,i_m,i_w] = policyhu[i_n,i_m,i_w]
+                        elif i == 1:
+                            policyC[t,i_n,i_m,i_w] = policyCca[i_n,i_m,i_w]
+                            policyh[t,i_n,i_m,i_w] = policyhca[i_n,i_m,i_w]
+                        elif i == 2:
+                            policyC[t,i_n,i_m,i_w] = policyCc[i_n,i_m,i_w]
+                            policyh[t,i_n,i_m,i_w] = policyhc[i_n,i_m,i_w]
                         
             #Complete
-            policyA1[t,:,:]=agrid_box*(1+r)+y_N+wt*(1-τ)*policyh[t,:,:]-policyC[t,:,:]
-            whic[t,:,:]=which
+            policyA1[t,:,:,:]=agrid_box*(1+r)+y_N+wbox*(1-τ)*policyh[t,:,:,:]-policyC[t,:,:,:]
+            #whic[t,:,:]=which
         #Retired
         else:
             
-            for i in range(numPtsP):               
-                #linear_interp.interp_1d_vec(ae[:,i],agrid,agrid,policyA1[t,:,i])#np.interp(agrid, ae[:,i],agrid)
-                policyA1[t,:,i]=np.interp(agrid, ae[:,i],agrid)
-                policyC[t,:,i] =agrid*(1+r)+ρ*pe[:,i]+y_N-policyA1[t,:,i]
-                policyh[t,:,i] =he[:,i]
-                V[t,:,i]=co.utility(policyC[t,:,i],policyh[t,:,i],p)+\
-                     (1/(1+δ))*np.interp(policyA1[t,:,i],agrid,V[t+1,:,i])
+            for i in range(numPtsP):
+                for j in range(nw):
+                    #linear_interp.interp_1d_vec(ae[:,i],agrid,agrid,policyA1[t,:,i])#np.interp(agrid, ae[:,i],agrid)
+                    policyA1[t,:,i,j]=np.interp(agrid, ae[:,i,j],agrid)
+                    policyC[t,:,i,j] =agrid*(1+r)+ρ*pe[:,i,j]+y_N-policyA1[t,:,i,j]
+                    policyh[t,:,i,j] =he[:,i,j]
+                    V[t,:,i,j]=co.utility(policyC[t,:,i,j],policyh[t,:,i,j],p)+\
+                         (1/(1+δ))*np.interp(policyA1[t,:,i,j],agrid,V[t+1,:,i,j])
             
         #Update marginal utility of having more pension points
-        Pc=policyC[t,:,:]
-        Ph=policyh[t,:,:]
+        Pc=policyC[t,:,:,:]
+        Ph=policyh[t,:,:,:]
         points=ne.evaluate('pgrid_box+wt*Ph/E_bar_now')
         
-        Pmua=np.zeros((numPtsA, numPtsP))
+        Pmua=np.zeros((numPtsA, numPtsP,nw))
         for i in range(numPtsP):
-            linear_interp.interp_2d_vec(agrid,pgrid,pmu,policyA1[t,:,i],points[:,i],Pmua[:,i])# #pmu on the grid!!!
+            for j in range(nw):
+                linear_interp.interp_2d_vec(agrid,pgrid,pmu[:,:,j],policyA1[t,:,i,j],points[:,i,j],Pmua[:,i,j])# #pmu on the grid!!!
         if (t+1>R): 
             pmutil[t,:,:]=ne.evaluate('(Pmua+ρ*Pc**(-γc))/(1+δ)')
         else:
