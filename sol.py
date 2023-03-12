@@ -11,7 +11,12 @@ import upperenvelop
 import co
 
 
-def solveEulerEquation(reform, p):
+def solveEulerEquation(p,model='baseline'):
+    
+    
+    #Translate keyword for model into number
+    if model=='baseline':      reform=0
+    if model=='pension reform':reform=1
     
     #Start counting time
     time_start = time.time()
@@ -26,7 +31,7 @@ def solveEulerEquation(reform, p):
     elapsed = time.time() - time_start    
     print('Finished, Reform =', reform, 'Elapsed time is', elapsed, 'seconds')   
     
-    return policyA1,policyh,policyC,V,policyp,whic
+    return {'A':policyA1,'h':policyh,'c':policyC,'V':V,'p':policyp,'which':whic,'model':reform}
 
 def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform,p):
     

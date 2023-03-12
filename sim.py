@@ -2,70 +2,72 @@
 
 import numpy as np
 import co
+from numba import njit
 from scipy.interpolate import pchip_interpolate
 from consav import linear_interp
 from interpolation.splines import  eval_linear
 #https://www.econforge.org/interpolation.py/
 
-def simNoUncer_interp(reform, policyA1, policyC, policyh, V, p):
+def simNoUncer_interp(p, model, Tstart=-1, Astart=0.0, Pstart=0.0):
+#def simNoUncer_interp(reform, policyA1, policyC, policyh, V, p, Tstart=None, Astart=None, Pstart=None):
+  
+    
+    # Get policy functions
+    policyA1=model['A']
+    policyC=model['c']
+    policyh=model['h']
+    V=model['V']
+    reform=model['model']
+    
+
+        
+        
+    ppath,cpath,apath,hpath,Epath=\
+        fast_simulate(Tstart,Astart,Pstart,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,
+                      model['A'],model['c'],model['h'],model['V'],model['model'])
+    
+    return {'p':ppath,'c':cpath,'A':apath,'h':hpath,'wh':Epath}
+    
+@njit
+def fast_simulate(Tstart,Astart,Pstart,T,N,agrid,pgrid,w,E_bar_now,
+                  policyA1,policyC,policyh,V,reform):
+
     # Arguments for output
-    cpath = np.nan+ np.zeros((p.T, 1))           # consumption
-    hpath = np.nan+ np.zeros((p.T, 1))           # earnings path
-    Epath = np.nan+ np.zeros((p.T, 1))           # earnings path
-    Epath_τ = np.nan+ np.zeros((p.T, 1))       # earnings path
-    EPpath = np.nan+ np.zeros((p.T, 1))          # earning points path
-    EPpath_c = np.nan+ np.zeros((p.T, 1))        # cumulative earning points path
-    EPpath_behav = np.nan+ np.zeros((p.T, 1))    # earning points path
-    EPpath_behav_c = np.nan+ np.zeros((p.T, 1))  # cumulative earning points path
-    vpath = np.nan+ np.zeros((p.T, 1))           # value
-    apath = np.nan+ np.zeros((p.T + 1,1))        # assets at start of each period, decided 1 period ahead and so includes period T+1   
-    ppath = np.nan+ np.zeros((p.T + 1,1))        # points at start of each period, decided 1 period ahead and so includes period T+1
+    cpath = np.nan+ np.zeros((T, N))           # consumption
+    hpath = np.nan+ np.zeros((T, N))           # earnings path
+    Epath = np.nan+ np.zeros((T, N))           # earnings path
+    apath = np.nan+ np.zeros((T + 1,N))        # assets at start of each period, decided 1 period ahead and so includes period T+1   
+    ppath = np.nan+ np.zeros((T + 1,N))        # points at start of each period, decided 1 period ahead and so includes period T+1
     
     
-    # Initial condition
-    apath[0, 0] = p.startA; 
-    ppath[0, 0] = p.startP; 
-    
+    # Modified initial conditions
+
+    Ti=Tstart
+    apath[Ti, :] = Astart; 
+    ppath[Ti, :] = Pstart; 
+        
+
     
     # Obtain paths using the initial condition and the policy and value functions
     
-    for t in range(p.T-1):  # loop through time periods for a pticular individual
+    for t in range(Ti,T-1):  # loop through time periods for a pticular individual
+        for n in range(N):
     
-        point=np.array([apath[t,0],ppath[t,0]]) #where to interpolate
-        vpath[t  , 0] = linear_interp.interp_2d(p.agrid,p.pgrid,V[t,:,:,0],apath[t,0],ppath[t,0])#eval_linear(p.mgrid,V[t,:,:],point)
-        apath[t+1, 0] = linear_interp.interp_2d(p.agrid,p.pgrid,policyA1[t, :,:,0],apath[t,0],ppath[t,0])#eval_linear(p.mgrid,policyA1[t, :,:],point)
-        cpath[t, 0] = linear_interp.interp_2d(p.agrid,p.pgrid,policyC[t, :,:,0],apath[t,0],ppath[t,0])#eval_linear(p.mgrid,policyC[t, :,:],point)
-        hpath[t, 0] = linear_interp.interp_2d(p.agrid,p.pgrid,policyh[t, :,:,0],apath[t,0],ppath[t,0])#eval_linear(p.mgrid,policyh[t, :,:],point)
-        Epath[t, 0] = hpath[t, 0]*p.w[t,0];
         
-        Epath_τ[t,0] = hpath[t,0]*p.w[t,0]
-        
-        if reform == 0:
-            EPpath[t, 0] = Epath[t,0]/p.E_bar_now
-            EPpath_behav[t,0] = Epath[t,0]/p.E_bar_now
-            ppath[t+1, 0]=  ppath[t, 0]+p.w[t,0]*hpath[t, 0]/p.E_bar_now
-        else:
+            point=np.array([apath[t,n],ppath[t,n]]) #where to interpolate
+            apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,policyA1[t, :,:,0],apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyA1[t, :,:],point)
+            cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,policyC[t, :,:,0],apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyC[t, :,:],point)
+            hpath[t, n] = linear_interp.interp_2d(agrid,pgrid,policyh[t, :,:,0],apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyh[t, :,:],point)
+            Epath[t, n] = hpath[t, n]*w[t,0]
             
-            
-            if ((t >=3) & (t <=10)):
-                EPpath[t, 0] = Epath[t,0]/p.E_bar_now*1.5
-                EPpath_behav[t,0] = Epath[t,0]/p.E_bar_now
-                ppath[t+1, 0]=  ppath[t, 0]+1.5*p.w[t,0]*hpath[t, 0]/p.E_bar_now
+            if reform == 0:
+                ppath[t+1, n]=  ppath[t, n]+w[t,0]*hpath[t, n]/E_bar_now
             else:
-                EPpath[t, 0] = Epath[t,0]/p.E_bar_now
-                EPpath_behav[t,0] = Epath[t,0]/p.E_bar_now
-                ppath[t+1, 0]=  ppath[t, 0]+p.w[t,0]*hpath[t, 0]/p.E_bar_now
-    
-    
-    EPpath_c[0,0] = EPpath[0,0]+5
-    EPpath_behav_c[0,0] = EPpath_behav[0,0]+5
-    for t in range(1,p.T):
-        EPpath_c[t,0] = EPpath_c[t-1,0] + EPpath[t,0]
-        EPpath_behav_c[t,0] = EPpath_behav_c[t-1,0] + EPpath_behav[t,0]
-    
-    
-    EPpath_m_c = EPpath_c*p.ρ
-    EPpath_behav_m_c = EPpath_behav_c*p.ρ
-    
-    return ppath, cpath, apath, hpath, Epath, Epath_τ, vpath, EPpath, EPpath_c, EPpath_m_c, EPpath_behav, EPpath_behav_c, EPpath_behav_m_c
-
+                            
+                if ((t >=3) & (t <=10)):
+                    ppath[t+1, n]=  ppath[t, n]+1.5*w[t,0]*hpath[t, n]/E_bar_now
+                else:
+                    ppath[t+1, n]=  ppath[t, n]+w[t,0]*hpath[t, n]/E_bar_now
+        
+     
+    return ppath,cpath,apath,hpath,Epath

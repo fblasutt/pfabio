@@ -14,13 +14,13 @@ class setup():
         self.R = 35           # Retirement period
         self.r = 0.015        # Interest rate
         self.δ = 0.015    # Discount rate
-        self.β = 10        # Utility weight on leisure
+        self.β = 13.6        # Utility weight on leisure
         self.γc = 1      # risk pameter on consumption!!!Check in upperenvelop if not 1
-        self.γh = 1.5785     # risk pameter on labour
+        self.γh = 1.571     # risk pameter on labour
         self.y_N = 48000      # Unearned income
         self.E_bar_now = 30000  # Average earnings
         self.q = 0            # Fixed cost of pticipation
-        self.ρ =350#0.3#350       # Dollar value of points
+        self.ρ =350       # Dollar value of points
         self.τ = 0.2#.2         # marginal tax rate
         
         # Hourly wage
@@ -43,12 +43,15 @@ class setup():
         self.minHours = 1e-5  # min allowed hours
         self.maxHours = 1880
         
+        # simulations
+        self.N = 10000        # agents to simulate
+        
     
         # 2. GENERATE GRID
         
         # Assets
         self.numPtsA = 40
-        self.agrid=nonlinspace(0.00001,250000,self.numPtsA,1.4)#np.linspace(0.001,250000,self.numPtsA)
+        self.agrid=nonlinspace(0.0,250000,self.numPtsA,1.4)#np.linspace(0.0,250000,self.numPtsA)#
         self.startA = 10000   # Assets people start life with
         
         # Pension points
@@ -64,7 +67,7 @@ class setup():
 def utility(c,h,p):
 
     utils_c=-np.inf*np.ones(c.shape)
-    where=(c>0)
+    where=(c>0.000000001)
     if p.γc == 1:
         utils_c[where] = np.log(c[where])
     else:
@@ -82,7 +85,7 @@ def utility(c,h,p):
 def mcutility(c,p):
 
     utils_c=np.inf*np.ones(c.shape)
-    where=(c>0)
+    where=(c>0.000000001)
     if p.γc == 1:
         utils_c[where] = 1/c[where]*p.ρ
     else:
