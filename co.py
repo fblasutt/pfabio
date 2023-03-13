@@ -25,7 +25,7 @@ class setup():
         
         # Hourly wage
         self.wM=np.zeros(self.T)
-        for t in range(self.T):self.wM[t]=16
+        for t in range(self.T):self.wM[t]=8+0.5*t
         
         # Hourly wage dispersion
         self.nw=3
@@ -51,7 +51,7 @@ class setup():
         
         # Assets
         self.numPtsA = 40
-        self.agrid=nonlinspace(0.0,250000,self.numPtsA,1.4)#np.linspace(0.0,250000,self.numPtsA)#
+        self.agrid=nonlinspace(0.0,450000,self.numPtsA,1.4)#np.linspace(0.0,250000,self.numPtsA)#
         self.startA = 10000   # Assets people start life with
         
         # Pension points
@@ -72,6 +72,8 @@ def utility(c,h,p):
         utils_c[where] = np.log(c[where])
     else:
         utils_c[where] = c[where]**(1-p.γc)/(1-p.γc)
+
+
 
     if p.γh == 1:
         utils_h = np.log(h)

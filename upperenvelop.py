@@ -160,7 +160,7 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
     
                     c_interp = w1*c[i_b_1,i_a_1,i_w] + w2*c[i_b_2,i_a_2,i_w] + w3*c[i_b_3,i_a_3,i_w]
                     d_interp = 0.0
-                    a_interp = m_now#m_now 
+                    a_interp = m_now+0.0#m_now 
                     b_interp = n_now*(1+r) - c_interp + y_N#(n_now + c_interp - y_N)/(1+r) #assets
     
                 elif num == 3: # acon, interpolate d
@@ -170,6 +170,13 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
                     b_interp = 0.0
                     c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*d_interp + y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
                     
+                elif num == 4: # acon, interpolate d
+        
+                    d_interp = 0.0
+                    a_interp = m_now+0.0
+                    b_interp = 0.0
+                    c_interp = n_now*(1+r)+ y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
+                
     
                 if c_interp <= 0.0 or d_interp < 0.0 or a_interp < 0 or b_interp < 0:
                     continue
@@ -180,6 +187,7 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
                 v_interp=np.log(c_interp)+\
                      β*(d_interp)**(1 - γh) / (1 - γh)+\
                          1/(1+δ)*w_interp
+                         
                 # vi. update if max
                 if v_interp >out_v[i_n,i_m,i_w]:
     
