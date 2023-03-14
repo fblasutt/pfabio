@@ -43,7 +43,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         are different to avoid extrapolation
     """
     #Initialize some variables
-    r=p.r;δ=p.δ;γc=p.γc;R=p.R;τ=p.τ;β=p.β;
+    r=p.r;δ=p.δ;γc=p.γc;R=p.R;τ=p.τ;β=p.β;q=p.q;
     w=np.array(p.w);agrid=p.agrid;y_N=p.y_N;γh=p.γh;T=p.T;numPtsA=p.numPtsA;nw=p.nw;
     numPtsP=p.numPtsP;pgrid=p.pgrid;maxHours=p.maxHours;ρ=p.ρ;E_bar_now=p.E_bar_now;
     
@@ -142,33 +142,28 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
                     pe,ae,ce,he,#computed above...
                     1, # which foc to take in upperenvelop
                     V[t+1,:,:,:],
-                    γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ) 
+                    γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q) 
             
             #A constrained
             upperenvelop.compute(policyCca,policyhca,Vca,holesca,
                      peca,aeca,cgrid_box,heca,#computed above...
                      3, # which foc to take in upperenvelop
                      V[t+1,:,:,:],
-                     γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ) 
+                     γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q) 
             
             #A AND l constrained (not relevant now...)
             upperenvelop.compute(policyCc,policyhc,Vc,holesc,
                      pec,aec,cgrid_box,hec,#computed above...
                      4, # which foc to take in upperenvelop
                      V[t+1,:,:,:],
-                     γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ) 
-            
-            # #A AND l constrained (not relevant now...)
-            # policyCc=agrid_box*(1+r) + y_N
-            # Vc=co.utility(policyCc,policyhc,p)+\
-            #  1/(1+δ)*np.repeat(V[t+1,0,np.newaxis,:,:],numPtsA,axis=0)
+                     γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,0.0) 
              
             #h constrained
             upperenvelop.compute(policyCch,policyhch,Vch,holesch,
                      pech,aech,ce,hech,#computed above...
                      2, # which foc to take in upperenvelop
                      V[t+1,:,:,:],
-                     γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ)   
+                     γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,0.0)   
                         
             # b. upper envelope    
             seg_max = np.zeros(4)
@@ -179,7 +174,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
                         # i. find max
                         seg_max[0] = Vu[i_n,i_m,i_w]
                         seg_max[1] = Vca[i_n,i_m,i_w]
-                        seg_max[2] = Vc[i_n,i_m,i_w]
+                        seg_max[2] = Vc[i_n,i_m,i_w]-100000
                         seg_max[3] = Vch[i_n,i_m,i_w]
        
                         i = np.argmax(seg_max)

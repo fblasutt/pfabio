@@ -21,7 +21,7 @@ def compute(out_c,out_d,out_v,holes,
             m,n,c,d,
             num,
             w,
-            γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,valt=np.array([[]])):
+            γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,valt=np.array([[]])):
     
     # a. infer shape
     Nb,Na,nw = w.shape
@@ -65,14 +65,14 @@ def compute(out_c,out_d,out_v,holes,
                         upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,
                                       m,n,c,d,
                                       Na,Nb,valid,num,w,
-                                      γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ)                    
+                                      γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q)                    
                         
         # iii. fill holes (technique: nearest neighbor)
-        fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,Nb,Na,nw)
+        fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,Nb,Na,nw)
 
 @njit
 def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,num,w,
-                  γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,
+                  γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,
                   egm_extrap_add=2,egm_extrap_w=-0.25):
     
     # a. simplex in (a,b)-space (or similar with constrained choices)
@@ -163,14 +163,14 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
                     a_interp = m_now+0.0#m_now 
                     b_interp = n_now*(1+r) - c_interp + y_N#(n_now + c_interp - y_N)/(1+r) #assets
     
-                elif num == 3: # acon, interpolate d
+                elif num == 3: # bcon, interpolate d
     
                     d_interp = w1*d[i_b_1,i_a_1,i_w] + w2*d[i_b_2,i_a_2,i_w] + w3*d[i_b_3,i_a_3,i_w]
                     a_interp = m_now + d_interp*wt[i_w]/E_bar_now 
                     b_interp = 0.0
                     c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*d_interp + y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
                     
-                elif num == 4: # acon, interpolate d
+                elif num == 4: # acon,bcon
         
                     d_interp = 0.0
                     a_interp = m_now+0.0
@@ -184,9 +184,8 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
                 # v. value-of-choice
     
                 w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w],b_interp,a_interp)
-                v_interp=np.log(c_interp)+\
-                     β*(d_interp)**(1 - γh) / (1 - γh)+\
-                         1/(1+δ)*w_interp
+                v_interp=np.log(c_interp)+β*(maxHours-d_interp)**(1 - γh) / (1 - γh)-q+\
+                               1/(1+δ)*w_interp
                          
                 # vi. update if max
                 if v_interp >out_v[i_n,i_m,i_w]:
@@ -197,7 +196,7 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
                     holes[i_n,i_m,i_w] = 0
 
 @njit
-def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,Nn,Nm,nw):
+def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,Nn,Nm,nw):
 
     # a. locate global bounding box with content
     i_n_min = 0
@@ -275,7 +274,7 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,
     
                             c_interp = out_c[i_n_close,i_m_close,i_w]
                             d_interp = 0.0
-                            a_interp = m_now#m_now 
+                            a_interp = m_now+0.0#m_now 
                             b_interp = n_now*(1+r) - c_interp + y_N#(n_now + c_interp - y_N)/(1+r) #assets
     
                         elif num == 3: # acon, interpolate d
@@ -285,14 +284,19 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,
                             b_interp = 0.0
                             c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*d_interp + y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
                             
-    
+                        elif num == 4: # acon, interpolate d
+            
+                            d_interp = 0.0
+                            a_interp = m_now+0.0
+                            b_interp = 0.0
+                            c_interp = n_now*(1+r)+ y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
+                        
                         if c_interp <= 0.0 or d_interp < 0.0 or a_interp < 0 or b_interp < 0:
                             continue
     
                         # value-of-choice
                         w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w],b_interp,a_interp)
-                        v_interp=np.log(c_interp)+\
-                         β*(maxHours-d_interp)**(1 - γh) / (1 - γh)+\
+                        v_interp=np.log(c_interp)+β*(maxHours-d_interp)**(1 - γh) / (1 - γh)-q+\
                            1/(1+δ)*w_interp
     
                         # update if better

@@ -14,18 +14,18 @@ class setup():
         self.R = 35           # Retirement period
         self.r = 0.015        # Interest rate
         self.δ = 0.015    # Discount rate
-        self.β = 13.6        # Utility weight on leisure
+        self.β = 0.5        # Utility weight on leisure
         self.γc = 1      # risk pameter on consumption!!!Check in upperenvelop if not 1
-        self.γh = 1.571     # risk pameter on labour
+        self.γh = 1.09    # risk pameter on labour
         self.y_N = 48000      # Unearned income
         self.E_bar_now = 30000  # Average earnings
-        self.q = 0            # Fixed cost of pticipation
+        self.q = 0.0            # Fixed cost of pticipation
         self.ρ =350       # Dollar value of points
         self.τ = 0.2#.2         # marginal tax rate
         
         # Hourly wage
         self.wM=np.zeros(self.T)
-        for t in range(self.T):self.wM[t]=8+0.5*t
+        for t in range(self.T):self.wM[t]=16
         
         # Hourly wage dispersion
         self.nw=3

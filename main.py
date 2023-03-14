@@ -61,30 +61,30 @@ SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=np.ones(p.N)*p.startA,Pstart=np
 #Pension reform
 SP= sim.simNoUncer_interp(p,ModP,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
 
-# #Wages 1% higher than baseline in t=3 only 
-# STt= sim.simNoUncer_interp(pp,ModTt,Tstart=0,Astart=np.ones(p.N)*p.startA,Pstart=np.zeros(p.N))
+#Wages 1% higher than baseline in t=3 only 
+STt= sim.simNoUncer_interp(pp,ModTt,Tstart=0,Astart=np.ones(p.N)*p.startA,Pstart=np.zeros(p.N))
 
-# #Wages 1% higher than baseline for all t 
-# STp= sim.simNoUncer_interp(ppp,ModTp,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
+#Wages 1% higher than baseline for all t 
+STp= sim.simNoUncer_interp(ppp,ModTp,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
 
-# #Lower taxes such that post-tax wages are 1% higher than baseline  
-# STτ= sim.simNoUncer_interp(pppp,ModTτ,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
+#Lower taxes such that post-tax wages are 1% higher than baseline  
+STτ= sim.simNoUncer_interp(pppp,ModTτ,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
 
-# ########################################
-# # compute key elasticities
-# ########################################
+########################################
+# compute key elasticities
+########################################
 
 
-# #Frisch elasticity: %change in h for an expected 1% increase in wage w in t=3
-# ϵf=np.mean(np.diff(STt['h'][:,:],axis=0)[2])/np.mean(STt['h'][2,:])*100
-# ϵf_t=1.0/p.γh*(p.maxHours-np.mean(STt['h'][2,:]))/np.mean(STt['h'][2,:])
+#Frisch elasticity: %change in h for an expected 1% increase in wage w in t=3
+ϵf=np.mean(np.diff(STt['h'][:,:],axis=0)[2])/np.mean(STt['h'][2,:])*100
+ϵf_t=1.0/p.γh*(p.maxHours-np.mean(STt['h'][2,:]))/np.mean(STt['h'][2,:])
 
-# print("The Simulated Frisch Elasticity is {}, theoretical is {}".format(ϵf,ϵf_t,))
+print("The Simulated Frisch Elasticity is {}, theoretical is {}".format(ϵf,ϵf_t,))
 
-# #Marshallian elasticity: %change in h for an expected 1% increase in wage w forall t
-# ϵm=(np.mean(STp['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
-# ϵm_τ=(np.mean(STτ['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
-# print("The Marshallian Elasticity is {}, computed using taxes is {}".format(ϵm,ϵm_τ))
+#Marshallian elasticity: %change in h for an expected 1% increase in wage w forall t
+ϵm=(np.mean(STp['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
+ϵm_τ=(np.mean(STτ['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
+print("The Marshallian Elasticity is {}, computed using taxes is {}".format(ϵm,ϵm_τ))
 
 ########################################
 # plot the result
@@ -150,3 +150,4 @@ plt.show()
 
 
 print("Increase in pension points is {}".format(np.mean(np.diff(SP['p'],axis=0)[3:11,:])/np.mean(np.diff(SB['p'],axis=0)[3:11,:])-1))
+print("WLP is {}".format(np.mean(SB['h'][3:11,:]>0)))
