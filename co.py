@@ -80,7 +80,7 @@ def utility(c,h,p):
     else:
         utils_h = (p.maxHours-h)**(1-p.γh) / (1-p.γh)#(h)**(1+1/p.γh) / (1+1/p.γh)
 
-    utils = utils_c + p.β*utils_h - (h==0)*p.q
+    utils = utils_c + p.β*utils_h 
 
     return utils
 

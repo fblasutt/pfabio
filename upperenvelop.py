@@ -149,33 +149,34 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
                       continue
     
                 # iv. interpolate choices
-                if num == 1: # ucon, interpolate c and d
+                if num == 0: # ucon, interpolate c and d
     
                     c_interp = w1*c[i_b_1,i_a_1,i_w] + w2*c[i_b_2,i_a_2,i_w] + w3*c[i_b_3,i_a_3,i_w]
                     d_interp = w1*d[i_b_1,i_a_1,i_w] + w2*d[i_b_2,i_a_2,i_w] + w3*d[i_b_3,i_a_3,i_w]
                     a_interp = m_now + d_interp*wt[i_w]/E_bar_now #m_now - d_interp*wt[i_w]/E_bar_now                     #points
                     b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*d_interp + y_N#(n_now + c_interp - wt*(1-τ)*d_interp - y_N)/(1+r) #assets
-    
-                elif num == 2: # dcon, interpolate c
-    
-                    c_interp = w1*c[i_b_1,i_a_1,i_w] + w2*c[i_b_2,i_a_2,i_w] + w3*c[i_b_3,i_a_3,i_w]
-                    d_interp = 0.0
-                    a_interp = m_now+0.0#m_now 
-                    b_interp = n_now*(1+r) - c_interp + y_N#(n_now + c_interp - y_N)/(1+r) #assets
-    
-                elif num == 3: # bcon, interpolate d
+
+                elif num == 1: # bcon, interpolate d
     
                     d_interp = w1*d[i_b_1,i_a_1,i_w] + w2*d[i_b_2,i_a_2,i_w] + w3*d[i_b_3,i_a_3,i_w]
                     a_interp = m_now + d_interp*wt[i_w]/E_bar_now 
                     b_interp = 0.0
                     c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*d_interp + y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
                     
-                elif num == 4: # acon,bcon
+                elif num == 2: # acon,bcon
         
                     d_interp = 0.0
                     a_interp = m_now+0.0
                     b_interp = 0.0
                     c_interp = n_now*(1+r)+ y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
+                    
+                elif num == 3: # dcon, interpolate c
+    
+                    c_interp = w1*c[i_b_1,i_a_1,i_w] + w2*c[i_b_2,i_a_2,i_w] + w3*c[i_b_3,i_a_3,i_w]
+                    d_interp = 0.0
+                    a_interp = m_now+0.0#m_now 
+                    b_interp = n_now*(1+r) - c_interp + y_N#(n_now + c_interp - y_N)/(1+r) #assets
+    
                 
     
                 if c_interp <= 0.0 or d_interp < 0.0 or a_interp < 0 or b_interp < 0:
@@ -263,33 +264,35 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,
                         if holes[i_n_close,i_m_close,i_w] == 1: # if itself a hole
                             continue
     
-                        if num == 1: # ucon, interpolate c and d
+                        if num == 0: # ucon, interpolate c and d
     
                             c_interp = out_c[i_n_close,i_m_close,i_w]
                             d_interp = out_d[i_n_close,i_m_close,i_w]
                             a_interp = m_now + d_interp*wt[i_w]/E_bar_now 
                             b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*d_interp + y_N
+
+                        elif num == 1: # acon, interpolate d
     
-                        elif num == 2: # dcon, interpolate c
+                           d_interp = out_d[i_n_close,i_m_close,i_w]
+                           a_interp = m_now + d_interp*wt[i_w]/E_bar_now 
+                           b_interp = 0.0
+                           c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*d_interp + y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
+                           
+                        elif num == 2: # acon, interpolate d
+            
+                            d_interp = 0.0
+                            a_interp = m_now+0.0
+                            b_interp = 0.0
+                            c_interp = n_now*(1+r)+ y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
+                            
+                        elif num == 3: # dcon, interpolate c
     
                             c_interp = out_c[i_n_close,i_m_close,i_w]
                             d_interp = 0.0
                             a_interp = m_now+0.0#m_now 
                             b_interp = n_now*(1+r) - c_interp + y_N#(n_now + c_interp - y_N)/(1+r) #assets
     
-                        elif num == 3: # acon, interpolate d
     
-                            d_interp = out_d[i_n_close,i_m_close,i_w]
-                            a_interp = m_now + d_interp*wt[i_w]/E_bar_now 
-                            b_interp = 0.0
-                            c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*d_interp + y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
-                            
-                        elif num == 4: # acon, interpolate d
-            
-                            d_interp = 0.0
-                            a_interp = m_now+0.0
-                            b_interp = 0.0
-                            c_interp = n_now*(1+r)+ y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
                         
                         if c_interp <= 0.0 or d_interp < 0.0 or a_interp < 0 or b_interp < 0:
                             continue

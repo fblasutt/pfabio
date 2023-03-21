@@ -53,11 +53,21 @@ def fast_simulate(Tstart,Astart,Pstart,T,N,agrid,pgrid,w,E_bar_now,
     for t in range(Ti,T-1):  # loop through time periods for a pticular individual
         for n in range(N):
     
-        
+            #Get the discrete choices first...
+            Vi=np.zeros(4)-np.inf
+            for p in range(4):
+                Vi[p]=linear_interp.interp_2d(agrid,pgrid,V[t,p,:,:,0],apath[t,n],ppath[t,n])
+          
+            i=np.argmax(Vi)
+            A1p=policyA1[t,i, :,:,0]
+            Cp=policyC[t,i, :,:,0]
+            hp=policyh[t,i, :,:,0]
+
+                    
             point=np.array([apath[t,n],ppath[t,n]]) #where to interpolate
-            apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,policyA1[t, :,:,0],apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyA1[t, :,:],point)
-            cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,policyC[t, :,:,0],apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyC[t, :,:],point)
-            hpath[t, n] = linear_interp.interp_2d(agrid,pgrid,policyh[t, :,:,0],apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyh[t, :,:],point)
+            apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyA1[t, :,:],point)
+            cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyC[t, :,:],point)
+            hpath[t, n] = linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyh[t, :,:],point)
             Epath[t, n] = hpath[t, n]*w[t,0]
             
             if reform == 0:
