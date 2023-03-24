@@ -28,7 +28,7 @@ def simNoUncer_interp(p, model, Tstart=-1, Astart=0.0, Pstart=0.0):
     
     return {'p':ppath,'c':cpath,'A':apath,'h':hpath,'wh':Epath}
     
-@njit
+#@njit
 def fast_simulate(Tstart,Astart,Pstart,T,N,agrid,pgrid,w,E_bar_now,
                   policyA1,policyC,policyh,V,reform):
 
@@ -55,16 +55,17 @@ def fast_simulate(Tstart,Astart,Pstart,T,N,agrid,pgrid,w,E_bar_now,
     
             #Get the discrete choices first...
             Vi=np.zeros(4)-np.inf
-            for p in range(4):
-                Vi[p]=linear_interp.interp_2d(agrid,pgrid,V[t,p,:,:,0],apath[t,n],ppath[t,n])
-          
+            for pp in range(4):
+                Vi[pp]=linear_interp.interp_2d(agrid,pgrid,V[t,pp,:,:,0],apath[t,n],ppath[t,n])
+                if pp==0:Vi[pp]+0.000000001
+                if pp==2:Vi[pp]+0.000000001
+            Vi[np.isnan(Vi)]=-1e8
             i=np.argmax(Vi)
             A1p=policyA1[t,i, :,:,0]
             Cp=policyC[t,i, :,:,0]
             hp=policyh[t,i, :,:,0]
 
-                    
-            point=np.array([apath[t,n],ppath[t,n]]) #where to interpolate
+
             apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyA1[t, :,:],point)
             cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyC[t, :,:],point)
             hpath[t, n] = linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyh[t, :,:],point)

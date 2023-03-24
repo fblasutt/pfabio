@@ -21,7 +21,7 @@ def compute(out_c,out_d,out_v,holes,
             m,n,c,d,
             num,
             w,
-            γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,valt=np.array([[]])):
+            γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,valt=np.array([[]])):
     
     # a. infer shape
     Nb,Na,nw = w.shape
@@ -65,14 +65,14 @@ def compute(out_c,out_d,out_v,holes,
                         upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,
                                       m,n,c,d,
                                       Na,Nb,valid,num,w,
-                                      γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q)                    
+                                      γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin)                    
                         
         # iii. fill holes (technique: nearest neighbor)
-        fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,Nb,Na,nw)
+        fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,Nb,Na,nw)
 
 @njit
 def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,num,w,
-                  γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,
+                  γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,
                   egm_extrap_add=2,egm_extrap_w=-0.25):
     
     # a. simplex in (a,b)-space (or similar with constrained choices)
@@ -132,8 +132,8 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
 
     # e. loop through common grid nodes in interior of bounding box
     for i_n in range(in_low,in_high):
+       
         for i_m in range(im_low,im_high):
-
             if holes[i_n,i_m,i_w]>0:
                 # i. common grid values
                 m_now = pgrid[i_m]
@@ -148,26 +148,28 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
                 if w1 < egm_extrap_w or w2 < egm_extrap_w or w3 < egm_extrap_w:
                       continue
     
+               
                 # iv. interpolate choices
                 if num == 0: # ucon, interpolate c and d
     
                     c_interp = w1*c[i_b_1,i_a_1,i_w] + w2*c[i_b_2,i_a_2,i_w] + w3*c[i_b_3,i_a_3,i_w]
-                    d_interp = w1*d[i_b_1,i_a_1,i_w] + w2*d[i_b_2,i_a_2,i_w] + w3*d[i_b_3,i_a_3,i_w]
+                    d_interp = 1.0#w1*d[i_b_1,i_a_1,i_w] + w2*d[i_b_2,i_a_2,i_w] + w3*d[i_b_3,i_a_3,i_w]
                     a_interp = m_now + d_interp*wt[i_w]/E_bar_now #m_now - d_interp*wt[i_w]/E_bar_now                     #points
                     b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*d_interp + y_N#(n_now + c_interp - wt*(1-τ)*d_interp - y_N)/(1+r) #assets
 
+
                 elif num == 1: # bcon, interpolate d
     
-                    d_interp = w1*d[i_b_1,i_a_1,i_w] + w2*d[i_b_2,i_a_2,i_w] + w3*d[i_b_3,i_a_3,i_w]
+                    d_interp = 1.0#w1*d[i_b_1,i_a_1,i_w] + w2*d[i_b_2,i_a_2,i_w] + w3*d[i_b_3,i_a_3,i_w]
                     a_interp = m_now + d_interp*wt[i_w]/E_bar_now 
-                    b_interp = 0.0
+                    b_interp = amin
                     c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*d_interp + y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
                     
                 elif num == 2: # acon,bcon
         
                     d_interp = 0.0
                     a_interp = m_now+0.0
-                    b_interp = 0.0
+                    b_interp = amin
                     c_interp = n_now*(1+r)+ y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N
                     
                 elif num == 3: # dcon, interpolate c
@@ -179,7 +181,7 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
     
                 
     
-                if c_interp <= 0.0 or d_interp < 0.0 or a_interp < 0 or b_interp < 0:
+                if c_interp <= 0.0 or d_interp < 0.0 or a_interp < 0 or b_interp < amin:
                     continue
     
                 # v. value-of-choice
@@ -197,7 +199,7 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
                     holes[i_n,i_m,i_w] = 0
 
 @njit
-def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,Nn,Nm,nw):
+def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,Nn,Nm,nw):
 
     # a. locate global bounding box with content
     i_n_min = 0
@@ -242,10 +244,9 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,
     for i_n in range(i_n_min,i_n_max):
         for i_m in range(i_m_min,i_m_max):
             for i_w in range(nw):
-            
                 if holes[i_n,i_m,i_w] == 0: # if not hole
                     continue
-    
+     
                 m_now = pgrid[i_m]
                 n_now = agrid[i_n]
                 m_add = 2
@@ -267,13 +268,13 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,
                         if num == 0: # ucon, interpolate c and d
     
                             c_interp = out_c[i_n_close,i_m_close,i_w]
-                            d_interp = out_d[i_n_close,i_m_close,i_w]
+                            d_interp = 1.0#out_d[i_n_close,i_m_close,i_w]
                             a_interp = m_now + d_interp*wt[i_w]/E_bar_now 
                             b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*d_interp + y_N
 
                         elif num == 1: # acon, interpolate d
     
-                           d_interp = out_d[i_n_close,i_m_close,i_w]
+                           d_interp = 1.0#out_d[i_n_close,i_m_close,i_w]
                            a_interp = m_now + d_interp*wt[i_w]/E_bar_now 
                            b_interp = 0.0
                            c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*d_interp + y_N#n_now+wt[i_w]*(1-τ)*d_interp + y_N

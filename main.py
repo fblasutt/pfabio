@@ -148,6 +148,47 @@ plt.xlabel("Age")
 plt.legend(('c','earn'))
 plt.show()
 
+#Graph the value of participating or not in the labor market 2 periods before retirement
+fig, ax = plt.subplots(figsize=(11, 8))   #Initialize figure and size
+ax.plot(p.agrid,ModB['V'][p.R-2,3,:,0,0], label="Value of FLP=0") 
+ax.plot(p.agrid,ModB['V'][p.R-2,0,:,0,0], label="Value of FLP=1") 
+#ax.plot(p.agrid,ModB['V'][p.R-2,2,:,0,0], label="Value of FLP=0") 
+#ax.plot(p.agrid,ModB['V'][p.R-2,1,:,0,0], label="Value of FLP=1") 
+ax.grid()
+ax.set_xlabel('Assets')                   #Label of x axis
+ax.set_ylabel('Utility')                  #Label of y axis
+plt.legend()                              #Plot the legend
+plt.show()                                #Show the graph
+
+
+#Graph difference in the value of participating and not in the mkt
+fig, ax = plt.subplots(figsize=(11, 8))   #Initialize figure and size
+ax.plot(p.agrid,ModB['V'][p.R-2,3,:,0,0]-ModB['V'][p.R-2,0,:,0,0], label="Value(FLP=0)-Value(FLP=1)") 
+ax.grid()
+ax.set_xlabel('Assets')                   #Label of x axis
+ax.set_ylabel('Utility')                  #Label of y axis
+plt.legend()                              #Plot the legend
+plt.show()                                #Show the graph
+
+
+#Consumption under participation and not participation
+fig, ax = plt.subplots(figsize=(11, 8))   #Initialize figure and size
+ax.plot(p.agrid[:],ModB['c'][p.R-2,0,:,0,0], label="Cons if FLP=1") 
+ax.plot(p.agrid[:],ModB['c'][p.R-2,3,:,0,0], label="Cons if FLP=0") 
+ax.grid()
+ax.set_xlabel('Assets')                   #Label of x axis
+ax.set_ylabel('Consumption')              #Label of y axis
+plt.legend()                              #Plot the legend
+plt.show()     
+
+fig, ax = plt.subplots(figsize=(11, 8))   #Initialize figure and size
+ax.plot(p.agrid[:],ModB['A'][p.R-2,0,:,0,0], label="Cons if FLP=1") 
+ax.plot(p.agrid[:],ModB['A'][p.R-2,3,:,0,0], label="Cons if FLP=0") 
+ax.grid()
+ax.set_xlabel('Assets')                   #Label of x axis
+ax.set_ylabel('Consumption')              #Label of y axis
+plt.legend()                              #Plot the legend
+plt.show()     
 
 print("Increase in pension points is {}".format(np.mean(np.diff(SP['p'],axis=0)[3:11,:])/np.mean(np.diff(SB['p'],axis=0)[3:11,:])-1))
 print("WLP is {}".format(np.mean(SB['h'][3:11,:]>0)))

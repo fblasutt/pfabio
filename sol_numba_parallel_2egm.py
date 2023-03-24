@@ -17,7 +17,7 @@ def solveEulerEquation(reform, p):
     time_start = time.time()
         
     #Initiate some variables
-    policyA1,policyh,policyC,V,policyp,pmutil,whic = np.empty((7,p.T, p.numPtsA, p.numPtsP))
+    policyA1,policyh,policyC,V,policyp,pmutil,whic = np.empty((7,p.T, p.NA, p.numPtsP))
      
     #Call the routing to solve the model
     solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform,p)
@@ -37,20 +37,20 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
     """
     #Initialize some variables
     r=p.r;δ=p.δ;γc=p.γc;R=p.R;τ=p.τ;β=p.β;
-    w=np.array(p.w);agrid=p.agrid;y_N=p.y_N;γh=p.γh;T=p.T;numPtsA=p.numPtsA
+    w=np.array(p.w);agrid=p.agrid;y_N=p.y_N;γh=p.γh;T=p.T;NA=p.NA
     numPtsP=p.numPtsP;pgrid=p.pgrid;maxHours=p.maxHours;ρ=p.ρ;E_bar_now=p.E_bar_now;
     
     #Grid for assets and points
     agrid_box=np.transpose(np.tile(agrid,(numPtsP,1)))
-    pgrid_box=np.tile(pgrid,(numPtsA,1))
+    pgrid_box=np.tile(pgrid,(NA,1))
     
     #Grid for consumption
-    cgrid=nonlinspace(agrid[0],agrid[-1]*(1+r)+y_N+np.max(w)*maxHours*(1-τ),numPtsA,1.4)
+    cgrid=nonlinspace(agrid[0],agrid[-1]*(1+r)+y_N+np.max(w)*maxHours*(1-τ),NA,1.4)
     cgrid_box=np.transpose(np.tile(cgrid,(numPtsP,1)))
     
     #Last period decisions below
-    policyA1[T-1,:,:] = np.zeros((numPtsA, numPtsP))  # optimal savings
-    policyh[T-1,:,:] = np.zeros((numPtsA, numPtsP))   # optimal earnings
+    policyA1[T-1,:,:] = np.zeros((NA, numPtsP))  # optimal savings
+    policyh[T-1,:,:] = np.zeros((NA, numPtsP))   # optimal earnings
     policyC[T-1,:,:] = agrid_box*(1+r) + y_N +\
                                 ρ*pgrid_box        # optimal consumption
     pmutil[T-1,:,:]=co.mcutility(policyC[T-1,:,:], p)       # mu of more pension points        
@@ -62,7 +62,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         
         #Define initial variable for fast coputation later
         pmu=pmutil[t+1,:,:]
-        pmuc=np.reshape(np.repeat(pmu[0,:],numPtsA),(numPtsA,numPtsP),order="F")
+        pmuc=np.reshape(np.repeat(pmu[0,:],NA),(NA,numPtsP),order="F")
         
         wt=w[t]
         policy=((t >=3) & (t <=10) & (reform==1))
@@ -91,7 +91,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
             hec=ne.evaluate('maxHours-((mult_pensc+wt*(1-τ)*(cgrid_box**(-γc)))/β)**(-1/γh)')
         else:        
             #Retired case        
-            he=np.zeros((numPtsA, numPtsP))
+            he=np.zeros((NA, numPtsP))
                   
         
         #Retired
@@ -123,8 +123,8 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         # Now interpolate to be back on grid...
         ###############################################
           
-        which,policyCu,policyhu,Vu,policyCcl,policyhcl,Vcl,policyCca,policyhca,Vca,policyCc,policyhc,Vc=np.zeros((13,numPtsA,numPtsP))
-        holesu,holescl,holesca = np.ones((3,numPtsA,numPtsP))
+        which,policyCu,policyhu,Vu,policyCcl,policyhcl,Vcl,policyCca,policyhca,Vca,policyCc,policyhc,Vc=np.zeros((13,NA,numPtsP))
+        holesu,holescl,holesca = np.ones((3,NA,numPtsP))
         
         #Not retired
         if (t+1<=R):     
@@ -146,11 +146,11 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
             #A AND l constrained (not relevant now...)
             policyCc=agrid_box*(1+r) + y_N
             Vc=co.utility(policyCc,policyhc,p)+\
-             1/(1+δ)*np.reshape(np.repeat(V[t+1,0,:],numPtsA),(numPtsA,numPtsP),order="F")#np.repeat(V[t+1,0,:],numPtsA).reshape(numPtsA,numPtsP)
+             1/(1+δ)*np.reshape(np.repeat(V[t+1,0,:],NA),(NA,numPtsP),order="F")#np.repeat(V[t+1,0,:],NA).reshape(NA,numPtsP)
                         
             # b. upper envelope    
             seg_max = np.zeros(3)
-            for i_n in range(numPtsA):
+            for i_n in range(NA):
                 for i_m in range(numPtsP):
         
                     # i. find max
@@ -191,7 +191,7 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,whic,pmutil,reform
         Ph=policyh[t,:,:]
         points=ne.evaluate('pgrid_box+wt*Ph/E_bar_now')
         
-        Pmua=np.zeros((numPtsA, numPtsP))
+        Pmua=np.zeros((NA, numPtsP))
         for i in range(numPtsP):
             linear_interp.interp_2d_vec(agrid,pgrid,pmu,policyA1[t,:,i],points[:,i],Pmua[:,i])# #pmu on the grid!!!
         if (t+1>R): 
