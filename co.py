@@ -10,23 +10,23 @@ class setup():
     def __init__(self):
 
         # Economic Environment: set pameters
-        self.T = 60           # Number of time periods
-        self.R = 45           # Retirement period
-        self.r = 0.0        # Interest rate
+        self.T = 55           # Number of time periods
+        self.R = 35           # Retirement period
+        self.r = 0.015        # Interest rate
         self.δ = 0.015    # Discount rate
         self.β = 0.0        # Utility weight on leisure
         self.γc = 1      # risk pameter on consumption!!!Check in upperenvelop if not 1
         self.γh = 1.09    # risk pameter on labour
-        self.y_N = 0.2      # Unearned income
+        self.y_N = 48000      # Unearned income
         self.E_bar_now = 30000  # Average earnings
-        self.q = 1.0            # Fixed cost of pticipation
-        self.ρ =0.01       # Dollar value of points
-        self.τ = 0.0#.2         # marginal tax rate
+        self.q = 0.15            # Fixed cost of pticipation
+        self.ρ =350.0       # Dollar value of points
+        self.τ = 0.2         # marginal tax rate
         self.ϵ=0.000000001
         
         # Hourly wage
         self.wM=np.zeros(self.T)
-        for t in range(self.T):self.wM[t]=0.4+0.0*t
+        for t in range(self.T):self.wM[t]=10+0.1*t
         
         # Hourly wage dispersion
         self.nw=2
@@ -51,14 +51,14 @@ class setup():
         # 2. GENERATE GRID
         
         # Assets
-        self.NA = 50
-        self.amin=-10.0
-        self.amax=30.0
+        self.NA = 200
+        self.amin=-200000
+        self.amax=250000
         self.agrid=np.linspace(self.amin,self.amax,self.NA)#nonlinspace(0.0,450000,self.NA,1.4)#np.linspace(0.0,250000,self.NA)#
         self.startA = 0.0   # Assets people start life with
         
         # Pension points
-        self.NP =30
+        self.NP =20
         self.pgrid=nonlinspace(0.0,self.R,self.NP,1.4)#np.linspace(0,self.R,self.NP)## # max one point per year in the law...
         self.startP = 0   # points people start life with
         

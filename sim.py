@@ -28,7 +28,7 @@ def simNoUncer_interp(p, model, Tstart=-1, Astart=0.0, Pstart=0.0):
     
     return {'p':ppath,'c':cpath,'A':apath,'h':hpath,'wh':Epath}
     
-#@njit
+@njit
 def fast_simulate(Tstart,Astart,Pstart,T,N,agrid,pgrid,w,E_bar_now,
                   policyA1,policyC,policyh,V,reform):
 
