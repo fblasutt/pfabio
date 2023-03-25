@@ -104,13 +104,13 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,pmutil,whic,holes,
             
             #Unconstrained
             ce[0,...]=c1*np.power(((1+r)/(1+δ)),(-1/γc)) #Euler eq.
-            he[0,...]=800.0#maxHours-((mp*wt/E_bar_now*pmu/(1+δ)\
-                          #   +wt*(1-τ)*(ce[0,...]**(-γc)))/β)**(-1/γh)
+            he[0,...]=maxHours-((mp*wt/E_bar_now*pmu/(1+δ)\
+                             +wt*(1-τ)*(ce[0,...]**(-γc)))/β)**(-1/γh)
             pe[0,...]=pgrid_box-    mp*he[0,...]*wt/E_bar_now   #Pens. points
             ae[0,...]=(agrid_box-wt*he[0,...]*(1-τ)-y_N+ce[0,...])/(1+r)#Savings
             
             #Constrained (assets)
-            he[1,...]=800.0#maxHours-((mp*wt/E_bar_now*pmuc/(1+δ)+wt*(1-τ)*(cgrid_box**(-γc)))/β)**(-1/γh)        #Labor supply
+            he[1,...]=maxHours-((mp*wt/E_bar_now*pmuc/(1+δ)+wt*(1-τ)*(cgrid_box**(-γc)))/β)**(-1/γh)        #Labor supply
             pe[1,...]=pgrid_box-   mp*he[1,...]*wt/E_bar_now      #Pens. points
             ce[1,...]=cgrid_box.copy()
             ae[1,...]=(ce[1,...] - wt*(1-τ)*he[1,...] - y_N+amin)/(1+r)#Savings

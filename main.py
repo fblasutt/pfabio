@@ -39,21 +39,24 @@ ModP= sol.solveEulerEquation(p,model='pension reform')
 #Baseline
 ModB = sol.solveEulerEquation(p,model='baseline')
 
-# #Wages 1% hihgher than baseline in t=3 only 
-# pp = co.setup();pp.w[3,:]=1.01*pp.w[3,:]
-# ModTt = sol.solveEulerEquation(pp,model='baseline')
+#Wages 1% hihgher than baseline in t=3 only 
+pWt = co.setup();pWt.w[3,:]=1.01*pWt.w[3,:]
+ModWt = sol.solveEulerEquation(pWt,model='baseline')
 
-# #Wages 1% hihgher than baseline for all t
-# ppp = co.setup();ppp.w=1.01*ppp.w
-# ModTp = sol.solveEulerEquation(ppp,model='baseline')
+#Wages 1% hihgher than baseline for all t
+pWp = co.setup();pWp.w=1.01*pWp.w
+ModWp = sol.solveEulerEquation(pWp,model='baseline')
 
-# #Lower taxes such that post-tax wages are 1% higher than baseline  for all t
-# pppp = co.setup();pppp.τ=1-1.01*(1-pppp.τ)
-# ModTτ = sol.solveEulerEquation(pppp,model='baseline')
+#Lower permanent taxes such that post-tax wages are 1% higher than baseline  for all t
+pτp = co.setup();pτp.τ=1-1.01*(1-pτp.τ)
+Modτp = sol.solveEulerEquation(pτp,model='baseline')
 
-# ########################################
-# # simulate the model
-# ########################################
+#Compute the Frisch 
+#pΩ
+#ModΩ
+########################################
+# simulate the model
+########################################
 
 #Baseline
 SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=np.ones(p.N)*p.startA,Pstart=np.zeros(p.N))
@@ -61,30 +64,39 @@ SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=np.ones(p.N)*p.startA,Pstart=np
 #Pension reform
 SP= sim.simNoUncer_interp(p,ModP,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
 
-# #Wages 1% higher than baseline in t=3 only 
-# STt= sim.simNoUncer_interp(pp,ModTt,Tstart=0,Astart=np.ones(p.N)*p.startA,Pstart=np.zeros(p.N))
+#Wages 1% higher than baseline in t=3 only 
+SWt= sim.simNoUncer_interp(pWt,ModWt,Tstart=2,Astart=SB['A'][2,:],Pstart=SB['p'][2,:])
 
-# #Wages 1% higher than baseline for all t 
-# STp= sim.simNoUncer_interp(ppp,ModTp,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
+#Wages 1% higher than baseline for all t 
+SWp= sim.simNoUncer_interp(pWp,ModWp,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
 
-# #Lower taxes such that post-tax wages are 1% higher than baseline  
-# STτ= sim.simNoUncer_interp(pppp,ModTτ,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
+#Lower taxes such that post-tax wages are 1% higher than baseline  
+Sτp= sim.simNoUncer_interp(pτp,Modτp,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
 
-# ########################################
-# # compute key elasticities
-# ########################################
+#Wages 1% higher than baseline in t=3 only: UNEXPECTED CHANGE 
+SWt_un= sim.simNoUncer_interp(pWt,ModWt,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
+
+#Wages are permanently higher but I control for wealth
+SWp_comp= sim.simNoUncer_interp(pWp,ModWp,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:],Vstart=ModB['V'])
+
+########################################
+# compute key elasticities
+########################################
 
 
-# #Frisch elasticity: %change in h for an expected 1% increase in wage w in t=3
-# ϵf=np.mean(np.diff(STt['h'][:,:],axis=0)[2])/np.mean(STt['h'][2,:])*100
-# ϵf_t=1.0/p.γh*(p.maxHours-np.mean(STt['h'][2,:]))/np.mean(STt['h'][2,:])
+#Frisch elasticity: %change in h for an expected 1% increase in wage w in t=3
+ϵf_Wt=(np.mean(SWt['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
+ϵf_T=1.0/p.γh*(p.maxHours-np.mean(SB['h'][3,:]))/np.mean(SB['h'][3,:])
+print("The Simulated Frisch Elasticity is {}, theoretical is {}".format(ϵf_Wt,ϵf_T))
 
-# print("The Simulated Frisch Elasticity is {}, theoretical is {}".format(ϵf,ϵf_t,))
+#Hicks elasticity: %change in h for an unxpected 1% increase in wage w in t=3
+ϵh_Wp_comp=(np.mean(SWp_comp['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
+print("The Simulated (life-cycle) Hicks Elasticity is {}".format(ϵh_Wp_comp))
 
-# #Marshallian elasticity: %change in h for an expected 1% increase in wage w forall t
-# ϵm=(np.mean(STp['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
-# ϵm_τ=(np.mean(STτ['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
-# print("The Marshallian Elasticity is {}, computed using taxes is {}".format(ϵm,ϵm_τ))
+#Marshallian elasticity: %change in h for an expected 1% increase in wage w forall t
+ϵm_Wp=(np.mean(SWp['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
+ϵm_τ=(np.mean(Sτp['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
+print("The Marshallian Elasticity is {}, computed using taxes is {}".format(ϵm_Wp,ϵm_τ))
 
 ########################################
 # plot the result
