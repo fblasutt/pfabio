@@ -59,7 +59,7 @@ Modτp = sol.solveEulerEquation(pτp,model='baseline')
 ########################################
 
 #Baseline
-SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=np.ones(p.N)*p.startA,Pstart=np.zeros(p.N))
+SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.zeros(p.N))
 
 #Pension reform
 SP= sim.simNoUncer_interp(p,ModP,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
