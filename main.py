@@ -84,18 +84,18 @@ SWp_comp= sim.simNoUncer_interp(pWp,ModWp,Tstart=3,Astart=SB['A'][3,:],Pstart=SB
 ########################################
 
 
-#Frisch elasticity: %change in h for an expected 1% increase in wage w in t=3
+#Frisch elasticity: %change id(t)n h for an expected 1% increase in wage w in t=3
 ϵf_Wt=(np.mean(SWt['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
 ϵf_T=1.0/p.γh*(p.maxHours-np.mean(SB['h'][3,:]))/np.mean(SB['h'][3,:])
 print("The Simulated Frisch Elasticity is {}, theoretical is {}".format(ϵf_Wt,ϵf_T))
 
 #Hicks elasticity: %change in h for an unxpected 1% increase in wage w in t=3
-ϵh_Wp_comp=(np.mean(SWp_comp['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
+ϵh_Wp_comp=np.mean(SWp_comp['h'][3,:])/np.mean(SB['h'][3,:])
 print("The Simulated (life-cycle) Hicks Elasticity is {}".format(ϵh_Wp_comp))
 
 #Marshallian elasticity: %change in h for an expected 1% increase in wage w forall t
-ϵm_Wp=(np.mean(SWp['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
-ϵm_τ=(np.mean(Sτp['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
+ϵm_Wp=np.mean(SWp['h'][3,:])/np.mean(SB['h'][3,:])
+ϵm_τ=np.mean(Sτp['h'][3,:])/np.mean(SB['h'][3,:])
 print("The Marshallian Elasticity is {}, computed using taxes is {}".format(ϵm_Wp,ϵm_τ))
 
 ########################################

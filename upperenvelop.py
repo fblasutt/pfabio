@@ -187,7 +187,7 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
                 # v. value-of-choice
     
                 w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w],b_interp,a_interp)
-                v_interp=np.log(c_interp)+β*(maxHours-d_interp)**(1 - γh) / (1 - γh)-q+\
+                v_interp=np.log(c_interp)+β*d_interp**(1+1/γh) / (1+1/γh)-q+\
                                1/(1+δ)*w_interp
                          
                 # vi. update if max
@@ -300,7 +300,7 @@ def fill_holes(out_c,out_d,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,
     
                         # value-of-choice
                         w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w],b_interp,a_interp)
-                        v_interp=np.log(c_interp)+β*(maxHours-d_interp)**(1 - γh) / (1 - γh)-q+\
+                        v_interp=np.log(c_interp)-β*d_interp**(1 +1/ γh) / (1 +1/ γh)-q+\
                            1/(1+δ)*w_interp
     
                         # update if better
