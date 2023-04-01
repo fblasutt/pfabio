@@ -61,7 +61,9 @@ def compute(out_c,out_d,out_v,holes,
         for i_b in range(Nb):
             for i_a in range(Na):
                 for i_w in range(nw):
-                    for tri in range(2): #consider both upper and lower triangle        
+                    for tri in range(2): #consider both upper and lower triangle     
+                    
+          
                         upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,
                                       m,n,c,d,
                                       Na,Nb,valid,num,w,
@@ -73,7 +75,7 @@ def compute(out_c,out_d,out_v,holes,
 @njit
 def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,num,w,
                   γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,
-                  egm_extrap_add=2,egm_extrap_w=-0.25):
+                  egm_extrap_add=4,egm_extrap_w=-0.45):
     
     # a. simplex in (a,b)-space (or similar with constrained choices)
     i_b_1 = i_b
@@ -139,6 +141,7 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
                 m_now = pgrid[i_m]
                 n_now = agrid[i_n]
     
+    
                 # ii. barycentric coordinates
                 w1 = ((n2-n3)*(m_now-m3) + (m3-m2)*(n_now-n3)) / denom
                 w2 = ((n3-n1)*(m_now-m3) + (m1-m3)*(n_now-n3)) / denom
@@ -178,8 +181,7 @@ def upperenvelope(out_c,out_d,out_v,holes,i_a,i_b,tri,i_w,m,n,c,d,Na,Nb,valid,nu
                     d_interp = 0.0
                     a_interp = m_now+0.0#m_now 
                     b_interp = n_now*(1+r) - c_interp + y_N#(n_now + c_interp - y_N)/(1+r) #assets
-    
-                
+
     
                 if c_interp <= 0.0 or d_interp < 0.0 or a_interp < 0 or b_interp < amin:
                     continue

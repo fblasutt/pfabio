@@ -102,6 +102,8 @@ def solveEulerEquation1(policyA1, policyh, policyC, policyp,V,pmutil,whic,holes,
             #Not retired case
             ###################################################################
             
+            #cgrid_box=np.maximum(cgrid_box,0.00000000001)
+            
             #Unconstrained
             ce[0,...]=c1*np.power(((1+r)/(1+δ)),(-1/γc)) #Euler eq.
             he[0,...]=((mp*wt/E_bar_now*pmu/(1+δ)\

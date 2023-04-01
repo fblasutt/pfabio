@@ -39,17 +39,6 @@ ModP= sol.solveEulerEquation(p,model='pension reform')
 #Baseline
 ModB = sol.solveEulerEquation(p,model='baseline')
 
-#Wages 1% hihgher than baseline in t=3 only 
-pWt = co.setup();pWt.w[3,:]=1.01*pWt.w[3,:]
-ModWt = sol.solveEulerEquation(pWt,model='baseline')
-
-#Wages 1% hihgher than baseline for all t
-pWp = co.setup();pWp.w=1.01*pWp.w
-ModWp = sol.solveEulerEquation(pWp,model='baseline')
-
-#Lower permanent taxes such that post-tax wages are 1% higher than baseline  for all t
-pτp = co.setup();pτp.τ=1-1.01*(1-pτp.τ)
-Modτp = sol.solveEulerEquation(pτp,model='baseline')
 
 #Compute the Frisch 
 #pΩ
@@ -59,46 +48,10 @@ Modτp = sol.solveEulerEquation(pτp,model='baseline')
 ########################################
 
 #Baseline
-SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=np.ones(p.N)*p.startA,Pstart=np.zeros(p.N))
+SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.zeros(p.N))
 
 #Pension reform
 SP= sim.simNoUncer_interp(p,ModP,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
-
-#Wages 1% higher than baseline in t=3 only 
-SWt= sim.simNoUncer_interp(pWt,ModWt,Tstart=2,Astart=SB['A'][2,:],Pstart=SB['p'][2,:])
-
-#Wages 1% higher than baseline for all t 
-SWp= sim.simNoUncer_interp(pWp,ModWp,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
-
-#Lower taxes such that post-tax wages are 1% higher than baseline  
-Sτp= sim.simNoUncer_interp(pτp,Modτp,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
-
-#Wages 1% higher than baseline in t=3 only: UNEXPECTED CHANGE 
-SWt_un= sim.simNoUncer_interp(pWt,ModWt,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
-
-#Wages are permanently higher but I control for wealth
-SWp_comp= sim.simNoUncer_interp(pWp,ModWp,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:],Vstart=ModB['V'])
-
-########################################
-# compute key elasticities
-########################################
-
-
-#Frisch elasticity: %change id(t)n h for an expected 1% increase in wage w in t=3
-ϵf_Wt=(np.mean(SWt['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
-ϵf_Wti=np.mean(SWt['h'][3,:][SB['h'][3,:]>0.0]/SB['h'][3,:][SB['h'][3,:]>0.0])
-print("The Simulated Frisch Elasticity is {}, intensive margin is {}".format(ϵf_Wt,ϵf_Wti))
-
-
-
-#Hicks elasticity: %change in h for an unxpected 1% increase in wage w in t=3
-ϵh_Wp_comp=np.mean(SWp_comp['h'][3,:])/np.mean(SB['h'][3,:])
-print("The Simulated (life-cycle) Hicks Elasticity is {}".format(ϵh_Wp_comp))
-
-#Marshallian elasticity: %change in h for an expected 1% increase in wage w forall t
-ϵm_Wp=np.mean(SWp['h'][3,:])/np.mean(SB['h'][3,:])
-ϵm_τ=np.mean(Sτp['h'][3,:])/np.mean(SB['h'][3,:])
-print("The Marshallian Elasticity is {}, computed using taxes is {}".format(ϵm_Wp,ϵm_τ))
 
 ########################################
 # plot the result
@@ -127,11 +80,9 @@ plt.show()
     
 # 3
 fig = plt.figure(figsize=(10,4)) 
-plt.plot(t,np.mean(SP['h'],axis=1), 'blue',
-         t, np.mean(SB['h'],axis=1), 'red',
-         t, np.mean(SWt['h'],axis=1), 'orange',)
+plt.plot(t,np.mean(SP['h'],axis=1), 'blue', t, np.mean(SB['h'],axis=1), 'red')
 plt.xlabel("Age")
-plt.legend(('Reform','No Reform','Wages increase'))
+plt.legend(('Reform','No Reform'))
 plt.ylabel("Hours over time")
 plt.show()
 
@@ -205,7 +156,6 @@ ax.set_xlabel('Assets')                   #Label of x axis
 ax.set_ylabel('Consumption')              #Label of y axis
 plt.legend()                              #Plot the legend
 plt.show()     
-
 
 print("WLP is {}".format(np.mean(SB['h'][3:11,:]>0)))
 print("Increase in employment is {}, data is {}".format(np.mean(SP['h'][3:11,:]>0)-np.mean(SB['p'][3:11,:]>0),0.11))

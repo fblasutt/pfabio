@@ -8,6 +8,10 @@ import quantecon as qe
 
 def simNoUncer_interp(p, model, Tstart=-1, Astart=0.0, Pstart=0.0, Vstart= -1.0*np.ones((2,2,2,2,2))):
  
+    
+    #Set seed
+    np.random.seed(2)
+    
     #Distribution of types
     # Type below
     tw=qe.MarkovChain(p.Π).simulate(p.N)
@@ -44,7 +48,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
     # Obtain paths using the initial condition and the policy and value functions  
     for t in range(Ti,T-1):  # loop through time periods for a pticular individual
         for n in range(N):
-    
+            
             #Get the discrete choices first...
             Vi=np.zeros(4)-np.inf
             for pp in range(4):
@@ -60,7 +64,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
             apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyA1[t, :,:],point)
             cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyC[t, :,:],point)
             hpath[t, n] = linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyh[t, :,:],point)
-            Epath[t, n] = hpath[t, n]*w[t,0]
+            Epath[t, n] = w[t,tw[n]]
             
             if reform == 0:
                 ppath[t+1, n]=  ppath[t, n]+w[t,tw[n]]*hpath[t, n]/E_bar_now

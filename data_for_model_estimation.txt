@@ -1,0 +1,51 @@
+**************************
+*Data for data estimation
+**************************
+
+Important question: should we focus on women with a partner?
+
+
+***1) Earnings/wages
+
+Divide men (women) into N groups: groups should be associated with different expected life-time earnings (potential wages) of 
+men (women). The groups can be based on education or occupation. I think that the optimal N should be around 5-7. It would be great
+if the share of people per group was similar.
+
+For each group of men (women), I need an estimation of the trend of average earnings (potential wages) by age.
+For men, it is common to obtain the earnings profile by regressing earnings on a polinomial of age. The coefficients of the earnings polynomial is 
+what I will use to run the model. For women,  the same can be done for wages (one needs to control for endogenous selection normally, but
+maybe we can skip this for now?). For men for each group I also need an estimation of pension points at retirement to compute theri pension.
+
+
+**2) Initial distribution (at age 30):
+
+-net worth
+-pension points
+-income group of women and partner (see above).
+
+You can create a dataset with the list of individuals in the sample, where for each household we have the variables above.
+
+
+**3) Target moments.
+
+Effect of the reform on
+
+1) hours worked
+2) employment
+3) part time/ marginal employment
+4) pension point
+5) earnings
+
+Moreover, I need the average Share of women working, working into full employment, working part time/marginal employment. 
+I need the moments above in three forms: aggregate, by age of the women, by "income group" of the women and the husband.
+
+Bonus: does the effect of the reform depends on the *age* of the mother? This can help calibrate income effects. Maybe
+we can leave this for later
+
+**4) Additional data
+
+Average number of hours worked for women into full employment and part time/ marginal employment.
+Estimation of the wage penalty of working into part time/marginal employment: obtained using a ummy variable in the regression in 2)?
+
+
+
