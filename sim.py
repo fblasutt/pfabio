@@ -18,14 +18,14 @@ def simNoUncer_interp(p, model, Tstart=-1, Astart=0.0, Pstart=0.0, Vstart= -1.0*
     
     #Call the simulator
     ppath,cpath,apath,hpath,Epath=\
-        fast_simulate(Tstart,Astart,Pstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,tw,
-                      model['A'],model['c'],model['h'],model['V'],model['model'])
+        fast_simulate(Tstart,Astart,Pstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,tw,p.wls,p.nwls,
+                      model['A'],model['c'],model['V'],model['model'])
     
     return {'p':ppath,'c':cpath,'A':apath,'h':hpath,'wh':Epath}
     
 @njit
-def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,tw,
-                  policyA1,policyC,policyh,V,reform):
+def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,tw,wls,nwls,
+                  policyA1,policyC,V,reform):
 
     # Arguments for output
     cpath = np.nan+ np.zeros((T, N))           # consumption
@@ -42,7 +42,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
     
     
     #If Vstart if provided, adjust wealth so that utility matches Vstart
-    if np.min(Vstart)!=-1.0:apath=adjust_wealth(Vstart, N, V, apath, ppath, amax, agrid, pgrid,Ti,tw)
+    if np.min(Vstart)!=-1.0:apath=adjust_wealth(Vstart, N, V, apath, ppath, amax, agrid, pgrid,Ti,tw,nwls)
        
     
     # Obtain paths using the initial condition and the policy and value functions  
@@ -50,15 +50,18 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
         for n in range(N):
             
             #Get the discrete choices first...
-            Vi=np.zeros(4)-np.inf
-            for pp in range(4):
+            Vi=np.zeros(nwls)-np.inf
+            for pp in range(nwls):
                 Vi[pp]=linear_interp.interp_2d(agrid,pgrid,V[t,pp,:,:,tw[n]],apath[t,n],ppath[t,n])
 
             Vi[np.isnan(Vi)]=-1e8
             i=np.argmax(Vi)
             A1p=policyA1[t,i, :,:,tw[n]]
             Cp=policyC[t,i, :,:,tw[n]]
-            hp=policyh[t,i, :,:,tw[n]]
+            
+            #Hours below
+            hp=np.ones(policyC[t,i, :,:,tw[n]].shape)*wls[i] 
+
 
 
             apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyA1[t, :,:],point)
@@ -79,21 +82,21 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
     return ppath,cpath,apath,hpath,Epath
 
 @njit
-def adjust_wealth(Vstart, N, V, apath, ppath, amax, agrid, pgrid, Ti, tw):
+def adjust_wealth(Vstart, N, V, apath, ppath, amax, agrid, pgrid, Ti, tw,nwls):
     
     step=amax/1000
     for n in range(N):
         
         #Standart Utility
-        Vi=np.zeros(4)-np.inf
-        for pp in range(4):
+        Vi=np.zeros(nwls)-np.inf
+        for pp in range(nwls):
             Vi[pp]=linear_interp.interp_2d(agrid,pgrid,V[Ti,pp,:,:,tw[n]],apath[Ti,n],ppath[Ti,n])
         Vi[np.isnan(Vi)]=-1e8
         Vmaxi=np.max(Vi)
         
         #New utility
-        Vm=np.zeros(4)-np.inf
-        for pp in range(4):
+        Vm=np.zeros(nwls)-np.inf
+        for pp in range(nwls):
             Vm[pp]=linear_interp.interp_2d(agrid,pgrid,Vstart[Ti,pp,:,:,tw[n]],apath[Ti,n],ppath[Ti,n])
         Vm[np.isnan(Vm)]=-1e8
         Vmaxm=np.max(Vm)
@@ -104,8 +107,8 @@ def adjust_wealth(Vstart, N, V, apath, ppath, amax, agrid, pgrid, Ti, tw):
             for i in range(100):
                 
                 addition=step*i
-                Vi2=np.zeros(4)-np.inf
-                for pp in range(4):
+                Vi2=np.zeros(nwls)-np.inf
+                for pp in range(nwls):
                     Vi2[pp]=linear_interp.interp_2d(agrid,pgrid,V[Ti,pp,:,:,tw[n]],apath[Ti,n]-addition,ppath[Ti,n])
                 Vi2[np.isnan(Vi2)]=-1e8                   
                 Vmaxi2=np.max(Vi2)
@@ -117,8 +120,8 @@ def adjust_wealth(Vstart, N, V, apath, ppath, amax, agrid, pgrid, Ti, tw):
             for i in range(100):
                 
                 addition=step*i
-                Vi2=np.zeros(4)-np.inf
-                for pp in range(4):
+                Vi2=np.zeros(nwls)-np.inf
+                for pp in range(nwls):
                     Vi2[pp]=linear_interp.interp_2d(agrid,pgrid,V[Ti,pp,:,:,tw[n]],apath[Ti,n]+addition,ppath[Ti,n])
                 Vi2[np.isnan(Vi2)]=-1e8                   
                 Vmaxi2=np.max(Vi2)
