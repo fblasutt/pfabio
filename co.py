@@ -14,7 +14,7 @@ class setup():
         self.T = 60           # Number of time periods
         self.R = 45           # Retirement period
         self.r = 0.0        # Interest rate
-        self.δ = 0.01    # Discount rate
+        self.δ = 0.0    # Discount rate
         self.β = 0.0      # Utility weight on leisure
         self.γc = 1      # risk pameter on consumption!!!Check in upperenvelop if not 1
         self.γh = .7    # risk pameter on labour
@@ -24,6 +24,7 @@ class setup():
         self.ρ =0       # Dollar value of points
         self.τ = 0.0        # marginal tax rate
         self.ϵ=0.000000001
+        self.σ=0.005          #Size of taste shock
         
         
         # Levels of WLS
@@ -32,12 +33,12 @@ class setup():
         
         # Hourly wage 
         self.wM=np.zeros(self.T) 
-        for t in range(self.T):self.wM[t]=0.3+0.02*t 
+        for t in range(self.T):self.wM[t]=0.4 
          
         # Hourly wage dispersion 
         self.nw=2
-        self.σ=0.00000000001 #dispersion of wages 
-        self.wv=np.linspace(-self.σ,self.σ,self.nw) 
+        self.σw=0.00000000001 #dispersion of wages 
+        self.wv=np.linspace(-self.σw,self.σw,self.nw) 
         self.Π=rouwenhorst(self.nw, 0.0, self.σ,0.0).P 
         self.Π=np.ones(self.Π.shape)/self.nw
         

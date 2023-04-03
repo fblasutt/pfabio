@@ -22,18 +22,18 @@ def solveEulerEquation(p,model='baseline'):
     time_start = time.time()
         
     #Initiate some variables
-    policyA1,policyC,V,policyp,pmutil,whic= np.zeros((6,p.T,p.nwls,p.NA, p.NP,p.nw))-1e8
+    policyA1,policyC,pr,V,policyp,pmutil= np.zeros((6,p.T,p.nwls,p.NA, p.NP,p.nw))-1e8
     holes=np.ones((p.T,p.nwls,p.NA, p.NP,p.nw))
     #Call the routing to solve the model
-    solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,whic,holes,reform,p)
+    solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p)
 
     #End timer and print elapsed time
     elapsed = time.time() - time_start    
     print('Finished, Reform =', reform, 'Elapsed time is', elapsed, 'seconds')   
     
-    return {'A':policyA1,'c':policyC,'V':V,'p':policyp,'which':whic,'model':reform}
+    return {'A':policyA1,'c':policyC,'V':V,'p':policyp,'pr':pr,'model':reform}
 
-def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,whic,holes,reform,p):
+def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
     
     """ Use the method of endogenous gridpoint in 2 dimensions to solve the model.
         Source: JDruedahlThomas and Jørgensen (2017). This method is robust to
@@ -44,7 +44,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,whic,holes,reform,p)
     """
     #Initialize some variables
     r=p.r;δ=p.δ;γc=p.γc;R=p.R;τ=p.τ;β=p.β;q=p.q;amin=p.amin;wls=p.wls;nwls=p.nwls;
-    w=np.array(p.w);agrid=p.agrid;y_N=p.y_N;γh=p.γh;T=p.T;NA=p.NA;nw=p.nw;
+    w=np.array(p.w);agrid=p.agrid;y_N=p.y_N;γh=p.γh;T=p.T;NA=p.NA;nw=p.nw;σ=p.σ;
     NP=p.NP;pgrid=p.pgrid;maxHours=p.maxHours;ρ=p.ρ;E_bar_now=p.E_bar_now;
     
     ce,pe,ae,ce_bc,pe_bc,ae_bc=np.zeros((6,p.nwls,NA, NP,nw))
@@ -64,20 +64,24 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,whic,holes,reform,p)
     policyC[T-1,0,:,:,:] = agrid_box*(1+r) + y_N +ρ*pgrid_box # optimal consumption                              
     pmutil[T-1,0,:,:,:]=co.mcutility(policyC[T-1,0,:,:,:], p)   # mu of more pension points        
     V[T-1,0,:,:,:]=co.utility(policyC[T-1,0,:,:,:],wls[0],p)
-                    
+   
     #Decisions below
-    for t in range(T-2,-1,-1):
+    for t in range(T-2,-2,-1):
                          
         #Get variables useful for next iteration t-1
-        ia = np.argmax(V[t+1,:,:,:,:],axis=0)
+        c=np.max(V[t+1,:,:,:,:],axis=0)/σ
         for i_n in range(NA):
             for i_m in range(NP):
                 for i_w in range(nw):
                     
-                    V1[i_n,i_m,i_w] = V[t+1,ia[i_n,i_m,i_w],i_n,i_m,i_w].copy()
-                    c1[i_n,i_m,i_w] = policyC[t+1,ia[i_n,i_m,i_w],i_n,i_m,i_w].copy()
+                    lc=c[i_n,i_m,i_w]#local normalizing variable
+                    V1[i_n,i_m,i_w] = σ*(lc+np.log(np.sum(np.exp(V[t+1,:,i_n,i_m,i_w]/σ-lc))))
+                    pr[t+1,:,i_n,i_m,i_w]=np.exp(V[t+1,:,i_n,i_m,i_w]/σ-V1[i_n,i_m,i_w]/σ)
+                    c1[i_n,i_m,i_w] = np.sum(pr[t+1,:,i_n,i_m,i_w]*policyC[t+1,:,i_n,i_m,i_w])
                 
-        
+        if t==-1:break
+        # if t==p.R-2:
+        #     print(111)
         wt=w[t,:]
         policy=((t >=3) & (t <=10) & (reform==1))
         

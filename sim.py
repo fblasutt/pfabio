@@ -12,20 +12,20 @@ def simNoUncer_interp(p, model, Tstart=-1, Astart=0.0, Pstart=0.0, Vstart= -1.0*
     #Set seed
     np.random.seed(2)
     
-    #Distribution of types
-    # Type below
-    tw=qe.MarkovChain(p.Π).simulate(p.N)
+    #Distribution of types and taste shocks
+    tw=qe.MarkovChain(p.Π).simulate(p.N)# Type here
+    ts=np.random.rand(p.T,p.N)
     
     #Call the simulator
     ppath,cpath,apath,hpath,Epath=\
-        fast_simulate(Tstart,Astart,Pstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,tw,p.wls,p.nwls,
-                      model['A'],model['c'],model['V'],model['model'])
+        fast_simulate(Tstart,Astart,Pstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,tw,ts,p.wls,p.nwls,
+                      model['A'],model['c'],model['pr'],model['model'])
     
     return {'p':ppath,'c':cpath,'A':apath,'h':hpath,'wh':Epath}
     
 @njit
-def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,tw,wls,nwls,
-                  policyA1,policyC,V,reform):
+def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,tw,ts,wls,nwls,
+                  policyA1,policyC,pr,reform):
 
     # Arguments for output
     cpath = np.nan+ np.zeros((T, N))           # consumption
@@ -42,7 +42,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
     
     
     #If Vstart if provided, adjust wealth so that utility matches Vstart
-    if np.min(Vstart)!=-1.0:apath=adjust_wealth(Vstart, N, V, apath, ppath, amax, agrid, pgrid,Ti,tw,nwls)
+    #if np.min(Vstart)!=-1.0:apath=adjust_wealth(Vstart, N, V, apath, ppath, amax, agrid, pgrid,Ti,tw,nwls)
        
     
     # Obtain paths using the initial condition and the policy and value functions  
@@ -50,12 +50,12 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
         for n in range(N):
             
             #Get the discrete choices first...
-            Vi=np.zeros(nwls)-np.inf
+            prs=np.zeros(nwls)
             for pp in range(nwls):
-                Vi[pp]=linear_interp.interp_2d(agrid,pgrid,V[t,pp,:,:,tw[n]],apath[t,n],ppath[t,n])
+                prs[pp]=linear_interp.interp_2d(agrid,pgrid,pr[t,pp,:,:,tw[n]],apath[t,n],ppath[t,n])
 
-            Vi[np.isnan(Vi)]=-1e8
-            i=np.argmax(Vi)
+
+            i=np.argmin((ts[t,n]>np.cumsum(prs)))
             A1p=policyA1[t,i, :,:,tw[n]]
             Cp=policyC[t,i, :,:,tw[n]]
             
@@ -64,9 +64,9 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
 
 
 
-            apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyA1[t, :,:],point)
-            cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyC[t, :,:],point)
-            hpath[t, n] = linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])#eval_linear(p.mgrid,policyh[t, :,:],point)
+            apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])
+            cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])
+            hpath[t, n] = linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])
             Epath[t, n] = w[t,tw[n]]
             
             if reform == 0:

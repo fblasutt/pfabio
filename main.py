@@ -40,7 +40,7 @@ ModP= sol.solveEulerEquation(p,model='pension reform')
 ModB = sol.solveEulerEquation(p,model='baseline')
 
 # #Wages 1% hihgher than baseline in t=3 only 
-# pWt = co.setup();pWt.w[3,:]=1.01*pWt.w[3,:]
+# pWt = co.setup();pWt.w[3,:]=1.01*pWt.w[3,:]up
 # ModWt = sol.solveEulerEquation(pWt,model='baseline')
 
 # #Wages 1% hihgher than baseline for all t
@@ -166,8 +166,8 @@ plt.show()
 
 #Graph the value of participating or not in the labor market 2 periods before retirement
 fig, ax = plt.subplots(figsize=(11, 8))   #Initialize figure and size
-ax.plot(p.agrid,ModB['V'][p.R-2,0,:,0,0], label="Value of FLP=0") 
-ax.plot(p.agrid,ModB['V'][p.R-2,1,:,0,0], label="Value of FLP=1") 
+ax.plot(p.agrid,ModB['V'][p.R-29,0,:,0,0], label="Value of FLP=0") 
+ax.plot(p.agrid,ModB['V'][p.R-29,1,:,0,0], label="Value of FLP=1") 
 #ax.plot(p.agrid,ModB['V'][p.R-2,2,:,0,0], label="Value of FLP=0") 
 #ax.plot(p.agrid,ModB['V'][p.R-2,1,:,0,0], label="Value of FLP=1") 
 ax.grid()
@@ -208,5 +208,5 @@ plt.show()
 
 
 print("WLP is {}".format(np.mean(SB['h'][3:11,:]>0)))
-print("Increase in employment is {}, data is {}".format(np.mean(SP['h'][3:11,:]>0)-np.mean(SB['p'][3:11,:]>0),0.11))
-print("Increase in hours is {}, data is {}".format(np.mean(SP['h'][3:11,:]>0)/np.mean(SB['p'][3:11,:]>0)-1, 0.46))
+print("Increase in employment is {}, data is {}".format(np.mean(SP['h'][3:11,:])-np.mean(SB['h'][3:11,:]),0.11))
+print("Increase in hours is {}, data is {}".format(np.mean(SP['h'][3:11,:])/np.mean(SB['h'][3:11,:])-1, 0.46))
