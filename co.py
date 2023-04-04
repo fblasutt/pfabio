@@ -11,18 +11,18 @@ class setup():
     def __init__(self):
 
         # Economic Environment: set pameters
-        self.T = 60           # Number of time periods
-        self.R = 45           # Retirement period
-        self.r = 0.0        # Interest rate
-        self.δ = 0.0    # Discount rate
-        self.β = 0.0      # Utility weight on leisure
+        self.T = 55           # Number of time periods
+        self.R = 35           # Retirement period
+        self.r = 0.015        # Interest rate
+        self.δ = 0.015    # Discount rate
+        self.β = 0.05      # Utility weight on leisure
         self.γc = 1      # risk pameter on consumption!!!Check in upperenvelop if not 1
         self.γh = .7    # risk pameter on labour
-        self.y_N = 0.1      # Unearned income
-        self.E_bar_now = 30000  # Average earnings
-        self.q = 1.0            # Fixed cost of pticipation
-        self.ρ =0       # Dollar value of points
-        self.τ = 0.0        # marginal tax rate
+        self.y_N = 48000/1200       # Unearned income
+        self.E_bar_now = 30000/1200  # Average earnings
+        self.q = 0.22            # Fixed cost of pticipation
+        self.ρ =0/1200       # Dollar value of points
+        self.τ = 0.2        # marginal tax rate
         self.ϵ=0.000000001
         self.σ=0.005          #Size of taste shock
         
@@ -33,11 +33,11 @@ class setup():
         
         # Hourly wage 
         self.wM=np.zeros(self.T) 
-        for t in range(self.T):self.wM[t]=0.4 
+        for t in range(self.T):self.wM[t]=13+0.05*t 
          
         # Hourly wage dispersion 
-        self.nw=2
-        self.σw=0.00000000001 #dispersion of wages 
+        self.nw=9
+        self.σw=0.5 #dispersion of wages 
         self.wv=np.linspace(-self.σw,self.σw,self.nw) 
         self.Π=rouwenhorst(self.nw, 0.0, self.σ,0.0).P 
         self.Π=np.ones(self.Π.shape)/self.nw
@@ -60,9 +60,9 @@ class setup():
         # 2. GENERATE GRID
         
         # Assets
-        self.NA = 551
+        self.NA = 100
         self.amin=0.0
-        self.amax=30.0
+        self.amax=450000/1200
         self.agrid=np.linspace(self.amin,self.amax,self.NA)#nonlinspace(0.0,450000,self.NA,1.4)#np.linspace(0.0,250000,self.NA)#
         
         
@@ -70,7 +70,7 @@ class setup():
          
         #Initial assets 
         self.Aμ = 0.0        # Assets people start life with (ave) 
-        self.Aσ = 10000.0   # Assets people start life with 
+        self.Aσ = 10000.0/1200   # Assets people start life with 
         self.startAd   = norm.cdf(self.agrid[1:],self.Aμ,self.Aσ)-\
                         norm.cdf(self.agrid[:-1],self.Aμ,self.Aσ) 
         self.startAd = np.append(self.startAd,0.0) 

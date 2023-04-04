@@ -40,7 +40,7 @@ ModP= sol.solveEulerEquation(p,model='pension reform')
 ModB = sol.solveEulerEquation(p,model='baseline')
 
 # #Wages 1% hihgher than baseline in t=3 only 
-# pWt = co.setup();pWt.w[3,:]=1.01*pWt.w[3,:]up
+# pWt = co.setup();pWt.w[3,:]=1.01*pWt.w[3,:]
 # ModWt = sol.solveEulerEquation(pWt,model='baseline')
 
 # #Wages 1% hihgher than baseline for all t
@@ -93,7 +93,7 @@ SP= sim.simNoUncer_interp(p,ModP,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:
 
 # #Hicks elasticity: %change in h for an unxpected 1% increase in wage w in t=3
 # ϵh_Wp_comp=np.mean(SWp_comp['h'][3,:])/np.mean(SB['h'][3,:])
-# print("The Simulated (life-cycle) Hicks Elasticity is {}".format(ϵh_W p_comp))
+# print("The Simulated (life-cycle) Hicks Elasticity is {}".format(ϵh_Wp_comp))
 
 # #Marshallian elasticity: %change in h for an expected 1% increase in wage w forall t
 # ϵm_Wp=np.mean(SWp['h'][3,:])/np.mean(SB['h'][3,:])
