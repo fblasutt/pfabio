@@ -19,13 +19,13 @@ def simNoUncer_interp(p, model, Tstart=-1, Astart=0.0, Pstart=0.0, Vstart= -1.0*
     #Call the simulator
     ppath,cpath,apath,hpath,Epath=\
         fast_simulate(Tstart,Astart,Pstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,tw,ts,p.wls,p.nwls,
-                      model['A'],model['c'],model['pr'],model['model'])
+                      model['A'],model['c'],model['p'],model['pr'],model['model'])
     
     return {'p':ppath,'c':cpath,'A':apath,'h':hpath,'wh':Epath}
     
 @njit
 def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,tw,ts,wls,nwls,
-                  policyA1,policyC,pr,reform):
+                  policyA1,policyC,policyP,pr,reform):
 
     # Arguments for output
     cpath = np.nan+ np.zeros((T, N))           # consumption
@@ -57,6 +57,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
 
             i=np.argmin((ts[t,n]>np.cumsum(prs)))
             A1p=policyA1[t,i, :,:,tw[n]]
+            Pp=policyP[t,i, :,:,tw[n]]
             Cp=policyC[t,i, :,:,tw[n]]
             
             #Hours below
@@ -65,18 +66,19 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
 
 
             apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])
+            ppath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,Pp,apath[t,n],ppath[t,n])
             cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])
             hpath[t, n] = linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])
             Epath[t, n] = w[t,tw[n]]
             
-            if reform == 0:
-                ppath[t+1, n]=  ppath[t, n]+w[t,tw[n]]*hpath[t, n]/E_bar_now
-            else:
+            # if reform == 0:
+            #     ppath[t+1, n]=  ppath[t, n]+w[t,tw[n]]*hpath[t, n]/E_bar_now
+            # else:
                             
-                if ((t >=3) & (t <=10)):
-                    ppath[t+1, n]=  ppath[t, n]+1.5*w[t,tw[n]]*hpath[t, n]/E_bar_now
-                else:
-                    ppath[t+1, n]=  ppath[t, n]+w[t,tw[n]]*hpath[t, n]/E_bar_now
+            #     if ((t >=3) & (t <=10)):
+            #         ppath[t+1, n]=  ppath[t, n]+1.5*w[t,tw[n]]*hpath[t, n]/E_bar_now
+            #     else:
+            #         ppath[t+1, n]=  ppath[t, n]+w[t,tw[n]]*hpath[t, n]/E_bar_now
         
      
     return ppath,cpath,apath,hpath,Epath

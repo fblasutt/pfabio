@@ -20,7 +20,7 @@ def compute(out_c,out_n,pmua,out_v,holes,
             m,n,c,m_bc,n_bc,c_bc,
             num,
             w,
-            γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,valt=np.array([[]])):
+            γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,valt=np.array([[]])):
     
     # a. infer shape
     Nb,Na,nw = w.shape
@@ -65,7 +65,7 @@ def compute(out_c,out_n,pmua,out_v,holes,
                         upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,
                                       m,n,c,m_bc,n_bc,c_bc,
                                       Na,Nb,valid,num,w,
-                                      γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls)                    
+                                      γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp)                    
                         
         # iii. fill holes (technique: nearest neighbor)
         #fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,Nb,Na,nw)
@@ -74,8 +74,8 @@ def compute(out_c,out_n,pmua,out_v,holes,
 def upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,
                   m_ok,n_ok,c_ok,m_bc,n_bc,c_bc,
                   Na,Nb,valid,num,w,
-                  γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,
-                  egm_extrap_add=4,egm_extrap_w=-0.45):
+                  γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,
+                  egm_extrap_add=2,egm_extrap_w=-0.25):
     
     # a. simplex in (a,b)-space (or similar with constrained choices)
     i_b_1 = i_b
@@ -145,55 +145,55 @@ def upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,
         # e. loop through common grid nodes in interior of bounding box
         for i_n in range(in_low,in_high):          
             for i_m in range(im_low,im_high):
-                #if holes[i_n,i_m,i_w]>0:
+                if holes[i_n,i_m,i_w,j]>0:
                     
-                # i. common grid values
-                m_now = pgrid[i_m]
-                n_now = agrid[i_n]
+                    # i. common grid values
+                    m_now = pgrid[i_m]
+                    n_now = agrid[i_n]
+        
+        
+                    # ii. barycentric coordinates
+                    w1 = ((n2-n3)*(m_now-m3) + (m3-m2)*(n_now-n3)) / denom
+                    w2 = ((n3-n1)*(m_now-m3) + (m1-m3)*(n_now-n3)) / denom
+                    w3 = 1 - w1 - w2
+        
+                    # iii. exit if too much outside simplex
+                    if w1 < egm_extrap_w or w2 < egm_extrap_w or w3 < egm_extrap_w:
+                          continue
+        
+                   
+                    # iv. interpolate choices (num inicates wls) 
     
+                    
+                    if j==0:
+                        #No borrowing constrained case
+                        c_interp = w1*c[i_b_1,i_a_1,i_w] + w2*c[i_b_2,i_a_2,i_w] + w3*c[i_b_3,i_a_3,i_w]
+                        a_interp = m_now + mp*wls*wt[i_w]/E_bar_now                    #points
+                        b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*wls + y_N[i_n,i_m,i_w]
     
-                # ii. barycentric coordinates
-                w1 = ((n2-n3)*(m_now-m3) + (m3-m2)*(n_now-n3)) / denom
-                w2 = ((n3-n1)*(m_now-m3) + (m1-m3)*(n_now-n3)) / denom
-                w3 = 1 - w1 - w2
+                    
+                    if j==1:
+                        #Borrowing constrained case
+                        a_interp = m_now + mp*wls*wt[i_w]/E_bar_now 
+                        b_interp = amin
+                        c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*wls + y_N[i_n,i_m,i_w]
+                 
+        
+                    if c_interp <= 0.0 or a_interp < 0 or b_interp < amin:
+                        continue
+                    
+                    # v. value of choice
+                    w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w],b_interp,a_interp)
+                    v_interp=np.log(c_interp)-β*wls**(1+1/γh) / (1+1/γh)-q+w_interp/(1+δ)     
     
-                # iii. exit if too much outside simplex
-                if w1 < egm_extrap_w or w2 < egm_extrap_w or w3 < egm_extrap_w:
-                      continue
-    
-               
-                # iv. interpolate choices (num inicates wls) 
-
-                
-                if j==0:
-                    #No borrowing constrained case
-                    c_interp = w1*c[i_b_1,i_a_1,i_w] + w2*c[i_b_2,i_a_2,i_w] + w3*c[i_b_3,i_a_3,i_w]
-                    a_interp = m_now + wls*wt[i_w]/E_bar_now                    #points
-                    b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*wls + y_N
-
-                
-                if j==1:
-                    #Borrowing constrained case
-                    a_interp = m_now + wls*wt[i_w]/E_bar_now 
-                    b_interp = amin
-                    c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*wls + y_N
-             
-    
-                if c_interp <= 0.0 or a_interp < 0 or b_interp < amin:
-                    continue
-                
-                # v. value of choice
-                w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w],b_interp,a_interp)
-                v_interp=np.log(c_interp)+β*wls**(1+1/γh) / (1+1/γh)-q+w_interp/(1+δ)     
-
-                # vi. update if max
-                if v_interp >out_v[i_n,i_m,i_w]:
-    
-                    out_v[i_n,i_m,i_w] = v_interp
-                    out_c[i_n,i_m,i_w] = c_interp
-                    out_n[i_n,i_m,i_w] = b_interp
-                    pmua[i_n,i_m,i_w]  = a_interp
-                    holes[i_n,i_m,i_w] = 0
+                    # vi. update if max
+                    if v_interp >out_v[i_n,i_m,i_w]:
+        
+                        out_v[i_n,i_m,i_w] = v_interp
+                        out_c[i_n,i_m,i_w] = c_interp
+                        out_n[i_n,i_m,i_w] = b_interp
+                        pmua[i_n,i_m,i_w]  = a_interp
+                        holes[i_n,i_m,i_w,j] = 0
 
 @njit
 def fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,Nn,Nm,nw):
@@ -268,7 +268,7 @@ def fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgri
                                 if j==0:
                                     c_interp = out_c[i_n_close,i_m_close,i_w]
                                     a_interp = m_now + wls*wt[i_w]/E_bar_now                    #points
-                                    b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*wls + y_N
+                                    b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*wls + y_N[i_n,i_m,i_w]
              
                                  
                                                                  
@@ -276,12 +276,12 @@ def fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgri
                                 if j==1:
                                     a_interp = m_now + wls*wt[i_w]/E_bar_now 
                                     b_interp = amin
-                                    c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*wls + y_N
+                                    c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*wls + y_N[i_n,i_m,i_w]
                                    
                                     
                                 #Value of choice
                                 w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w],b_interp,a_interp)
-                                v_interp=np.log(c_interp)+β*wls**(1+1/γh) / (1+1/γh)-q+1/(1+δ)*w_interp
+                                v_interp=np.log(c_interp)-β*wls**(1+1/γh) / (1+1/γh)-q+1/(1+δ)*w_interp
                                             
                                    
                                 if c_interp <= 0.0 or a_interp < 0 or b_interp < amin:
