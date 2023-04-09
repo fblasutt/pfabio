@@ -16,14 +16,14 @@ class setup():
         self.R = 35           # Retirement period
         self.r = 0.015        # Interest rate
         self.δ = 0.015    # Discount rate
-        self.β = 0.63      # Utility weight on leisure
+        self.β = 0.60286305      # Utility weight on leisure
         self.γc = 1      # risk pameter on consumption!!!Check in upperenvelop if not 1
-        self.γh = .8    # risk pameter on labour
+        self.γh = .5    # risk pameter on labour
         self.E_bar_now = 30000/1200  # Average earnings
-        self.q = 0.06         # Fixed cost of pticipation
+        self.q = 0.11963534         # Fixed cost of pticipation
         self.ρ =350/1200       # Dollar value of points
         self.ϵ=0.000000001
-        self.σ=0.012          #Size of taste shock
+        self.σ=0.00122283          #Size of taste shock
         
         
         # Levels of WLS

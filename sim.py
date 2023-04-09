@@ -29,7 +29,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
 
     # Arguments for output
     cpath = np.nan+ np.zeros((T, N))           # consumption
-    hpath = np.nan+ np.zeros((T, N))           # earnings path
+    hpath = np.nan+ np.zeros((T, N),dtype=np.int32)           # earnings path
     Epath = np.nan+ np.zeros((T, N))           # earnings path
     apath = np.nan+ np.zeros((T + 1,N))        # assets at start of each period, decided 1 period ahead and so includes period T+1   
     ppath = np.nan+ np.zeros((T + 1,N))        # points at start of each period, decided 1 period ahead and so includes period T+1
@@ -61,14 +61,14 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
             Cp=policyC[t,i, :,:,tw[n]]
             
             #Hours below
-            hp=np.ones(policyC[t,i, :,:,tw[n]].shape)*wls[i] 
+            #hp=np.ones(policyC[t,i, :,:,tw[n]].shape)*wls[i] 
 
 
 
             apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])
             ppath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,Pp,apath[t,n],ppath[t,n])
             cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])
-            hpath[t, n] = linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])
+            hpath[t, n] = i#linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])
             Epath[t, n] = w[t,tw[n]]
             
             # if reform == 0:

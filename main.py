@@ -39,13 +39,13 @@ ModP= sol.solveEulerEquation(p,model='pension reform')
 #Baseline
 ModB = sol.solveEulerEquation(p,model='baseline')
 
-# #Wages 1% hihgher than baseline in t=3 only 
-# pWt = co.setup();pWt.w[3,:]=1.01*pWt.w[3,:]
-# ModWt = sol.solveEulerEquation(pWt,model='baseline')
+#Wages 1% hihgher than baseline in t=3 only 
+pWt = co.setup();pWt.w[3,:]=1.01*pWt.w[3,:]
+ModWt = sol.solveEulerEquation(pWt,model='baseline')
 
-# #Lowe in t=3 only to mimin a 1% increase in net wages 
-# pτt = co.setup();pτt.τ[3]=1-(1-p.τ[3])*1.01
-# Modτt = sol.solveEulerEquation(pτt,model='baseline')
+#Lowe in t=3 only to mimin a 1% increase in net wages 
+pτt = co.setup();pτt.τ[3]=1-(1-p.τ[3])*1.01
+Modτt = sol.solveEulerEquation(pτt,model='baseline')
 
 
 #Compute the Frisch 
@@ -61,27 +61,27 @@ SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.zeros(p.N))
 #Pension reform
 SP= sim.simNoUncer_interp(p,ModP,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
 
-# #Wages 1% higher than baseline in t=3 only 
-# SWt= sim.simNoUncer_interp(pWt,ModWt,Tstart=2,Astart=SB['A'][2,:],Pstart=SB['p'][2,:])
+#Wages 1% higher than baseline in t=3 only 
+SWt= sim.simNoUncer_interp(pWt,ModWt,Tstart=2,Astart=SB['A'][2,:],Pstart=SB['p'][2,:])
 
-# # Lower taxes in t=3 only 
-# Sτt= sim.simNoUncer_interp(pτt,Modτt,Tstart=2,Astart=SB['A'][2,:],Pstart=SB['p'][2,:])
-
-
-
-# # ########################################
-# # # compute key elasticities
-# # ########################################
+# Lower taxes in t=3 only 
+Sτt= sim.simNoUncer_interp(pτt,Modτt,Tstart=2,Astart=SB['A'][2,:],Pstart=SB['p'][2,:])
 
 
-# #Frisch elasticity: %change id(t)n h for an expected 1% increase in wage w in t=3
-# ϵf_Wt=(np.mean(SWt['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
-# ϵf_Wti=np.mean(SWt['h'][3,:][SB['h'][3,:]>0.0]/SB['h'][3,:][SB['h'][3,:]>0.0])
-# print("The Simulated Frisch Elasticity (using change in w) is {}, intensive margin is {}".format(ϵf_Wt,ϵf_Wti))
 
-# ϵf_τt=(np.mean(Sτt['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
-# ϵf_τti=np.mean(Sτt['h'][3,:][SB['h'][3,:]>0.0]/SB['h'][3,:][SB['h'][3,:]>0.0])
-# print("The Simulated Frisch Elasticity (using change in w) is {}, intensive margin is {}".format(ϵf_τt,ϵf_τti))
+# ########################################
+# # compute key elasticities
+# ########################################
+
+
+#Frisch elasticity: %change id(t)n h for an expected 1% increase in wage w in t=3
+ϵf_Wt=(np.mean(SWt['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
+ϵf_Wti=np.mean(SWt['h'][3,:][SB['h'][3,:]>0.0]/SB['h'][3,:][SB['h'][3,:]>0.0])
+print("The Simulated Frisch Elasticity (using change in w) is {}, intensive margin is {}".format(ϵf_Wt,ϵf_Wti))
+
+ϵf_τt=(np.mean(Sτt['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
+ϵf_τti=np.mean(Sτt['h'][3,:][SB['h'][3,:]>0.0]/SB['h'][3,:][SB['h'][3,:]>0.0])
+print("The Simulated Frisch Elasticity (using change in w) is {}, intensive margin is {}".format(ϵf_τt,ϵf_τti))
 
 
 ########################################
@@ -191,5 +191,4 @@ plt.show()
 
 
 print("WLP is {}".format(np.mean(SB['h'][3:11,:]>0)))
-print("Increase in employment is {}, data is {}".format(np.mean(SP['h'][3:11,:])-np.mean(SB['h'][3:11,:]),0.11))
-print("Increase in hours is {}, data is {}".format(np.mean(SP['h'][3:11,:])/np.mean(SB['h'][3:11,:])-1, 0.46))
+print("Increase in employment is {}, data is {}".format(np.mean(SP['h'][3:11,:]>0)-np.mean(SB['h'][3:11,:]>0),0.099))
