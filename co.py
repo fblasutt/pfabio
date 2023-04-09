@@ -5,6 +5,7 @@ from interpolation.splines import CGrid
 from consav.grids import nonlinspace # grids
 from quantecon.markov.approximation import rouwenhorst
 from scipy.stats import norm 
+from numba import njit,prange
 
 class setup():
     
@@ -15,11 +16,11 @@ class setup():
         self.R = 35           # Retirement period
         self.r = 0.015        # Interest rate
         self.δ = 0.015    # Discount rate
-        self.β = 0.00005      # Utility weight on leisure
+        self.β = 0.63      # Utility weight on leisure
         self.γc = 1      # risk pameter on consumption!!!Check in upperenvelop if not 1
-        self.γh = .7    # risk pameter on labour
+        self.γh = .8    # risk pameter on labour
         self.E_bar_now = 30000/1200  # Average earnings
-        self.q = 0.21           # Fixed cost of pticipation
+        self.q = 0.06         # Fixed cost of pticipation
         self.ρ =350/1200       # Dollar value of points
         self.ϵ=0.000000001
         self.σ=0.012          #Size of taste shock
@@ -38,7 +39,7 @@ class setup():
         for t in range(self.T):self.τ[t]=0.2
          
         # Hourly wage dispersion 
-        self.nw=2
+        self.nw=11
         self.σw=0.5 #dispersion of wages 
         self.wv=np.linspace(-self.σw,self.σw,self.nw) 
         self.Π=rouwenhorst(self.nw, 0.0, self.σ,0.0).P 
@@ -67,7 +68,7 @@ class setup():
         # 2. GENERATE GRID
         
         # Assets
-        self.NA = 100
+        self.NA = 20
         self.amin=0.0
         self.amax=650000/1200
         self.agrid=np.linspace(self.amin,self.amax,self.NA)#nonlinspace(0.0,450000,self.NA,1.4)#np.linspace(0.0,250000,self.NA)#
@@ -89,7 +90,7 @@ class setup():
         self.startA=self.agrid[self.startAt] 
         
         # Pension points
-        self.NP =20
+        self.NP =10
         self.pgrid=nonlinspace(0.0,self.R,self.NP,1.4)#np.linspace(0,self.R,self.NP)## # max one point per year in the law...
         self.startP = 0   # points people start life with
         
@@ -125,23 +126,13 @@ def Ωt(p,ts):
 # Define the utility function
 def utility(c,h,p):
 
-    utils_c=np.log(c*0.0+0.000000001)
+    utils_c=np.full_like(c,-1e-8,dtype=np.float64)
     where=(c>0.000000001)
-    if p.γc == 1:
-        utils_c[where] = np.log(c[where])
-    else:
-        utils_c[where] = c[where]**(1-p.γc)/(1-p.γc)
 
+    utils_c[where] = np.log(c[where])
+    
 
-
-    if p.γh == 1:
-        utils_h = np.log(h)
-    else:
-        utils_h = (h)**(1+1/p.γh) / (1+1/p.γh)#(p.maxHours-h)**(1-p.γh) / (1-p.γh)#
-
-    utils = utils_c - p.β*utils_h 
-
-    return utils
+    return utils_c - p.β*(h)**(1+1/p.γh) / (1+1/p.γh)
 
 def mcutility(c,p):
 

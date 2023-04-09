@@ -8,6 +8,7 @@ from consav.grids import nonlinspace # grids
 from consav import linear_interp
 import numexpr as ne
 import upperenvelop
+from numba import njit,prange
 import co
 
 
@@ -29,11 +30,12 @@ def solveEulerEquation(p,model='baseline'):
 
     #End timer and print elapsed time
     elapsed = time.time() - time_start    
-    print('Finished, Reform =', reform, 'Elapsed time is', elapsed, 'seconds')   
+    #print('Finished, Reform =', reform, 'Elapsed time is', elapsed, 'seconds')   
     
     return {'A':policyA1,'c':policyC,'V':V,'p':policyp,'pr':pr,'model':reform}
 
-
+#@profile
+#@njit
 def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
     
     """ Use the method of endogenous gridpoint in 2 dimensions to solve the model.
@@ -70,17 +72,9 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
    
     #Decisions below
     for t in range(T-2,-2,-1):
-                         
+         
         #Get variables useful for next iteration t-1
-        c=np.max(V[t+1,:,:,:,:],axis=0)/σ
-        for i_n in range(NA):
-            for i_m in range(NP):
-                for i_w in range(nw):
-                    
-                    lc=c[i_n,i_m,i_w]#local normalizing variable
-                    V1[i_n,i_m,i_w] = σ*(lc+np.log(np.sum(np.exp(V[t+1,:,i_n,i_m,i_w]/σ-lc))))
-                    pr[t+1,:,i_n,i_m,i_w]=np.exp(V[t+1,:,i_n,i_m,i_w]/σ-V1[i_n,i_m,i_w]/σ)
-                    c1[i_n,i_m,i_w] = np.sum(pr[t+1,:,i_n,i_m,i_w]*policyC[t+1,:,i_n,i_m,i_w])
+        expectation(t,NA,NP,nw,V,V1,σ,pr,c1,policyC)             
                 
         if t==-1:break
 
@@ -166,6 +160,15 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
                          (1/(1+δ))*np.interp(policyA1[t,0,:,i,j],agrid,V1[:,i,j])
                          
      
-            
-
+@njit
+def expectation(t,NA,NP,nw,V,V1,σ,pr,c1,policyC):                
+        #Get variables useful for next iteration t-1
+        for i_n in prange(NA):
+            for i_m in prange(NP):
+                for i_w in prange(nw):
+                    
+                    lc=np.max(V[t+1,:,i_n,i_m,i_w])/σ#local normalizing variable
+                    V1[i_n,i_m,i_w] = σ*(lc+np.log(np.sum(np.exp(V[t+1,:,i_n,i_m,i_w]/σ-lc))))
+                    pr[t+1,:,i_n,i_m,i_w]=np.exp(V[t+1,:,i_n,i_m,i_w]/σ-V1[i_n,i_m,i_w]/σ)
+                    c1[i_n,i_m,i_w] = np.sum(pr[t+1,:,i_n,i_m,i_w]*policyC[t+1,:,i_n,i_m,i_w])
  
