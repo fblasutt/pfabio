@@ -6,7 +6,7 @@ from consav import linear_interp
 import quantecon as qe
 #https://www.econforge.org/interpolation.py/
 
-def simNoUncer_interp(p, model, Tstart=-1, Astart=0.0, Pstart=0.0, Vstart= -1.0*np.ones((2,2,2,2,2))):
+def simNoUncer_interp(p, model, Tstart=0, Astart=0.0, Pstart=0.0, Vstart= -1.0*np.ones((2,2,2,2,2))):
  
     
     #Set seed
@@ -17,22 +17,23 @@ def simNoUncer_interp(p, model, Tstart=-1, Astart=0.0, Pstart=0.0, Vstart= -1.0*
     ts=np.random.rand(p.T,p.N)
     
     #Call the simulator
-    ppath,cpath,apath,hpath,Epath=\
+    ppath,cpath,apath,hpath,Epath,vpath=\
         fast_simulate(Tstart,Astart,Pstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,tw,ts,p.wls,p.nwls,
-                      model['A'],model['c'],model['p'],model['pr'],model['model'])
+                      model['A'],model['c'],model['p'],model['pr'],model['V'],model['model'])
     
-    return {'p':ppath,'c':cpath,'A':apath,'h':hpath,'wh':Epath}
+    return {'p':ppath,'c':cpath,'A':apath,'h':hpath,'wh':Epath, 'v':vpath}
     
 @njit
 def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,tw,ts,wls,nwls,
-                  policyA1,policyC,policyP,pr,reform):
+                  policyA1,policyC,policyP,pr,V,reform):
 
     # Arguments for output
     cpath = np.nan+ np.zeros((T, N))           # consumption
-    hpath = np.nan+ np.zeros((T, N),dtype=np.int32)           # earnings path
+    hpath = np.zeros((T, N),dtype=np.int32)           # earnings path
     Epath = np.nan+ np.zeros((T, N))           # earnings path
-    apath = np.nan+ np.zeros((T + 1,N))        # assets at start of each period, decided 1 period ahead and so includes period T+1   
-    ppath = np.nan+ np.zeros((T + 1,N))        # points at start of each period, decided 1 period ahead and so includes period T+1
+    vpath = np.nan+ np.zeros((T, N))           # utility
+    apath = np.nan+ np.zeros((T,N))        # assets at start of each period, decided 1 period ahead and so includes period T+1   
+    ppath = np.nan+ np.zeros((T,N))        # points at start of each period, decided 1 period ahead and so includes period T+1
     
     
     # Modified initial conditions
@@ -46,7 +47,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
        
     
     # Obtain paths using the initial condition and the policy and value functions  
-    for t in range(Ti,T-1):  # loop through time periods for a pticular individual
+    for t in range(Ti,T):  # loop through time periods for a pticular individual
         for n in range(N):
             
             #Get the discrete choices first...
@@ -54,34 +55,25 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
             for pp in range(nwls):
                 prs[pp]=linear_interp.interp_2d(agrid,pgrid,pr[t,pp,:,:,tw[n]],apath[t,n],ppath[t,n])
 
-
+           
             i=np.argmin((ts[t,n]>np.cumsum(prs)))
             A1p=policyA1[t,i, :,:,tw[n]]
             Pp=policyP[t,i, :,:,tw[n]]
             Cp=policyC[t,i, :,:,tw[n]]
+            Vp=V[t,i, :,:,tw[n]]
+
             
-            #Hours below
-            #hp=np.ones(policyC[t,i, :,:,tw[n]].shape)*wls[i] 
 
-
-
-            apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])
-            ppath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,Pp,apath[t,n],ppath[t,n])
             cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])
             hpath[t, n] = i#linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])
             Epath[t, n] = w[t,tw[n]]
+            vpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Vp,apath[t,n],ppath[t,n])
             
-            # if reform == 0:
-            #     ppath[t+1, n]=  ppath[t, n]+w[t,tw[n]]*hpath[t, n]/E_bar_now
-            # else:
-                            
-            #     if ((t >=3) & (t <=10)):
-            #         ppath[t+1, n]=  ppath[t, n]+1.5*w[t,tw[n]]*hpath[t, n]/E_bar_now
-            #     else:
-            #         ppath[t+1, n]=  ppath[t, n]+w[t,tw[n]]*hpath[t, n]/E_bar_now
+            if t<T-1:apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])
+            if t<T-1:ppath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,Pp,apath[t,n],ppath[t,n])
         
      
-    return ppath,cpath,apath,hpath,Epath
+    return ppath,cpath,apath,hpath,Epath,vpath
 
 @njit
 def adjust_wealth(Vstart, N, V, apath, ppath, amax, agrid, pgrid, Ti, tw,nwls):

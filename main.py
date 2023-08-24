@@ -44,7 +44,7 @@ pWt = co.setup();pWt.w[3,:]=1.01*pWt.w[3,:]
 ModWt = sol.solveEulerEquation(pWt,model='baseline')
 
 #Lowe in t=3 only to mimin a 1% increase in net wages 
-pτt = co.setup();pτt.τ[3]=1-(1-p.τ[3])*1.01
+pτt = co.setup();pτt.τ[3]=1.01*p.τ[3]-0.01#1-(1-p.τ[3])*1.01
 Modτt = sol.solveEulerEquation(pτt,model='baseline')
 
 
@@ -190,5 +190,7 @@ plt.legend()                              #Plot the legend
 plt.show()     
 
 
-print("WLP is {}".format(np.mean(SB['h'][3:11,:]>0)))
+print("WLP is {}, data is {}".format(np.mean(SB['h'][3:11,:]>0),0.64))
+print("Part time is {}, data is {}".format(np.mean(SB['h'][3:11,:]==1),0.3136))
+print("The effect on full time employment is {}, data is {}".format(np.mean(SP['h'][3:11,:][SP['h'][3:11,:]>0]==2)-np.mean(SB['h'][3:11,:][SB['h'][3:11,:]>0]==2),0.045))
 print("Increase in employment is {}, data is {}".format(np.mean(SP['h'][3:11,:]>0)-np.mean(SB['h'][3:11,:]>0),0.099))

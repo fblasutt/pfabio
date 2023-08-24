@@ -2,14 +2,13 @@
 *Data for data estimation
 **************************
 
-Important question: should we focus on women with a partner?
+Important question: should we focus on women with a partner? For now, I think so.
 
 
 ***1) Earnings/wages
 
 Divide men (women) into N groups: groups should be associated with different expected life-time earnings (potential wages) of 
-men (women). The groups can be based on education or occupation. I think that the optimal N should be around 5-7. It would be great
-if the share of people per group was similar.
+men (women). The groups can be based on education (better) or occupation. I think that the optimal N should be around 3-7. 
 
 For each group of men (women), I need an estimation of the trend of average earnings (potential wages) by age.
 For men, it is common to obtain the earnings profile by regressing earnings on a polinomial of age. The coefficients of the earnings polynomial is 
@@ -23,7 +22,9 @@ maybe we can skip this for now?). For men for each group I also need an estimati
 -pension points
 -income group of women and partner (see above).
 
-You can create a dataset with the list of individuals in the sample, where for each household we have the variables above.
+You can create a dataset with the list of individuals in the sample, where for each household we have the variables above. If one or more of the
+variables (e.g., net worth) come from a differnt dataset than the "baseline" one, it would be great to have the (discrete) distribution of these variable conditional
+on the other charactheristics (e.g.: what is the distribution of networth for college graduates with 2 pension points...?)
 
 
 **3) Target moments.
@@ -33,7 +34,7 @@ Effect of the reform on
 1) hours worked
 2) employment
 3) part time/ marginal employment
-4) pension point
+4) pension points
 5) earnings
 
 Moreover, I need the average Share of women working, working into full employment, working part time/marginal employment. 
@@ -44,7 +45,7 @@ we can leave this for later
 
 **4) Additional data
 
-Average number of hours worked for women into full employment and part time/ marginal employment.
+Average number of hours worked for women into full employment and part time/ marginal employment. (is it possible to see if the reform affect these values?)
 Estimation of the wage penalty of working into part time/marginal employment: obtained using a ummy variable in the regression in 2)?
 
 

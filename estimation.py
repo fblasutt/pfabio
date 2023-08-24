@@ -6,12 +6,13 @@ Created on Mon Dec 26 14:56:15 2022
 """
 
 
-import dfols
 import co # user defined functions
 import sol
 import sim
 import numpy as np
-from scipy.optimize import minimize
+import pybobyqa
+from scipy.optimize import dual_annealing,differential_evolution
+import scipy
 
 #Actual Program
 
@@ -26,7 +27,7 @@ def q(pt):
     #..and update them
     p.q=pt[0]
     p.β =pt[1]
-    p.σ =pt[2]
+    p.δ =pt[2]
     
     #Pension reform
     ModP= sol.solveEulerEquation(p,model='pension reform')
@@ -47,15 +48,13 @@ def q(pt):
     shpo=np.mean(SB['h'][3:11,:]>0)
     sh05=np.mean(SB['h'][3:11,:]==1)
     eff=np.mean(SP['h'][3:11,:]>0)-np.mean(SB['h'][3:11,:]>0)
+    eff_full=np.mean(SP['h'][3:11,:][SP['h'][3:11,:]>0]==2)-np.mean(SB['h'][3:11,:][SB['h'][3:11,:]>0]==2)
     
     #Print the point
-    print("The point is {}, the moments are {}, {}, {}".format(pt,shpo,sh05,eff))   
-    
-    ans=[((shpo-0.64)/0.64)**2,\
-         ((sh05-0.33)/0.33)**2,\
-         ((eff-0.099)/0.099)**2]
+    print("The point is {}, the moments are {}, {}, {}, {}".format(pt,shpo,sh05,eff,eff_full))   
+
         
-    return ans#((shpo-0.64)/0.64)**2+((sh05-0.33)/0.33)**2+((eff-0.099)/0.099)**2#ans
+    return ((shpo-0.64)/0.64)**2+((sh05-0.31)/0.31)**2+((eff-0.099)/0.099)**2#ans
             
             
             
@@ -64,19 +63,20 @@ np.random.seed(10)
 
 
 #Define initial point (xc) and boundaries (xl,xu)
-xc=np.array([0.09631098,0.52197238,0.00311286])
-xl=np.array([0.06,0.4,0.0005])
-xu=np.array([0.15,0.8,0.01])
+xc=np.array([0.12,0.66,0.015])
+xl=np.array([0.11,0.50,0.00])
+xu=np.array([0.17,0.85,0.02])
 
 #Optimization below
-res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-8, maxfun=600, bounds=(xl,xu),
-                npt=len(xc)+5,scaling_within_bounds=True, 
+res=pybobyqa.solve(q, xc, rhobeg = 0.3, rhoend=1e-4, maxfun=200, bounds=(xl,xu),
+                npt=len(xc)+5,scaling_within_bounds=True, seek_global_minimum=True,
                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
-                              'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95,
-                              'regression.momentum_extra_steps':True},
+                              'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
                 objfun_has_noise=False)
  
-
+#res = scipy.optimize.minimize(q,xc,bounds=list(zip(list(xl), list(xu))),method='Nelder-Mead',tol=1e-8)
+#res = differential_evolution(q,bounds=list(zip(list(xl), list(xu))),disp=True,mutation=(0.1, 0.5),recombination=0.8) 
+ 
 
 #The point is [0.09800833, 0.50142732, 0.00124261 ], the moments are 0.6376375, 0.3382125, 0.09378124999999998
   
