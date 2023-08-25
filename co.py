@@ -15,15 +15,16 @@ class setup():
         self.T = 55           # Number of time periods
         self.R = 35           # Retirement period
         self.r = 0.015        # Interest rate
-        self.δ = 0.01554451#0.03    # Discount rate
-        self.β = 0.59951563#0.54743387      # Utility weight on leisure
+        self.δ = 0.01668503#0.03    # Discount rate
+        self.β = 0.48489817#0.54743387      # Utility weight on leisure
         self.γc = 1      # risk pameter on consumption!!!Check in upperenvelop if not 1
-        self.γh = .5    # risk pameter on labour
-        self.E_bar_now = 38000/1200  # Average earnings
-        self.q = 0.11894444#0.1110743#0.11963534         # Fixed cost of pticipation
-        self.ρ =350/1200       # Dollar value of points
+        self.γh = 1.0    # risk pameter on labour
+        self.scale=1200
+        self.E_bar_now = 38000/self.scale  # Average earnings
+        self.q = 0.09179383#0.1110743#0.11963534         # Fixed cost of pticipation
+        self.ρ =350/self.scale      # Dollar value of points
         self.ϵ=0.000000001
-        self.σ=0.00428793          #Size of taste shock
+        self.σ=0.005#0.001#0.00428793          #Size of taste shock
         
         
         # Levels of WLS
@@ -32,7 +33,7 @@ class setup():
         
         # Hourly wage 
         self.wM=np.zeros(self.T) 
-        for t in range(self.T):self.wM[t]=13+0.05*t 
+        for t in range(self.T):self.wM[t]=12+0.3*t 
         
         # Taxes
         self.τ=np.zeros(self.T) 
@@ -47,8 +48,8 @@ class setup():
         
         # Earnings of men
         self.y_N=np.zeros((self.T,self.nw)) 
-        for t in range(self.R):self.y_N[t,:]=48000/1200
-        for t in range(self.R,self.T):self.y_N[t,:]=48000/1200*0.4
+        for t in range(self.R):self.y_N[t,:]=40000/self.scale
+        for t in range(self.R,self.T):self.y_N[t,:]=40000/self.scale*0.4
         
         #Create actual wages 
         self.w=np.zeros((self.T,self.nw)) 
@@ -63,14 +64,14 @@ class setup():
         self.maxHours = 1880
         
         # simulations
-        self.N = 10000        # agents to simulate
+        self.N = 20000        # agents to simulate
         
         # 2. GENERATE GRID
         
         # Assets
         self.NA = 20
         self.amin=0.0
-        self.amax=650000/1200
+        self.amax=1550000/self.scale
         self.agrid=np.linspace(self.amin,self.amax,self.NA)#nonlinspace(0.0,450000,self.NA,1.4)#np.linspace(0.0,250000,self.NA)#
         
         
@@ -78,7 +79,7 @@ class setup():
          
         #Initial assets 
         self.Aμ = 0.0        # Assets people start life with (ave) 
-        self.Aσ = 10000.0/1200   # Assets people start life with 
+        self.Aσ = 10000.0/self.scale   # Assets people start life with 
         self.startAd   = norm.cdf(self.agrid[1:],self.Aμ,self.Aσ)-\
                         norm.cdf(self.agrid[:-1],self.Aμ,self.Aσ) 
         self.startAd = np.append(self.startAd,0.0) 
@@ -91,8 +92,9 @@ class setup():
         
         # Pension points
         self.NP =10
-        self.pgrid=nonlinspace(0.0,self.R,self.NP,1.4)#np.linspace(0,self.R,self.NP)## # max one point per year in the law...
-        self.startP = 0   # points people start life with
+        self.startP = 8.0 
+        self.pgrid=nonlinspace(self.startP,self.R,self.NP,1.4)#np.linspace(0,self.R,self.NP)## # max one point per year in the law...
+          # points people start life with
         
         #Multidimensional grid
         self.mgrid=CGrid((self.agrid[0],self.agrid[-1],self.NA),(self.pgrid[0],self.pgrid[-1],self.NP))

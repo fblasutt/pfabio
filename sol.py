@@ -80,7 +80,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
 
         wt=w[t,:]
         τ=τt[t]
-        y_Nt=y_N_box[t,:,:,:]
+        y_Nt=y_N_box[t,:,:,:,0]
         policy=((t >=3) & (t <=10) & (reform==1))
         
         #Multiplier of points based on points
@@ -102,6 +102,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
             
             for i in range(nwls):
                 
+                #modify taxes if
                 #Unconstrained
                 ce[i,...]=c1*np.power(((1+r)/(1+δ)),(-1/γc)) #Euler eq.
                 pe[i,...]=pgrid_box-    mp*wls[i]*wt/E_bar_now   #Pens. points

@@ -66,22 +66,22 @@ ModτtP = sol.solveEulerEquation(pτtP,model='pension reform')
 ########################################
 
 #Baseline
-SB= sim.simNoUncer_interp(p,ModB,Astart=p.startA,Pstart=np.zeros(p.N))
+SB= sim.simNoUncer_interp(p,ModB,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
 
 #Wages 1% higher than baseline in t=3 only + baseline
-SWtB= sim.simNoUncer_interp(pWtB,ModWtB,Astart=p.startA,Pstart=np.zeros(p.N))
+SWtB= sim.simNoUncer_interp(pWtB,ModWtB,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
 
 # Lower taxes in t=3 only  + baseline
-SτtB= sim.simNoUncer_interp(pτtB,ModτtB,Astart=p.startA,Pstart=np.zeros(p.N))
+SτtB= sim.simNoUncer_interp(pτtB,ModτtB,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
 
 #Baseline
-SP= sim.simNoUncer_interp(p,ModP,Astart=p.startA,Pstart=np.zeros(p.N))
+SP= sim.simNoUncer_interp(p,ModP,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
 
 #Wages 1% higher than baseline in t=3 only + pension reform
-SWtP= sim.simNoUncer_interp(pWtP,ModWtP,Astart=p.startA,Pstart=np.zeros(p.N))
+SWtP= sim.simNoUncer_interp(pWtP,ModWtP,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
 
 # Lower taxes in t=3 only  + pension reform
-SτtP= sim.simNoUncer_interp(pτtP,ModτtP,Astart=p.startA,Pstart=np.zeros(p.N))
+SτtP= sim.simNoUncer_interp(pτtP,ModτtP,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
 
 
 # ########################################
@@ -107,17 +107,16 @@ table=r'\begin{table}[htbp]'+\
        r'\centering\footnotesize'+\
        r'\begin{tabular}{lcc}'+\
        r' \toprule '+\
-       r"& Change in gross wages & Change in tax rate   \\"+\
+       r"& Change in gross wages & Change in income tax rate   \\"+\
        r'\midrule   '+\
        r' Marshallian elasticity of labor supply &'+p31(ϵf_wB)+'&'+p31(ϵf_τB)+'\\\\'+\
        r'  \bottomrule'+\
        r'\multicolumn{3}{l}{\textsc{Notes:} All the elsticities are computed for the same change in net wages.}'+\
       """\end{tabular}
       """+\
-      r'{\raggedright\footnotesize \textsc{Notes:} All the elsticities are computed for the same change in net wages.\par}'+\
       r'\end{table}'
       
 #Write table to tex file
-with open('C:/Users/Fabio/Dropbox/occupation/model/pfabio/output/table_expe.tex', 'w') as f:
+with open('C:/Users/Fabio/Dropbox/occupation/model/pfabio/output/table_elasticities.tex', 'w') as f:
     f.write(table)
     f.close()

@@ -37,7 +37,7 @@ def q(pt):
   
 
     #Baseline
-    SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.zeros(p.N))
+    SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
 
     #Pension reform
     SP= sim.simNoUncer_interp(p,ModP,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
@@ -54,7 +54,7 @@ def q(pt):
     print("The point is {}, the moments are {}, {}, {}, {}".format(pt,shpo,sh05,eff,eff_full))   
 
         
-    return ((shpo-0.64)/0.64)**2+((sh05-0.31)/0.31)**2+((eff-0.099)/0.099)**2#ans
+    return ((shpo-0.65)/0.65)**2+((sh05-0.31)/0.31)**2+((eff-0.0715)/0.0715)**2#ans
             
             
             
@@ -64,17 +64,17 @@ np.random.seed(10)
 
 #Define initial point (xc) and boundaries (xl,xu)
 xc=np.array([0.12,0.66,0.015])
-xl=np.array([0.11,0.50,0.00])
+xl=np.array([0.08,0.30,0.00])
 xu=np.array([0.17,0.85,0.02])
 
 #Optimization below
-res=pybobyqa.solve(q, xc, rhobeg = 0.3, rhoend=1e-4, maxfun=200, bounds=(xl,xu),
-                npt=len(xc)+5,scaling_within_bounds=True, seek_global_minimum=True,
-                user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
-                              'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
-                objfun_has_noise=False)
+# res=pybobyqa.solve(q, xc, rhobeg = 0.3, rhoend=1e-8, maxfun=200, bounds=(xl,xu),
+#                 npt=len(xc)+5,scaling_within_bounds=True, seek_global_minimum=False,
+#                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
+#                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
+#                 objfun_has_noise=False)
  
-#res = scipy.optimize.minimize(q,xc,bounds=list(zip(list(xl), list(xu))),method='Nelder-Mead',tol=1e-8)
+res = scipy.optimize.minimize(q,xc,bounds=list(zip(list(xl), list(xu))),method='Nelder-Mead',tol=1e-5)
 #res = differential_evolution(q,bounds=list(zip(list(xl), list(xu))),disp=True,mutation=(0.1, 0.5),recombination=0.8) 
  
 

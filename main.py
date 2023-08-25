@@ -2,7 +2,9 @@
 #        It also features a separate budget for pension benefits,
 #        following the reform of the German pension system
 
-
+#!!!Note: the model cannot match the decomposition of the effect on pension points (mech+behav)
+#+ also the effect on earnings seems extremely hard to get. Perhaps adding minijob helps,
+#if thos imply very low wages and little working hours
 ######################################
 # Preamble
 ######################################
@@ -56,7 +58,7 @@ Modτt = sol.solveEulerEquation(pτt,model='baseline')
 ########################################
 
 #Baseline
-SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.zeros(p.N))
+SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
 
 #Pension reform
 SP= sim.simNoUncer_interp(p,ModP,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
@@ -84,9 +86,9 @@ print("The Simulated Frisch Elasticity (using change in w) is {}, intensive marg
 print("The Simulated Frisch Elasticity (using change in w) is {}, intensive margin is {}".format(ϵf_τt,ϵf_τti))
 
 
-########################################
-# plot the result
-########################################
+# ########################################
+# # plot the result
+# ########################################
 
 t = list(range(30, p.T+30))
 # Plot paths of consumption and assets 
@@ -123,7 +125,7 @@ plt.show()
 
 # 4
 fig = plt.figure(figsize=(10,4)) 
-plt.plot(t,np.mean(SP['A'][1:p.T+1,:],axis=1), 'blue', t, np.mean(SB['A'][1:p.T+1,:],axis=1), 'red')
+plt.plot(t,np.mean(SP['A'],axis=1), 'blue', t, np.mean(SB['A'],axis=1), 'red')
 plt.xlabel("Age")
 plt.legend(('Reform','No Reform'))
 plt.ylabel('Assets over time')
@@ -133,7 +135,7 @@ plt.show()
 
 # 5
 fig = plt.figure(figsize=(10,4)) 
-plt.plot(t,np.mean(SP['p'][1:p.T+1,:],axis=1), 'blue', t, np.mean(SB['p'][1:p.T+1,:],axis=1), 'red')
+plt.plot(t,np.mean(SP['p'],axis=1), 'blue', t, np.mean(SB['p'],axis=1), 'red')
 plt.xlabel("Age")
 plt.legend(('Reform','No Reform'))
 plt.ylabel('points')
@@ -192,5 +194,12 @@ plt.show()
 
 print("WLP is {}, data is {}".format(np.mean(SB['h'][3:11,:]>0),0.64))
 print("Part time is {}, data is {}".format(np.mean(SB['h'][3:11,:]==1),0.3136))
+print("Effect on employment is {}, data is {}".format(np.mean(p.wls[SP['h'][3:11,:]]>0)-np.mean(p.wls[SB['h'][3:11,:]]>0),0.1))
 print("The effect on full time employment is {}, data is {}".format(np.mean(SP['h'][3:11,:][SP['h'][3:11,:]>0]==2)-np.mean(SB['h'][3:11,:][SB['h'][3:11,:]>0]==2),0.045))
 print("Increase in employment is {}, data is {}".format(np.mean(SP['h'][3:11,:]>0)-np.mean(SB['h'][3:11,:]>0),0.099))
+print("Effect on earnings is {}, data is {}".format((np.mean(p.wls[SP['h'][3:11,:]]*SP['wh'][3:11,:])-np.mean(p.wls[SB['h'][3:11,:]]*SB['wh'][3:11,:]))/(np.mean(p.wls[SB['h'][3:11,:]]*SB['wh'][3:11,:])),0.46))
+print("Baseline pension points are {}, data is {}".format(np.mean(np.diff(SB['p'][3:11,:],axis=0)),0.23))
+print("Gender gap in old age if {}".format(1-(np.mean(p.ρ*SB['p'][p.R:,:]))/np.mean(p.y_N[p.R:,:])))
+
+
+

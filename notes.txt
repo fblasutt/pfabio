@@ -1,0 +1,37 @@
+-I do not understand the decomposition on the effect on pension credits. I think that
+ total effect=(baseline credits+behavioral effect)*1.5
+
+-By having marginal employment we should be ablt to match the effect on pension credits
+
+-Harder to match the effect on earnings: massive effect, I suspect there are some
+ women switchin employment *within* category full/part time/marginal. Hoepfully
+ we will not miss to much
+
+-The model has a very hard time matching the effect of the reform on employment. Need
+ to try with different utility functions. *Solved*: just increase the intertemporal
+ elasticity of substutution!
+
+-Identification works ok, not great because of the dicrete choice. In principle we would 
+ like to have a large tast shock, but this mechanically decrease the effect of the
+ reform (preferences starts to matter more than invcentives). Combining this with
+ point above could be a nice way to go. On the same lines: if I decrease the level of
+ the target effect and increase to taste shock size, identification works as it should.
+ Moreover, having more agents does help for "perfect" indetification. See *solution*
+ above!
+
+- One nice thing: the effect on the gender wage gap + the conclusion about tax rate vs
+  cargiver credits reforms seems pretty robust to changing the elasticity of substitution!
+
+- Interpretation of results: the heterogeneous effect by initial earnings makes sense if
+  richer women i) live longer, ii) are more patient. I bet both are true, to be checked.
+
+
+- Artmann, schundlen, Giupponi: include their effect on income effects (thats what they do)
+  as an expreiment
+
+- LABOR SUPPLY AND THE PENSION-CONTRIBUTION LINK (French , linder,..) Differeny kind of policy
+  (before: only best 10 yrs matter for pension, after everything matter) and more at men. Reform
+  was gradual for women (anticipation) and they find smaller effects.
+
+ - *Important* Need to have more realistic rules: get benefits also from children 0-3 + rules also
+    are different for 2+ children...
