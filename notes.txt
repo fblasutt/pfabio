@@ -35,3 +35,12 @@
 
  - *Important* Need to have more realistic rules: get benefits also from children 0-3 + rules also
     are different for 2+ children...
+
+- Can one earn more that 2 earnings points in one year? If not, this should be in the model
+
+- Is the reform from age 3 or 4 of children?
+
+- What happens to children 0-3? Do mothers get points if not working? Always? When was this introduced?
+
+- Why control group starts at 15 and not 11 years?
+

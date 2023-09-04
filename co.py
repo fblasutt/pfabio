@@ -43,7 +43,7 @@ class setup():
         self.nw=11
         self.σw=0.5 #dispersion of wages 
         self.wv=np.linspace(-self.σw,self.σw,self.nw) 
-        self.Π=rouwenhorst(self.nw, 0.0, self.σ,0.0).P 
+        self.Π=rouwenhorst(self.nw, 0.0, self.σ,mu=0.0).P 
         self.Π=np.ones(self.Π.shape)/self.nw
         
         # Earnings of men

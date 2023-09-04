@@ -103,12 +103,12 @@ table=r'\begin{table}[htbp]'+\
        r'\centering\footnotesize'+\
        r'\begin{tabular}{lccc}'+\
        r' \toprule '+\
-       r"& Pay gap & Women's labor & Welfare gains  \\"+\
-       r"&at retirement &participation & wrt baseline (euros)  \\"+\
+       r"& Pension & Women's labor & Welfare gains  \\"+\
+       r"&gender gap &participation & wrt baseline (euros)  \\"+\
        r'\midrule   '+\
        r' Baseline                 &'+p43(ggap_old_B)+'&'+p43(WLP_B)+'& 0.0\\\\'+\
        r' Caregiver credits        &'+p43(ggap_old_P)+'&'+p43(WLP_P)+'&'+p50(welf_P)+'\\\\'+\
-       r' Lower taxes              &'+p43(ggap_old_τ)+'&'+p43(WLP_τ)+'&'+p50(welf_τ)+'\\\\'+\
+       r' Lower income taxes              &'+p43(ggap_old_τ)+'&'+p43(WLP_τ)+'&'+p50(welf_τ)+'\\\\'+\
        r'  \bottomrule'+\
        r'\multicolumn{4}{l}{\textsc{Notes:} The experiments in the last two rows imply the same government deficit}'+'\\\\'+\
        r'\multicolumn{4}{l}{of '+p50((deficit_P-deficit_B)*p.scale)+' euros. Welfare gains = equivalent transfer in baseline model at age 30. }'+\

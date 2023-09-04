@@ -2,7 +2,10 @@
 *Data for data estimation
 **************************
 
-Important question: should we focus on women with a partner? For now, I think so.
+Important question: should we focus on women with a partner? For now, I think so. If yes, all the moments should be constructed
+with this group of people. Also, what do to with women with 2+ more children? drop them from the sample for the estimation of the
+structural model? Otherwise, I can add exogenous fertility to the model. I think that if results are similar for the "cut sample"
+(e.g., only couples with 1 child) I would use the cut sample. 
 
 
 ***1) Earnings/wages
@@ -27,26 +30,11 @@ variables (e.g., net worth) come from a differnt dataset than the "baseline" one
 on the other charactheristics (e.g.: what is the distribution of networth for college graduates with 2 pension points...?)
 
 
-**3) Target moments.
+**3) Target moments: 1) effect of the reform on employment (or pension points), 2) share of women employed, 3) share of women working part-time,
+     4) share of women working in regular/marginal employment. Nontarteget moments: effect of the reform on
+     marginal employment, full-time employment, pension points with and without caregiver credits. The sample for which we compute these moments should be consistent
+     with the model (eg., only women with partner and children aged 3-20).
 
-Effect of the reform on
-
-1) hours worked
-2) employment
-3) part time/ marginal employment
-4) pension points
-5) earnings
-
-Moreover, I need the average Share of women working, working into full employment, working part time/marginal employment. 
-I need the moments above in three forms: aggregate, by age of the women, by "income group" of the women and the husband.
-
-Bonus: does the effect of the reform depends on the *age* of the mother? This can help calibrate income effects. Maybe
-we can leave this for later
-
-**4) Additional data
-
-Average number of hours worked for women into full employment and part time/ marginal employment. (is it possible to see if the reform affect these values?)
-Estimation of the wage penalty of working into part time/marginal employment: obtained using a ummy variable in the regression in 2)?
 
 
 

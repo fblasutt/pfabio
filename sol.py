@@ -80,7 +80,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
 
         wt=w[t,:]
         τ=τt[t]
-        y_Nt=y_N_box[t,:,:,:,0]
+        y_Nt=y_N_box[t,:,:,:]
         policy=((t >=3) & (t <=10) & (reform==1))
         
         #Multiplier of points based on points
@@ -105,11 +105,11 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
                 #modify taxes if
                 #Unconstrained
                 ce[i,...]=c1*np.power(((1+r)/(1+δ)),(-1/γc)) #Euler eq.
-                pe[i,...]=pgrid_box-    mp*wls[i]*wt/E_bar_now   #Pens. points
+                pe[i,...]=pgrid_box-np.maximum(np.minimum(mp*wls[i]*wt/E_bar_now,1.0),wls[i]*wt/E_bar_now)   #Pens. points
                 ae[i,...]=(agrid_box-wt*wls[i]*(1-τ)-y_Nt+ce[i,...])/(1+r)#Savings
                 
                 #Constrained (assets)
-                pe_bc[i,...]=pgrid_box-   mp*wls[i]*wt/E_bar_now      #Pens. points
+                pe_bc[i,...]=pgrid_box-  np.maximum(np.minimum(mp*wls[i]*wt/E_bar_now,1.0),wls[i]*wt/E_bar_now)      #Pens. points
                 ce_bc[i,...]=cgrid_box.copy()
                 ae_bc[i,...]=(ce_bc[i,...] - wt*(1-τ)*wls[i] - y_Nt+amin)/(1+r)#Savings
         

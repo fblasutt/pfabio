@@ -17,11 +17,11 @@ def simNoUncer_interp(p, model, Tstart=0, Astart=0.0, Pstart=0.0, Vstart= -1.0*n
     ts=np.random.rand(p.T,p.N)
     
     #Call the simulator
-    ppath,cpath,apath,hpath,Epath,vpath=\
+    ppath,cpath,apath,hpath,Epath,vpath,wpath=\
         fast_simulate(Tstart,Astart,Pstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,tw,ts,p.wls,p.nwls,
                       model['A'],model['c'],model['p'],model['pr'],model['V'],model['model'])
     
-    return {'p':ppath,'c':cpath,'A':apath,'h':hpath,'wh':Epath, 'v':vpath}
+    return {'p':ppath,'c':cpath,'A':apath,'h':hpath,'wh':Epath, 'v':vpath,'w':wpath}
     
 @njit
 def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,tw,ts,wls,nwls,
@@ -31,6 +31,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
     cpath = np.nan+ np.zeros((T, N))           # consumption
     hpath = np.zeros((T, N),dtype=np.int32)           # earnings path
     Epath = np.nan+ np.zeros((T, N))           # earnings path
+    wpath = np.nan+ np.zeros((T, N))           # wage path
     vpath = np.nan+ np.zeros((T, N))           # utility
     apath = np.nan+ np.zeros((T,N))        # assets at start of each period, decided 1 period ahead and so includes period T+1   
     ppath = np.nan+ np.zeros((T,N))        # points at start of each period, decided 1 period ahead and so includes period T+1
@@ -66,14 +67,15 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
 
             cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])
             hpath[t, n] = i#linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])
-            Epath[t, n] = w[t,tw[n]]
+            Epath[t, n] = w[t,tw[n]]*wls[hpath[t, n]]
+            wpath[t, n] = w[t,tw[n]]
             vpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Vp,apath[t,n],ppath[t,n])
             
             if t<T-1:apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])
             if t<T-1:ppath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,Pp,apath[t,n],ppath[t,n])
         
      
-    return ppath,cpath,apath,hpath,Epath,vpath
+    return ppath,cpath,apath,hpath,Epath,vpath,wpath
 
 @njit
 def adjust_wealth(Vstart, N, V, apath, ppath, amax, agrid, pgrid, Ti, tw,nwls):
