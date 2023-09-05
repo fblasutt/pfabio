@@ -15,22 +15,22 @@ class setup():
         self.T = 55           # Number of time periods
         self.R = 35           # Retirement period
         self.r = 0.015        # Interest rate
-        self.δ = 0.02318381#0.03    # Discount rate
-        self.β = 0.5415781#0.54743387      # Utility weight on leisure
+        self.δ = 0.0132772#0.03    # Discount rate
+        self.β = 0.64951288#0.54743387      # Utility weight on leisure
         self.γc = 1      # risk pameter on consumption!!!Check in upperenvelop if not 1
         self.γh = 1.0    # risk pameter on labour
         self.scale=1200
         self.E_bar_now = 38000/self.scale  # Average earnings
-        self.q = 0.13480626 #0.1110743#0.11963534         # Fixed cost of pticipation
+        self.q =0.1682684  #0.1110743#0.11963534         # Fixed cost of pticipation
+        self.q_mini =0.015
         self.ρ =350/self.scale      # Dollar value of points
         self.ϵ=0.000000001
-        self.σ=0.01#0.001#0.00428793          #Size of taste shock
+        self.σ=0.02#0.001#0.00428793          #Size of taste shock
         
-        
-        # Levels of WLS
-        self.wls=np.array([0.0,0.5,1.0])
+               # Levels of WLS
+        self.wls=np.array([0.0,0.33,0.6,1.0])
         self.nwls=len(self.wls)
-        
+           
         # Hourly wage 
         self.wM=np.zeros(self.T) 
         for t in range(self.T):self.wM[t]=17.5+0.1*t 

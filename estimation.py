@@ -46,15 +46,15 @@ def q(pt):
     
     #
     shpo=np.mean(SB['h'][3:11,:]>0)
-    sh05=np.mean(SB['h'][3:11,:]==1)
+    sh1=np.mean(SB['h'][3:11,:]==3)
     eff=np.mean(SP['h'][3:11,:]>0)-np.mean(SB['h'][3:11,:]>0)
-    eff_full=np.mean(SP['h'][3:11,:][SP['h'][3:11,:]>0]==2)-np.mean(SB['h'][3:11,:][SB['h'][3:11,:]>0]==2)
+    eff_full=np.mean(SP['h'][3:11,:][SP['h'][3:11,:]>0]==3)-np.mean(SB['h'][3:11,:][SB['h'][3:11,:]>0]==3)
     
     #Print the point
-    print("The point is {}, the moments are {}, {}, {}, {}".format(pt,shpo,sh05,eff,eff_full))   
+    print("The point is {}, the moments are {}, {}, {}, {}".format(pt,shpo,sh1,eff,eff_full))   
 
         
-    return ((shpo-0.65)/0.65)**2+((sh05-0.31)/0.31)**2+((eff-0.1)/0.1)**2#ans
+    return ((shpo-0.65)/0.65)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2#ans
             
             
             
@@ -65,7 +65,7 @@ np.random.seed(10)
 #Define initial point (xc) and boundaries (xl,xu)
 xc=np.array([0.12,0.66,0.015])
 xl=np.array([0.08,0.30,0.00])
-xu=np.array([0.17,0.85,0.03])
+xu=np.array([0.17,1.2,0.03])
 
 #Optimization below
 # res=pybobyqa.solve(q, xc, rhobeg = 0.3, rhoend=1e-8, maxfun=200, bounds=(xl,xu),

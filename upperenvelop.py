@@ -21,7 +21,7 @@ def compute(out_c,out_n,pmua,out_v,holes,
             m,n,c,m_bc,n_bc,c_bc,
             num,
             w,
-            γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,valt=np.array([[]])):
+            γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,q_mini,valt=np.array([[]])):
     
     # a. infer shape
     Nb,Na,nw = w.shape
@@ -61,22 +61,23 @@ def compute(out_c,out_n,pmua,out_v,holes,
             for i_a in prange(Na):
                 for i_w in prange(nw):
                     for tri in prange(2): #consider both upper and lower triangle     
+                
                     
           
                         upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,
                                       m,n,c,m_bc,n_bc,c_bc,
                                       Na,Nb,valid,num,w,
-                                      γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp)                    
+                                      γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,q_mini)                    
                         
         # iii. fill holes (technique: nearest neighbor)
-        fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,Nb,Na,nw)
+        fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,q_mini,Nb,Na,nw)
 
 @njit
 #@profile
 def upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,
                   m_ok,n_ok,c_ok,m_bc,n_bc,c_bc,
                   Na,Nb,valid,num,w,
-                  γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,
+                  γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,q_mini,
                   egm_extrap_add=2,egm_extrap_w=-0.25):
     
     # a. simplex in (a,b)-space (or similar with constrained choices)
@@ -192,7 +193,7 @@ def upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,
                     
                     # v. value of choice
                     w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w],b_interp,a_interp)
-                    v_interp=np.log(c_interp)-β*wls**(1+1/γh) / (1+1/γh)-q+w_interp/(1+δ)     
+                    v_interp=np.log(c_interp)-β*wls**(1+1/γh) / (1+1/γh)-q+q_mini+w_interp/(1+δ)     
     
                     # vi. update if max
                     if v_interp >out_v[i_n,i_m,i_w]:
@@ -204,7 +205,7 @@ def upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,
                         holes[i_n,i_m,i_w,j] = 0
 
 @njit
-def fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,Nn,Nm,nw):
+def fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,q_mini,Nn,Nm,nw):
 
     # a. locate global bounding box with content
     i_n_min = 0
@@ -291,7 +292,7 @@ def fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgri
                                         
                                     #Value of choice
                                     w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w],b_interp,a_interp)
-                                    v_interp=np.log(c_interp)-β*wls**(1+1/γh) / (1+1/γh)-q+1/(1+δ)*w_interp
+                                    v_interp=np.log(c_interp)-β*wls**(1+1/γh) / (1+1/γh)-q+q_mini+1/(1+δ)*w_interp
                                                 
                                        
                                     if c_interp <= 0.0 or a_interp < 0 or b_interp < amin:
