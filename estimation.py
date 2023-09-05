@@ -54,7 +54,7 @@ def q(pt):
     print("The point is {}, the moments are {}, {}, {}, {}".format(pt,shpo,sh05,eff,eff_full))   
 
         
-    return ((shpo-0.65)/0.65)**2+((sh05-0.31)/0.31)**2+((eff-0.0715)/0.0715)**2#ans
+    return ((shpo-0.65)/0.65)**2+((sh05-0.31)/0.31)**2+((eff-0.1)/0.1)**2#ans
             
             
             
@@ -65,7 +65,7 @@ np.random.seed(10)
 #Define initial point (xc) and boundaries (xl,xu)
 xc=np.array([0.12,0.66,0.015])
 xl=np.array([0.08,0.30,0.00])
-xu=np.array([0.17,0.85,0.02])
+xu=np.array([0.17,0.85,0.03])
 
 #Optimization below
 # res=pybobyqa.solve(q, xc, rhobeg = 0.3, rhoend=1e-8, maxfun=200, bounds=(xl,xu),
