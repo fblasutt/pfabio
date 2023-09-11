@@ -24,6 +24,7 @@ import sol
 import sim
 import numpy as np
 import matplotlib.pyplot as plt
+from transitions_chart import transitions_chart
 
 
 # set up parameters
@@ -211,6 +212,8 @@ print("Effect of earinngs point without cargiver credits, earnings above median 
 beloww=SB['w'][2,:]<np.median(SB['w'][2,:])
 print("Effect of earinngs point without cargiver credits, wages below median is {}".format(np.mean(SP['wh'][3:11,:][:,beloww] /p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,beloww]/ p.E_bar_now)))
 print("Effect of earinngs point without cargiver credits, wages above median is {}".format(np.mean(SP['wh'][3:11,:][:,~beloww]/p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,~beloww]/p.E_bar_now)))
+
+Π=transitions_chart(SB,SP)
 
 
 

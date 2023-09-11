@@ -15,25 +15,25 @@ class setup():
         self.T = 55           # Number of time periods
         self.R = 35           # Retirement period
         self.r = 0.015        # Interest rate
-        self.δ = 0.0132772#0.03    # Discount rate
-        self.β = 0.64951288#0.54743387      # Utility weight on leisure
+        self.δ = 0.01435056#0.03    # Discount rate
+        self.β = 0.62983154#0.54743387      # Utility weight on leisure
         self.γc = 1      # risk pameter on consumption!!!Check in upperenvelop if not 1
         self.γh = 1.0    # risk pameter on labour
         self.scale=1200
         self.E_bar_now = 38000/self.scale  # Average earnings
-        self.q =0.1682684  #0.1110743#0.11963534         # Fixed cost of pticipation
-        self.q_mini =0.015
+        self.q =0.14626213  #0.1110743#0.11963534         # Fixed cost of pticipation
+        self.q_mini =0.1
         self.ρ =350/self.scale      # Dollar value of points
         self.ϵ=0.000000001
-        self.σ=0.02#0.001#0.00428793          #Size of taste shock
+        self.σ=0.004#0.001#0.00428793          #Size of taste shock
         
                # Levels of WLS
-        self.wls=np.array([0.0,0.33,0.6,1.0])
+        self.wls=np.array([0.0,0.1,0.6,1.0])
         self.nwls=len(self.wls)
            
         # Hourly wage 
         self.wM=np.zeros(self.T) 
-        for t in range(self.T):self.wM[t]=17.5+0.1*t 
+        for t in range(self.T):self.wM[t]=18.25+0.05*t 
         
         # Taxes
         self.τ=np.zeros(self.T) 
@@ -71,15 +71,15 @@ class setup():
         # Assets
         self.NA = 20
         self.amin=0.0
-        self.amax=1550000/self.scale
-        self.agrid=np.linspace(self.amin,self.amax,self.NA)#nonlinspace(0.0,450000,self.NA,1.4)#np.linspace(0.0,250000,self.NA)#
+        self.amax=1000000/self.scale
+        self.agrid=nonlinspace(self.amin,self.amax,self.NA,1.4)#np.linspace(self.amin,self.amax,self.NA)#np.linspace(0.0,250000,self.NA)#
         
         
                  
          
         #Initial assets 
-        self.Aμ = 0.0        # Assets people start life with (ave) 
-        self.Aσ = 10000.0/self.scale   # Assets people start life with 
+        self.Aμ = 30000.0/self.scale        # Assets people start life with (ave) 
+        self.Aσ = 20000.0/self.scale   # Assets people start life with 
         self.startAd   = norm.cdf(self.agrid[1:],self.Aμ,self.Aσ)-\
                         norm.cdf(self.agrid[:-1],self.Aμ,self.Aσ) 
         self.startAd = np.append(self.startAd,0.0) 

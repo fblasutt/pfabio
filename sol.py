@@ -104,15 +104,14 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
                 
                 #modify for the mini-jobs case
                 tax=τ  if i!=1 else 0.0
-                mpp=mp if i!=1 else 0.0
                 
                 #Unconstrained
                 ce[i,...]=c1*np.power(((1+r)/(1+δ)),(-1/γc)) #Euler eq.
-                pe[i,...]=pgrid_box-np.maximum(np.minimum(mpp*wls[i]*wt/E_bar_now,1.0),wls[i]*wt/E_bar_now)   #Pens. points
+                pe[i,...]=pgrid_box-np.maximum(np.minimum(mp*wls[i]*wt/E_bar_now,1.0),wls[i]*wt/E_bar_now)*(i!=1)   #Pens. points
                 ae[i,...]=(agrid_box-wt*wls[i]*(1-tax)-y_Nt+ce[i,...])/(1+r)#Savings
                 
                 #Constrained (assets)
-                pe_bc[i,...]=pgrid_box-  np.maximum(np.minimum(mpp*wls[i]*wt/E_bar_now,1.0),wls[i]*wt/E_bar_now)      #Pens. points
+                pe_bc[i,...]=pgrid_box-  np.maximum(np.minimum(mp*wls[i]*wt/E_bar_now,1.0),wls[i]*wt/E_bar_now)*(i!=1)      #Pens. points
                 ce_bc[i,...]=cgrid_box.copy()
                 ae_bc[i,...]=(ce_bc[i,...] - wt*(1-tax)*wls[i] - y_Nt+amin)/(1+r)#Savings
         
@@ -147,7 +146,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
                 #Mini jobs below
                 #modify for the mini-jobs case
                 tax=τ      if i!=1 else 0.0
-                mpp=mp     if i!=1 else 0.0
+                #mpp=mp     if i!=1 else 0.0
                 q_min=0.0  if i!=1 else q_mini
                 
                 #Computation below
@@ -155,7 +154,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
                         pe[i,...],ae[i,...],ce[i,...],pe_bc[i,...],ae_bc[i,...],ce_bc[i,...],#computed above...
                         i, # which foc to take in upperenvelop
                         V1,
-                        γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,tax,y_Nt,E_bar_now,δ,pen,amin,wls[i],mpp,q_min) 
+                        γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,tax,y_Nt,E_bar_now,δ,pen,amin,wls[i],mp,q_min) 
     
         #Retired
         else:
