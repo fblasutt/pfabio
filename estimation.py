@@ -47,17 +47,17 @@ def q(pt):
     
     #
     shpo=np.mean(SB['h'][3:11,:]>0)
-    sh1=np.mean(SB['h'][3:11,:]==3)
+    sh1=np.mean(SB['h'][3:11,:]==4)
     sh_min=np.mean(SB['h'][3:11,:]==1)
     eff=np.mean(SP['h'][3:11,:]>0)-np.mean(SB['h'][3:11,:]>0)
-    eff_full=np.mean(SP['h'][3:11,:][SP['h'][3:11,:]>0]==3)-np.mean(SB['h'][3:11,:][SB['h'][3:11,:]>0]==3)
+    eff_full=np.mean(SP['h'][3:11,:][SP['h'][3:11,:]>0]==4)-np.mean(SB['h'][3:11,:][SB['h'][3:11,:]>0]==4)
     eff_points=np.mean(np.diff(SP['p'][3:11,:],axis=0))-np.mean(np.diff(SB['p'][3:11,:],axis=0))
     
     #Print the point
     print("The point is {}, the moments are {}, {}, {}, {}, {}, {}".format(pt,shpo,sh1,eff,eff_full,sh_min,eff_points))   
 
         
-    return ((shpo-0.65)/0.65)**2+((sh1-0.1984)/0.1984)**2+((eff_points-0.15)/0.15)**2+((0.256-sh_min)/0.256)**2
+    return ((shpo-0.65)/0.65)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
             
             
             
@@ -66,18 +66,18 @@ np.random.seed(10)
 
 
 #Define initial point (xc) and boundaries (xl,xu)
-xc=np.array([0.17,0.65,0.013,0.09])
+xc=np.array([0.187,0.537,0.0159,0.131])
 xl=np.array([0.08,0.40,0.00,0.0])
 xu=np.array([0.25,1.0,0.03,0.15])
 
 #Optimization below
-res=pybobyqa.solve(q, xc, rhobeg = 0.3, rhoend=1e-8, maxfun=200, bounds=(xl,xu),
-                npt=len(xc)+5,scaling_within_bounds=True, seek_global_minimum=False,
-                user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
-                              'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
-                objfun_has_noise=False)
+# res=pybobyqa.solve(q, xc, rhobeg = 0.3, rhoend=1e-8, maxfun=200, bounds=(xl,xu),
+#                 npt=len(xc)+5,scaling_within_bounds=True, seek_global_minimum=False,
+#                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
+#                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
+#                 objfun_has_noise=False)
  
-#res = scipy.optimize.minimize(q,xc,bounds=list(zip(list(xl), list(xu))),method='Nelder-Mead',tol=1e-5)
+res = scipy.optimize.minimize(q,xc,bounds=list(zip(list(xl), list(xu))),method='Nelder-Mead',tol=1e-5)
 #res = differential_evolution(q,bounds=list(zip(list(xl), list(xu))),disp=True,mutation=(0.1, 0.5),recombination=0.8) 
  
 

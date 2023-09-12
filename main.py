@@ -194,9 +194,8 @@ plt.show()
 
 
 print("WLP is {}, data is {}".format(np.mean(SB['h'][3:11,:]>0),0.64))
-print("Part time is {}, data is {}".format(np.mean(SB['h'][3:11,:]==2),0.3136))
 print("Effect on employment is {}, data is {}".format(np.mean(p.wls[SP['h'][3:11,:]]>0)-np.mean(p.wls[SB['h'][3:11,:]]>0),0.1))
-print("The effect on full time employment is {}, data is {}".format(np.mean(SP['h'][3:11,:][SP['h'][3:11,:]>0]==3)-np.mean(SB['h'][3:11,:][SB['h'][3:11,:]>0]==3),0.045))
+print("The effect on full time employment is {}, data is {}".format(np.mean(SP['h'][3:11,:][SP['h'][3:11,:]>0]==4)-np.mean(SB['h'][3:11,:][SB['h'][3:11,:]>0]==4),0.045))
 print("Increase in employment is {}, data is {}".format(np.mean(SP['h'][3:11,:]>0)-np.mean(SB['h'][3:11,:]>0),0.099))
 print("Effect on earnings is {}, data is {}".format((np.mean(p.wls[SP['h'][3:11,:]]*SP['wh'][3:11,:])-np.mean(p.wls[SB['h'][3:11,:]]*SB['wh'][3:11,:]))/(np.mean(p.wls[SB['h'][3:11,:]]*SB['wh'][3:11,:])),0.46))
 print("Baseline pension points are {}, data is {}".format(np.mean(np.diff(SB['p'][3:11,:],axis=0)),0.23))

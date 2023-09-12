@@ -22,18 +22,24 @@ def transitions_chart(SB,SP):
     b2=np.mean(SB['h'][3,:]==1)
     
     #(3) part-time
-    b3=np.mean(SB['h'][3,:]==2)
+    b3=np.mean((SB['h'][3,:]>=2) & (SB['h'][3,:]<=3))
     
     #(4) full time
-    b4=np.mean(SB['h'][3,:]==3)
+    b4=np.mean(SB['h'][3,:]==4)
     
     
     #Fill transition matrix between states
     Π=np.zeros((4,4))
-    for i in range(4):
-        for j in range(4):
-            Π[i,j]=np.mean((SB['h'][3,:]==i) & (SP['h'][3,:]==j))
+    index=np.array([0,1,2,2,3],dtype=np.int32)
+    for i in range(5):
+        for j in range(5):
             
+            i2=index[i]
+            j2=index[j]
+            
+            Π[i2,j2]+=np.mean((SB['h'][3,:]==i) & (SP['h'][3,:]==j))
+            
+    
     #Create .tex file displyaing the transition between states
     leng=5*Π#width of arrows
     ifl = lambda x, y: x if y>0.0 else r''#do notdraw if no transitions
