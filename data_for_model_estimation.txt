@@ -2,38 +2,55 @@
 *Data for data estimation
 **************************
 
-Important question: should we focus on women with a partner? For now, I think so. If yes, all the moments should be constructed
-with this group of people. Also, what do to with women with 2+ more children? drop them from the sample for the estimation of the
-structural model? Otherwise, I can add exogenous fertility to the model. I think that if results are similar for the "cut sample"
-(e.g., only couples with 1 child) I would use the cut sample. 
+Sample selection: same for the DiD estimates. Since in the main dataset we do not observe couples, I was thinking of modeling a unitary household
+where the (exogenous) income of the men is 0 for single mothers. We consider households where women have 1 child only (let me know
+if this is a problem).
+
+The idea is to use one of the DiD estimates as target, while the others should be used as over-identification checks.
 
 
 ***1) Earnings/wages
 
 Divide men (women) into N groups: groups should be associated with different expected life-time earnings (potential wages) of 
-men (women). The groups can be based on education (better) or occupation. I think that the optimal N should be around 3-7. 
+men (women). The groups can be based on education or occupation. I think that the optimal N should be around 3-7. 
 
-For each group of men (women), I need an estimation of the trend of average earnings (potential wages) by age.
-For men, it is common to obtain the earnings profile by regressing earnings on a polinomial of age. The coefficients of the earnings polynomial is 
+For each group of men (women), I need an estimation of the trend of earnings (wages) by age.
+For men, it is common to obtain the earnings profile by regressing w on a polinomial of age. The coefficients of the earnings polynomial is 
 what I will use to run the model. For women,  the same can be done for wages (one needs to control for endogenous selection normally, but
-maybe we can skip this for now?). For men for each group I also need an estimation of pension points at retirement to compute theri pension.
+maybe we can skip this for now?). For men for each group I also need an estimation of pension points at retirement to compute their pension.
 
 
-**2) Initial distribution (at age 30):
+**2) Initial distribution (age is equal for everyone and should be the median age at first birth):
 
--net worth
--pension points
+-net worth: not strictly necessary: I suppose networth is low for young households. In the simulations it doesnt seem to matter so much.
+
+-pension points first time they enter the sample
 -income group of women and partner (see above).
-
-You can create a dataset with the list of individuals in the sample, where for each household we have the variables above. If one or more of the
-variables (e.g., net worth) come from a differnt dataset than the "baseline" one, it would be great to have the (discrete) distribution of these variable conditional
-on the other charactheristics (e.g.: what is the distribution of networth for college graduates with 2 pension points...?)
+-age of the child first time they enter the sample (should be 3 for treatment and 11 for control right?)
+-calendar year first time they enter the sample
 
 
-**3) Target moments: 1) effect of the reform on employment (or pension points), 2) share of women employed, 3) share of women working part-time,
-     4) share of women working in regular/marginal employment. Nontarteget moments: effect of the reform on
-     marginal employment, full-time employment, pension points with and without caregiver credits. The sample for which we compute these moments should be consistent
-     with the model (eg., only women with partner and children aged 3-20).
+**3) Discretization of hours
+
+We need to discretize hours on a grid. I try to illustrate this with one example.
+
+The hours grid can be [0, 200, 1000, 1500, 2000] where each entry of the array is the average working hours of a people worknig in specific hours brackets.
+For example 0 hours can simply be women who work 0 hours in a year. 300 hours is the average working hours of women who work more than 0 and less than 500 hours
+in a year. 1000 hours is the avreage working hours of women more than 500 and less than 1300 hours....2000 is the average yearly hours of women working more than 1800 hours.
+The idea is that the first entry in the grid represent nonparticipation, the second whould be mini-jobs, the last one full time employment, and all in between should be part-time
+work. I think that having 2 entries for part-time work will be enough, but this can be changed.
+
+*IMPORTANT* to match the data the choice of groups and hours brackets is important. The following should be true for the trated group befor the reform
+
+$\sum_{j \in \text{GROUPS}}\sum_{i \in \text{HOURS GRID}} \pi_{ji} f(h_i  w_j)<0.05$
+
+where GROUPS is the set containing the wage groups of women, HOURS GRID is a set containing the hour brackets,
+$\pi_{ij}$ is the share of women in group $j$ choosing the $i$ hours worked bracket. 
+$h_i$ is the average amount of hours worked of women in the $i$ hours bracket and $w_j$ is the hourly wage of women in the $j$ group. 
+Finally, $f()$ is a function that determines the pension points earned given earnings $h_i  w_j$.
+
+**4) Target moments. The following moments can be computed for the trated group before the reform and control group before the reform: share of women working in each hours bracket (minijobs, parttime, full time).
+     Moreover, I will target one of the DiD results, leaving the others as overidentification checks.
 
 
 

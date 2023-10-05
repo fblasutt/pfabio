@@ -51,6 +51,8 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
     for t in range(Ti,T):  # loop through time periods for a pticular individual
         for n in range(N):
             
+            policy=((t >=3) & (t <=10))#& (reform==1))
+            mp=1.5 if policy else 1.0
             #Get the discrete choices first...
             prs=np.zeros(nwls)
             for pp in range(nwls):
@@ -67,7 +69,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
 
             cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])
             hpath[t, n] = i#linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])
-            Epath[t, n] = w[t,tw[n]]*wls[hpath[t, n]] if i!=1 else 0.0
+            Epath[t, n] = np.maximum(np.minimum(mp*wls[i]*w[t,tw[n]]/E_bar_now,1.0),wls[i]*w[t,tw[n]]/E_bar_now)*(i!=1)-np.maximum(np.minimum(wls[i]*w[t,tw[n]]/E_bar_now,1.0),wls[i]*w[t,tw[n]]/E_bar_now)*(i!=1)
             wpath[t, n] = w[t,tw[n]]
             vpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Vp,apath[t,n],ppath[t,n])
             

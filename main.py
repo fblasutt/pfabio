@@ -201,7 +201,7 @@ print("Effect on earnings is {}, data is {}".format((np.mean(p.wls[SP['h'][3:11,
 print("Baseline pension points are {}, data is {}".format(np.mean(np.diff(SB['p'][3:11,:],axis=0)),0.23))
 print("Gender gap in old age if {}".format(1-(np.mean(p.ρ*SB['p'][p.R:,:]))/np.mean(p.y_N[p.R:,:])))
 print("Effect of earinngs point is {}".format(np.mean(np.diff(SP['p'][3:11,:],axis=0))-np.mean(np.diff(SB['p'][3:11,:],axis=0))))
-print("Effect of earinngs point without cargiver credits is {}".format(np.mean(SP['wh'][3:11,:]/p.E_bar_now)-np.mean(SB['wh'][3:11,:]/p.E_bar_now)))
+print("Effect of earinngs point without cargiver credits is {}".format(np.mean(SP['wh'][3:11,:])-np.mean(SB['wh'][3:11,:])))
 
 #Get heterogeneous effects
 belowe=SB['wh'][2,:]<np.median(SB['wh'][2,:])
@@ -216,3 +216,4 @@ print("Effect of earinngs point without cargiver credits, wages above median is 
 
 
 
+print(np.mean(SB['wh'][3:11,:]))
