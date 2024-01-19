@@ -195,22 +195,27 @@ plt.show()
 
 print("WLP is {}, data is {}".format(np.mean(SB['h'][3:11,:]>0),0.64))
 print("Effect on employment is {}, data is {}".format(np.mean(p.wls[SP['h'][3:11,:]]>0)-np.mean(p.wls[SB['h'][3:11,:]]>0),0.1))
-print("The effect on full time employment is {}, data is {}".format(np.mean(SP['h'][3:11,:][SP['h'][3:11,:]>0]==4)-np.mean(SB['h'][3:11,:][SB['h'][3:11,:]>0]==4),0.045))
+print("The effect on full time employment is {}, data is {}".format(np.mean(SP['h'][3:11,:][SP['h'][3:11,:]>0]==3)-np.mean(SB['h'][3:11,:][SB['h'][3:11,:]>0]==3),0.045))
 print("Increase in employment is {}, data is {}".format(np.mean(SP['h'][3:11,:]>0)-np.mean(SB['h'][3:11,:]>0),0.099))
 print("Effect on earnings is {}, data is {}".format((np.mean(p.wls[SP['h'][3:11,:]]*SP['wh'][3:11,:])-np.mean(p.wls[SB['h'][3:11,:]]*SB['wh'][3:11,:]))/(np.mean(p.wls[SB['h'][3:11,:]]*SB['wh'][3:11,:])),0.46))
 print("Baseline pension points are {}, data is {}".format(np.mean(np.diff(SB['p'][3:11,:],axis=0)),0.23))
 print("Gender gap in old age if {}".format(1-(np.mean(p.ρ*SB['p'][p.R:,:]))/np.mean(p.y_N[p.R:,:])))
 print("Effect of earinngs point is {}".format(np.mean(np.diff(SP['p'][3:11,:],axis=0))-np.mean(np.diff(SB['p'][3:11,:],axis=0))))
-print("Effect of earinngs point without cargiver credits is {}".format(np.mean(SP['wh'][3:11,:])-np.mean(SB['wh'][3:11,:])))
+print("Effect of behavioral earinngs points is {}".format(np.mean(np.diff(SP['p'][3:11,:],axis=0))-np.mean(np.diff(SB['p'][3:11,:],axis=0))-np.mean(SP['wh'][3:11,:])))
 
-#Get heterogeneous effects
-belowe=SB['wh'][2,:]<np.median(SB['wh'][2,:])
-print("Effect of earinngs point without cargiver credits, earnings below median is {}".format(np.mean(SP['wh'][3:11,:][:,belowe] /p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,belowe]/ p.E_bar_now)))
-print("Effect of earinngs point without cargiver credits, earnings above median is {}".format(np.mean(SP['wh'][3:11,:][:,~belowe]/p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,~belowe]/p.E_bar_now)))
 
-beloww=SB['w'][2,:]<np.median(SB['w'][2,:])
-print("Effect of earinngs point without cargiver credits, wages below median is {}".format(np.mean(SP['wh'][3:11,:][:,beloww] /p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,beloww]/ p.E_bar_now)))
-print("Effect of earinngs point without cargiver credits, wages above median is {}".format(np.mean(SP['wh'][3:11,:][:,~beloww]/p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,~beloww]/p.E_bar_now)))
+print("Effect on hours is {}, data is 3-4 hours".format(
+    (np.mean(SP['h'][3:11,:]==0)*0.0+np.mean(SP['h'][3:11,:]==1)*10.0+np.mean(SP['h'][3:11,:]==2)*20+np.mean(SP['h'][3:11,:]==3)*38.5)-
+    (np.mean(SB['h'][3:11,:]==0)*0.0+np.mean(SB['h'][3:11,:]==1)*10.0+np.mean(SB['h'][3:11,:]==2)*20+np.mean(SB['h'][3:11,:]==3)*38.5)
+    ))
+# #Get heterogeneous effects
+# belowe=SB['wh'][2,:]<np.median(SB['wh'][2,:])
+# print("Effect of earinngs point without cargiver credits, earnings below median is {}".format(np.mean(SP['wh'][3:11,:][:,belowe] /p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,belowe]/ p.E_bar_now)))
+# print("Effect of earinngs point without cargiver credits, earnings above median is {}".format(np.mean(SP['wh'][3:11,:][:,~belowe]/p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,~belowe]/p.E_bar_now)))
+
+# beloww=SB['w'][2,:]<np.median(SB['w'][2,:])
+# print("Effect of earinngs point without cargiver credits, wages below median is {}".format(np.mean(SP['wh'][3:11,:][:,beloww] /p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,beloww]/ p.E_bar_now)))
+# print("Effect of earinngs point without cargiver credits, wages above median is {}".format(np.mean(SP['wh'][3:11,:][:,~beloww]/p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,~beloww]/p.E_bar_now)))
 
 Π=transitions_chart(SB,SP)
 

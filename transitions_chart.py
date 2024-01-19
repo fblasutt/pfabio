@@ -71,7 +71,7 @@ def transitions_chart(SB,SP):
           r'; \end{tikzpicture} '
           
     #Write table to tex file
-    with open('C:/Users/Fabio/Dropbox/occupation/model/pfabio/output/transitions_chart.tex', 'w') as f:
+    with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/transitions_chart.tex', 'w') as f:
         f.write(chart)
         f.close()
 
