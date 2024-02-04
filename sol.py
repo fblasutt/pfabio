@@ -74,14 +74,14 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
     for t in range(T-2,-2,-1):
          
         #Get variables useful for next iteration t-1
-        expectation(t,NA,NP,nw,V,V1,σ,pr,c1,policyC)             
+        expectation(t,NA,NP,nw,V,V1,σ,γc,pr,c1,policyC)             
                 
         if t==-1:break
 
-        wt=w[t,:]
+        
         τ=τt[t]
         y_Nt=y_N_box[t,:,:,:]
-        policy=((t >=3) & (t <=10) & (reform==1))
+        policy=((t >=8) & (t <=11) & (reform==1))
         
         #Multiplier of points based on points
         mp=1.5 if policy else 1.0
@@ -101,6 +101,8 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
             #cgrid_box=np.maximum(cgrid_box,0.00000000001)
             
             for i in range(nwls):
+                
+                wt=w[t,i,:]
                 
                 #modify for the mini-jobs case
                 tax=τ  if i!=1 else 0.0
@@ -140,6 +142,8 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
             #Unconstrained
             for i in range(nwls):
                 
+                wt=w[t,i,:]
+                
                 #Penalty for not working?
                 pen=q if i>0 else 0.0
                 
@@ -170,14 +174,14 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
                          
      
 @njit
-def expectation(t,NA,NP,nw,V,V1,σ,pr,c1,policyC):                
+def expectation(t,NA,NP,nw,V,V1,σ,γc,pr,c1,policyC):                
         #Get variables useful for next iteration t-1
         for i_n in prange(NA):
             for i_m in prange(NP):
                 for i_w in prange(nw):
                     
                     lc=np.max(V[t+1,:,i_n,i_m,i_w])/σ#local normalizing variable
-                    V1[i_n,i_m,i_w] = σ*(lc+np.log(np.sum(np.exp(V[t+1,:,i_n,i_m,i_w]/σ-lc))))
+                    V1[i_n,i_m,i_w] = σ*(lc+np.log(np.sum(np.exp(V[t+1,:,i_n,i_m,i_w]/σ-lc)))  )
                     pr[t+1,:,i_n,i_m,i_w]=np.exp(V[t+1,:,i_n,i_m,i_w]/σ-V1[i_n,i_m,i_w]/σ)
                     c1[i_n,i_m,i_w] = np.sum(pr[t+1,:,i_n,i_m,i_w]*policyC[t+1,:,i_n,i_m,i_w])
  

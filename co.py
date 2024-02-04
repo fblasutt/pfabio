@@ -10,37 +10,38 @@ from numba import njit,prange
 class setup():
     
     def __init__(self):
- 
+    
         # Economic Environment: set pameters
-        self.T = 55           # Number of time periods
-        self.R = 35           # Retirement period
+        self.T = 56           # Number of time periods
+        self.R = 36           # Retirement period
         self.r = 0.015        # Interest rate
-        self.δ = 0.03132993#0.00983949    # Discount rate
-        self.β =0.56220753#0.74458434# Utility weight on leisure
-        self.γc = 1      # risk pameter on consumption!!!Check in upperenvelop if not 1
+        self.δ = 0.06252873#0.00983949    # Discount rate
+        self.β =0.82821048  # Utility weight on leisure
+        self.γc = 1.0      # risk pameter on consumption!!!Check in upperenvelop if not 1
         self.γh = 1.0    # risk pameter on labour
-        self.scale=1200
-        self.E_bar_now = 38000/self.scale  # Average earnings
-        self.q =0.13752749# Fixed cost of pticipation
-        self.q_mini =0.13752749*0.27894531#0.18283181*0.30219591
+        self.scale=1000
+        self.scale_e=0.6
+        self.E_bar_now = 44000/self.scale*self.scale_e  # Average earnings
+        self.q =0.18778603 #Fixed cost of pticipation
+        self.q_mini =0.18778603* 0.49496679#0.18283181*0.30219591
         self.ρ =350/self.scale      # Dollar value of points
         self.ϵ=0.000000001
-        self.σ=0.004#0.001#0.00428793          #Size of taste shock
-             
-        # Levels of WLS. From GSOEP hrs/week = ()
-        #self.wls=np.array([0.0,0.1,0.5,0.75,1.0])
-        
+        self.σ=0.003#0.001#0.00428793          #Size of taste shock
+                    
+           
         # Levels of WLS. From GSOEP hrs/week = (10/ 20 / 38.5 )
-        self.wls=np.array([0.0,0.25974,0.51948,1.0])
-        
-        # Levels of WLS. From GSOEP hrs/week = (10/ 20 / 38.5 )
-        #self.wls=np.array([0.0,0.2082,0.4593759,0.69675,1.0])
+        self.wls=np.array([0.0,10.0,20.0,38.5])/38.5
         
         self.nwls=len(self.wls)
            
         # Hourly wage 
-        self.wM=np.zeros(self.T) 
-        for t in range(self.T):self.wM[t]=18.25+0.05*t 
+        self.wM=np.zeros((self.T,self.nwls)) 
+        for t in range(self.T):
+            for i in range(self.nwls):
+                if i ==1:self.wM[t,i]=np.exp(-.5078441+2.440857+.0099643*t -.0002273*t**2)/self.scale*38.5*52*self.scale_e
+                if i ==2:self.wM[t,i]=np.exp(-.0755133+2.440857+.0099643*t -.0002273*t**2)/self.scale*38.5*52*self.scale_e
+                if i ==3:self.wM[t,i]=np.exp(          2.440857+.0099643*t -.0002273*t**2)/self.scale*38.5*52*self.scale_e
+                
         
         # Taxes
         self.τ=np.zeros(self.T) 
@@ -48,20 +49,32 @@ class setup():
          
         # Hourly wage dispersion 
         self.nw=11
-        self.σw=0.3 #dispersion of wages 
+        self.σw=1.0 #dispersion of wages 
         self.wv=np.linspace(-self.σw,self.σw,self.nw) 
         self.Π=rouwenhorst(self.nw, 0.0, self.σ,mu=0.0).P 
-        self.Π=np.ones(self.Π.shape)/self.nw
+        #self.Π=np.ones(self.Π.shape)/self.nw
         
+
+        #Create actual wages 
+        self.w=np.zeros((self.T,self.nwls,self.nw)) 
+        for t in range(self.T):
+            for i in range(self.nwls):
+                if i>1:
+                    self.w[t,i,:]=np.exp(np.log(self.wM[t,i])+self.wv) 
+                elif i==1:
+                    self.w[t,i,:]=self.wM[t,i] 
+                    
+         
+ 
         # Earnings of men
         self.y_N=np.zeros((self.T,self.nw)) 
-        for t in range(self.R):self.y_N[t,:]=40000/self.scale
-        for t in range(self.R,self.T):self.y_N[t,:]=40000/self.scale*0.4
-        
-        #Create actual wages 
-        self.w=np.zeros((self.T,self.nw)) 
-        for t in range(self.T):self.w[t,:]=np.exp(np.log(self.wM[t])+self.wv) 
-         
+        for t in range(self.R):
+            for i in range(self.nw):
+                self.y_N[t,i]=np.exp(10.14251+.0232318*t-.0005649*t**2+self.wv[i]*0)/self.scale*self.scale_e
+                
+        for t in range(self.R,self.T):
+            for i in range(self.nw):            
+                 self.y_N[t,i]=self.y_N[self.R-1,i]*0.4/self.scale
         
     
         # precision pameters
@@ -98,8 +111,8 @@ class setup():
         self.startA=self.agrid[self.startAt] 
         
         # Pension points
-        self.NP =10
-        self.startP = 8.0 
+        self.NP =7
+        self.startP = 5.99
         self.pgrid=nonlinspace(self.startP,self.R,self.NP,1.4)#np.linspace(0,self.R,self.NP)## # max one point per year in the law...
           # points people start life with
         
@@ -112,25 +125,25 @@ class setup():
 
             
             
-#Compute the present value of life-time wealth for each group
-def Ωt(p,ts):
-    Ω=np.zeros(p.w.shape)
+# #Compute the present value of life-time wealth for each group
+# def Ωt(p,ts):
+#     Ω=np.zeros(p.w.shape)
     
-    #Working life part...
-    for t in range(ts,p.R):
-        for ti in range(t,p.R):
-            Ω[t,:]=Ω[t,:]+((p.y_N+p.maxHours*p.w[ti,:])/(1+p.r)**(ti-t))
+#     #Working life part...
+#     for t in range(ts,p.R):
+#         for ti in range(t,p.R):
+#             Ω[t,:]=Ω[t,:]+((p.y_N+p.maxHours*p.w[ti,:])/(1+p.r)**(ti-t))
             
             
-    #Max points and welath afterwards
-    p.maxpoints=np.zeros(p.nw)
-    for t in range(ts,p.R):p.maxpoints=p.maxpoints+p.maxHours*p.w[t,:]/p.E_bar_now
+#     #Max points and welath afterwards
+#     p.maxpoints=np.zeros(p.nw)
+#     for t in range(ts,p.R):p.maxpoints=p.maxpoints+p.maxHours*p.w[t,:]/p.E_bar_now
 
-    for t in range(ts,p.T):
-        for ti in range(max(t,p.R),p.T):
-            Ω[t,:]=Ω[t,:]+((p.y_N+p.maxpoints*p.ρ)/(1+p.r)**(ti-t))    
+#     for t in range(ts,p.T):
+#         for ti in range(max(t,p.R),p.T):
+#             Ω[t,:]=Ω[t,:]+((p.y_N+p.maxpoints*p.ρ)/(1+p.r)**(ti-t))    
 
-    return Ω
+#     return Ω
  
 # Define the utility function
 def utility(c,h,p):
@@ -138,7 +151,7 @@ def utility(c,h,p):
     utils_c=np.full_like(c,-1e-8,dtype=np.float64)
     where=(c>0.000000001)
 
-    utils_c[where] = np.log(c[where])
+    utils_c[where] = np.log(c[where]) #(c[where])**(1-p.γc)/(1-p.γc)
     
 
     return utils_c - p.β*(h)**(1+1/p.γh) / (1+1/p.γh)

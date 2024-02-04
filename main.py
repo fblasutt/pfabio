@@ -2,9 +2,7 @@
 #        It also features a separate budget for pension benefits,
 #        following the reform of the German pension system
 
-#!!!Note: the model cannot match the decomposition of the effect on pension points (mech+behav)
-#+ also the effect on earnings seems extremely hard to get. Perhaps adding minijob helps,
-#if thos imply very low wages and little working hours
+
 ######################################
 # Preamble
 ######################################
@@ -62,13 +60,13 @@ Modτt = sol.solveEulerEquation(pτt,model='baseline')
 SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
 
 #Pension reform
-SP= sim.simNoUncer_interp(p,ModP,Tstart=3,Astart=SB['A'][3,:],Pstart=SB['p'][3,:])
+SP= sim.simNoUncer_interp(p,ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:])
 
 #Wages 1% higher than baseline in t=3 only 
-SWt= sim.simNoUncer_interp(pWt,ModWt,Tstart=2,Astart=SB['A'][2,:],Pstart=SB['p'][2,:])
+SWt= sim.simNoUncer_interp(pWt,ModWt,Tstart=7,Astart=SB['A'][7,:],Pstart=SB['p'][7,:])
 
 # Lower taxes in t=3 only 
-Sτt= sim.simNoUncer_interp(pτt,Modτt,Tstart=2,Astart=SB['A'][2,:],Pstart=SB['p'][2,:])
+Sτt= sim.simNoUncer_interp(pτt,Modτt,Tstart=7,Astart=SB['A'][7,:],Pstart=SB['p'][7,:])
 
 
 
@@ -78,12 +76,12 @@ Sτt= sim.simNoUncer_interp(pτt,Modτt,Tstart=2,Astart=SB['A'][2,:],Pstart=SB['
 
 
 #Frisch elasticity: %change id(t)n h for an expected 1% increase in wage w in t=3
-ϵf_Wt=(np.mean(SWt['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
-ϵf_Wti=np.mean(SWt['h'][3,:][SB['h'][3,:]>0.0]/SB['h'][3,:][SB['h'][3,:]>0.0])
+ϵf_Wt=(np.mean(SWt['h'][4,:])/np.mean(SB['h'][4,:])-1)*100
+ϵf_Wti=np.mean(SWt['h'][4,:][SB['h'][4,:]>0.0]/SB['h'][3,:][SB['h'][4,:]>0.0])
 print("The Simulated Frisch Elasticity (using change in w) is {}, intensive margin is {}".format(ϵf_Wt,ϵf_Wti))
 
-ϵf_τt=(np.mean(Sτt['h'][3,:])/np.mean(SB['h'][3,:])-1)*100
-ϵf_τti=np.mean(Sτt['h'][3,:][SB['h'][3,:]>0.0]/SB['h'][3,:][SB['h'][3,:]>0.0])
+ϵf_τt=(np.mean(Sτt['h'][4,:])/np.mean(SB['h'][4,:])-1)*100
+ϵf_τti=np.mean(Sτt['h'][4,:][SB['h'][4,:]>0.0]/SB['h'][3,:][SB['h'][4,:]>0.0])
 print("The Simulated Frisch Elasticity (using change in w) is {}, intensive margin is {}".format(ϵf_τt,ϵf_τti))
 
 
@@ -105,7 +103,7 @@ plt.show()
 
 # 2
 fig = plt.figure(figsize=(10,4)) 
-plt.plot(t,np.mean(SP['wh'],axis=1), 'blue', t, np.mean(SB['wh'],axis=1), 'red')
+plt.plot(t,np.mean(SP['pb'],axis=1), 'blue', t, np.mean(SB['pb'],axis=1), 'red')
 plt.xlabel("Age")
 plt.legend(('Reform','No Reform'))
 plt.ylabel("Earnings over time")
@@ -145,7 +143,7 @@ plt.show()
 
 # 6
 fig = plt.figure(figsize=(10,4)) 
-plt.plot(t,np.mean(SB['c'],axis=1), 'blue', t, np.mean(SB['wh'],axis=1), 'red')
+plt.plot(t,np.mean(SB['c'],axis=1), 'blue', t, np.mean(SB['pb'],axis=1), 'red')
 plt.xlabel("Age")
 plt.legend(('c','earn'))
 plt.show()
@@ -193,32 +191,49 @@ plt.legend()                              #Plot the legend
 plt.show()     
 
 
-print("WLP is {}, data is {}".format(np.mean(SB['h'][3:11,:]>0),0.64))
-print("Effect on employment is {}, data is {}".format(np.mean(p.wls[SP['h'][3:11,:]]>0)-np.mean(p.wls[SB['h'][3:11,:]]>0),0.1))
-print("The effect on full time employment is {}, data is {}".format(np.mean(SP['h'][3:11,:][SP['h'][3:11,:]>0]==3)-np.mean(SB['h'][3:11,:][SB['h'][3:11,:]>0]==3),0.045))
-print("Increase in employment is {}, data is {}".format(np.mean(SP['h'][3:11,:]>0)-np.mean(SB['h'][3:11,:]>0),0.099))
-print("Effect on earnings is {}, data is {}".format((np.mean(p.wls[SP['h'][3:11,:]]*SP['wh'][3:11,:])-np.mean(p.wls[SB['h'][3:11,:]]*SB['wh'][3:11,:]))/(np.mean(p.wls[SB['h'][3:11,:]]*SB['wh'][3:11,:])),0.46))
-print("Baseline pension points are {}, data is {}".format(np.mean(np.diff(SB['p'][3:11,:],axis=0)),0.23))
-print("Gender gap in old age if {}".format(1-(np.mean(p.ρ*SB['p'][p.R:,:]))/np.mean(p.y_N[p.R:,:])))
-print("Effect of earinngs point is {}".format(np.mean(np.diff(SP['p'][3:11,:],axis=0))-np.mean(np.diff(SB['p'][3:11,:],axis=0))))
-print("Effect of behavioral earinngs points is {}".format(np.mean(np.diff(SP['p'][3:11,:],axis=0))-np.mean(np.diff(SB['p'][3:11,:],axis=0))-np.mean(SP['wh'][3:11,:])))
+
+print("% Full time is {}, data is {}".format(np.mean(SB['h'][7,:]==3),0.1984))
+print("% part time is {}, data is {}".format(np.mean(SB['h'][7,:]==2),0.1986))
+print("% marginal  is {}, data is {}".format(np.mean(SB['h'][7,:]==1),0.256))
+print("Baseline earnings (non marginal) is {}, data is 6108".format(np.mean(SB['wh'][7,:])*p.scale))
+print("Baseline earnings >0 (non marginal) is {}, data is 15819".format(np.mean(SB['wh'][7,:][SB['wh'][7,:]>0])*p.scale))
+print("Pension points are {}, data is {}".format(np.nanmean(np.diff(SB['p'][7:9,:],axis=0)),0.23))
+print("% Pension points>1 are {}, data is {}".format(np.nanmean(np.diff(SB['p'][7:9,:],axis=0)>1),0.043))
+print("% Pension points>0.66 are {}, data is {}".format(np.nanmean(np.diff(SB['p'][7:9,:],axis=0)>0.66),0.118))
 
 
-print("Effect on hours is {}, data is 3-4 hours".format(
-    (np.mean(SP['h'][3:11,:]==0)*0.0+np.mean(SP['h'][3:11,:]==1)*10.0+np.mean(SP['h'][3:11,:]==2)*20+np.mean(SP['h'][3:11,:]==3)*38.5)-
-    (np.mean(SB['h'][3:11,:]==0)*0.0+np.mean(SB['h'][3:11,:]==1)*10.0+np.mean(SB['h'][3:11,:]==2)*20+np.mean(SB['h'][3:11,:]==3)*38.5)
+p033 =((np.diff(SB['p'][7:9,:],axis=0))>0.00).flatten() & ((np.diff(SB['p'][7:9,:],axis=0))<=0.33).flatten()
+p3366=((np.diff(SB['p'][7:9,:],axis=0))>0.33).flatten() & ((np.diff(SB['p'][7:9,:],axis=0))<=0.66).flatten() 
+p661 =((np.diff(SB['p'][7:9,:],axis=0))>0.66).flatten() & ((np.diff(SB['p'][7:9,:],axis=0))<=1.00).flatten()
+
+print("Additional average caregiver pension points for whole population at *baseline* are {}, data is {}".format(np.mean(SB['pb2'][7,:]),0.0595))
+print("Additional max    caregiver pension points for whole population  at *baseline* are {}, data is {}".format(np.max(SB['pb2'][7,:]),0.33))
+print("Additional average caregiver pension points in p (0.00,0.33]     at *baseline* are {}, data is {}".format(np.mean(SB['pb2'][7,:][p033]),0.095))
+print("Additional average caregiver pension points in p (0.33,0.66]     at *baseline* are {}, data is {}".format(np.mean(SB['pb2'][7,:][p3366]),0.245))
+print("Additional average caregiver pension points in p (0.66,1.00]     at *baseline* are {}, data is {}".format(np.mean(SB['pb2'][7,:][p661 ]),0.189))
+
+
+print("-----------------------------------------------------------------------------------------------------------------------------------------------------------")
+print("Effect on hours is {}, data is 3.565 hours".format(
+    (np.mean(SP['h'][8:12,:]==0)*0.0+np.mean(SP['h'][8:12,:]==1)*10.0+np.mean(SP['h'][8:12,:]==2)*20+np.mean(SP['h'][8:12,:]==3)*38.5)-
+    (np.mean(SB['h'][8:12,:]==0)*0.0+np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*20+np.mean(SB['h'][8:12,:]==3)*38.5)
     ))
-# #Get heterogeneous effects
-# belowe=SB['wh'][2,:]<np.median(SB['wh'][2,:])
-# print("Effect of earinngs point without cargiver credits, earnings below median is {}".format(np.mean(SP['wh'][3:11,:][:,belowe] /p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,belowe]/ p.E_bar_now)))
-# print("Effect of earinngs point without cargiver credits, earnings above median is {}".format(np.mean(SP['wh'][3:11,:][:,~belowe]/p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,~belowe]/p.E_bar_now)))
-
-# beloww=SB['w'][2,:]<np.median(SB['w'][2,:])
-# print("Effect of earinngs point without cargiver credits, wages below median is {}".format(np.mean(SP['wh'][3:11,:][:,beloww] /p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,beloww]/ p.E_bar_now)))
-# print("Effect of earinngs point without cargiver credits, wages above median is {}".format(np.mean(SP['wh'][3:11,:][:,~beloww]/p.E_bar_now)-np.mean(SB['wh'][3:11,:][:,~beloww]/p.E_bar_now)))
-
-Π=transitions_chart(SB,SP)
+print("The effect on all employment is {}, data is {}".format(np.mean(SP['h'][8:12,:]>0)-np.mean(SB['h'][8:12,:]>0),0.099))
+print("The effect on full time employment is {}, data is {}".format(np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3),0.045))
+print("The effect on marginal employment is {}, data is {}".format(np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1),-0.11))
+print("The effect on regual employment is {}, data is {}".format(np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]>1)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]>1), 0.105))
+print("Effect of pension point is {}, data is 0.153".format(np.nanmean(np.diff(SP['p'][8:13,:],axis=0))-np.nanmean(np.diff(SB['p'][8:13,:],axis=0))))
+print("Effect of behavioral pension points is {}, data is 0.102".format(np.nanmean(np.diff(SP['p'][8:13,:],axis=0))-np.nanmean(np.diff(SB['p'][8:13,:],axis=0))-np.mean(SP['pb'][8:12,:])))
+print("Effect on non-marginal earnings is {}, data is {}".format((np.mean(SP['wh'][8:12,:])-np.mean(SB['wh'][8:12,:]))*p.scale,2809))
+print("Effect on non-marginal earnings (>0) is {}, data is {}".format((np.mean(SP['wh'][8:12,:][SP['wh'][8:12,:]>0])-np.mean(SB['wh'][8:12,:][SB['wh'][8:12,:]>0]))*p.scale,1588))
 
 
-
-print(np.mean(SB['wh'][3:11,:]))
+print("-----------------------------------------------------------------------------------------------------------------------------------------------------------")
+#Get heterogeneous effects
+beloww=SB['w'][2,:]<np.median(SB['w'][2,:])
+print("Effect of earinngs point for rich women is {}".format(np.mean(np.diff(SP['p'][8:13,:][:,~(beloww)],axis=0))-np.mean(np.diff(SB['p'][8:13,:][:,~(beloww)],axis=0))))
+print("Effect of earinngs point for poor women is {}".format(np.mean(np.diff(SP['p'][8:13,:][:,(beloww)],axis=0)) -np.mean(np.diff(SB['p'][8:13,:][:,(beloww)],axis=0))))
+print("Effect of behavioral earinngs points for rich women is {}".format(np.mean(np.diff(SP['p'][8:13,:][:,~(beloww)],axis=0))-np.mean(np.diff(SB['p'][8:13,:][:,~(beloww)],axis=0))-np.mean(SP['pb'][8:12,:][:,~(beloww)])))
+print("Effect of behavioral earinngs points for poor women is {}".format(np.mean(np.diff(SP['p'][8:13,:][:,(beloww)],axis=0))-np.mean(np.diff(SB['p'][8:13,:][:,(beloww)],axis=0))-np.mean(SP['pb'][8:12,:][:,(beloww)])))
+print("Gender gap in old age if {}".format(1-(np.mean(p.ρ*SB['p'][p.R:,:]))/np.mean(p.y_N[p.R:,:])))
+#
