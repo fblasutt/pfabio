@@ -235,5 +235,13 @@ print("Effect of earinngs point for rich women is {}".format(np.mean(np.diff(SP[
 print("Effect of earinngs point for poor women is {}".format(np.mean(np.diff(SP['p'][8:13,:][:,(beloww)],axis=0)) -np.mean(np.diff(SB['p'][8:13,:][:,(beloww)],axis=0))))
 print("Effect of behavioral earinngs points for rich women is {}".format(np.mean(np.diff(SP['p'][8:13,:][:,~(beloww)],axis=0))-np.mean(np.diff(SB['p'][8:13,:][:,~(beloww)],axis=0))-np.mean(SP['pb'][8:12,:][:,~(beloww)])))
 print("Effect of behavioral earinngs points for poor women is {}".format(np.mean(np.diff(SP['p'][8:13,:][:,(beloww)],axis=0))-np.mean(np.diff(SB['p'][8:13,:][:,(beloww)],axis=0))-np.mean(SP['pb'][8:12,:][:,(beloww)])))
-print("Gender gap in old age if {}".format(1-(np.mean(p.ρ*SB['p'][p.R:,:]))/np.mean(p.y_N[p.R:,:])))
-#
+
+
+for i in range(p.nw):
+    print("Share not working for wage {} is {}".format(p.w[7,3,i],np.mean(SB['h'][7,:][SB['w'][7,:]==p.w[7,3,i]]==1)))
+print("-----------------------------------------------------------------------------------------------------------------------------------------------------------") 
+ 
+print("Share of women increasing LS is {}, their avg points at basline are {}".format(np.mean(SP['h'][8:12,:]>SB['h'][8:12,:]) ,np.mean(np.diff(SB['p'][8:13],axis=0)[SP['h'][8:12,:]>SB['h'][8:12,:]]))) 
+print("Share of women ==         LS is {}, their avg points at basline are {}".format(np.mean(SP['h'][8:12,:]==SB['h'][8:12,:]),np.mean(np.diff(SB['p'][8:13],axis=0)[SP['h'][8:12,:]==SB['h'][8:12,:]]))) 
+print("Share of women decreasing LS is {}, their avg points at basline are {}".format(np.mean(SP['h'][8:12,:]<SB['h'][8:12,:]) ,np.mean(np.diff(SB['p'][8:13],axis=0)[SP['h'][8:12,:]<SB['h'][8:12,:]]))) 
+

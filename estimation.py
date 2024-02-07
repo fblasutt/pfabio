@@ -52,8 +52,8 @@ def q(pt):
     eff_e=np.mean(SP['h'][8:12,:]>0)-np.mean(SB['h'][8:12,:]>0)
     eff_full=np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3)
     eff_points=np.mean(np.diff(SP['p'][8:12,:],axis=0))-np.mean(np.diff(SB['p'][8:12,:],axis=0))
-    eff_h=(np.mean(SP['h'][8:12,:]==0)*0.0+np.mean(SP['h'][8:12,:]==1)*10.0+np.mean(SP['h'][8:12,:]==2)*20+np.mean(SP['h'][8:12,:]==3)*38.5)-\
-          (np.mean(SB['h'][8:12,:]==0)*0.0+np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*20+np.mean(SB['h'][8:12,:]==3)*38.5)
+    eff_h=(np.mean(SP['wh'][8:12,:])-np.mean(SB['wh'][8:12,:]))*p.scale#(np.mean(SP['h'][8:12,:]==0)*0.0+np.mean(SP['h'][8:12,:]==1)*10.0+np.mean(SP['h'][8:12,:]==2)*20+np.mean(SP['h'][8:12,:]==3)*38.5)-\
+          #(np.mean(SB['h'][8:12,:]==0)*0.0+np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*20+np.mean(SB['h'][8:12,:]==3)*38.5)
     
     #Print the point
     print("The point is {}, the moments are {}, {}, {}, {} , {}, {}, {}".format(pt,shpo,sh1,sh_min,eff_h,eff_e,eff_full,eff_points))   
@@ -61,7 +61,7 @@ def q(pt):
         
     #return ((shpo-0.65)/0.65)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
     #return ((shpo-0.1956)/0.1956)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
-    return ((shpo-0.1956)/0.1956)**2+((sh1-0.1984)/0.1984)**2+((eff_h-3.565)/3.565)**2+((0.256-sh_min)/0.256)**2
+    return ((shpo-0.1956)/0.1956)**2+((sh1-0.1984)/0.1984)**2+((eff_h-2809)/2809)**2+((0.256-sh_min)/0.256)**2
             
             
             
@@ -70,7 +70,7 @@ np.random.seed(10)
 
 
 #Define initial point (xc) and boundaries (xl,xu)
-xc=np.array([0.1886, 0.834, 0.0617, 0.498])
+xc=np.array([0.197, 0.86, 0.044, 0.51])
 xl=np.array([0.08,0.05,0.00,0.1])
 xu=np.array([0.6,1.2,0.07,1.3])
 

@@ -3,22 +3,16 @@
 import numpy as np
 from numba import njit
 from consav import linear_interp
-import quantecon as qe
 #https://www.econforge.org/interpolation.py/
 
 def simNoUncer_interp(p, model, Tstart=0, Astart=0.0, Pstart=0.0, Vstart= -1.0*np.ones((2,2,2,2,2))):
  
     
-    #Set seed
-    np.random.seed(2)
-    
-    #Distribution of types and taste shocks
-    tw=qe.MarkovChain(p.Π).simulate(p.N)# Type here
-    ts=np.random.rand(p.T,p.N)
+
     
     #Call the simulator
     epath,ppath,cpath,apath,hpath,pepath,pepath2,vpath,wpath=\
-        fast_simulate(Tstart,Astart,Pstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,tw,ts,p.wls,p.nwls,
+        fast_simulate(Tstart,Astart,Pstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,p.tw,p.ts,p.wls,p.nwls,
                       model['A'],model['c'],model['p'],model['pr'],model['V'],model['model'])
     
     return {'wh':epath,'p':ppath,'c':cpath,'A':apath,'h':hpath,'pb':pepath, 'pb2':pepath2, 'v':vpath,'w':wpath}
@@ -75,7 +69,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
             hpath[t, n] = i#linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])
             pepath[t, n] = np.maximum(np.minimum(mp2*wls[i]*w[t,i,tw[n]]/E_bar_now,1.0),wls[i]*w[t,i,tw[n]]/E_bar_now)*(i>1)-wls[i]*w[t,i,tw[n]]/E_bar_now*(i>1)
             pepath2[t, n]= np.maximum(np.minimum(mp *wls[i]*w[t,i,tw[n]]/E_bar_now,1.0),wls[i]*w[t,i,tw[n]]/E_bar_now)*(i>1)-wls[i]*w[t,i,tw[n]]/E_bar_now*(i>1)
-            wpath[t, n] = w[t,i,tw[n]]
+            wpath[t, n] = w[t,3,tw[n]]
             epath[t, n] = wpath[t, n]*wls[hpath[t, n]]*(i>1)+0*(i<1)
             vpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Vp,apath[t,n],ppath[t,n])
             
