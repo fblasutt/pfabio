@@ -238,7 +238,9 @@ print("Effect of behavioral earinngs points for poor women is {}".format(np.mean
 
 
 for i in range(p.nw):
-    print("Share not working for wage {} is {}".format(p.w[7,3,i],np.mean(SB['h'][7,:][SB['w'][7,:]==p.w[7,3,i]]==1)))
+    print("Share in mini-jobs for wage {} is {}".format(p.w[7,3,i],np.mean(SB['h'][7,:][SB['w'][7,:]==p.w[7,3,i]]==1)))
+for i in range(p.nw):
+    print("Share LS           for wage {} is {}".format(p.w[8,3,i],np.mean((SP['h'][8,:]>SB['h'][8,:])[(SB['h'][8,:]==1) & (SB['w'][8,:]==p.w[8,3,i])])))
 print("-----------------------------------------------------------------------------------------------------------------------------------------------------------") 
  
 print("Share of women increasing LS is {}, their avg points at basline are {}".format(np.mean(SP['h'][8:12,:]>SB['h'][8:12,:]) ,np.mean(np.diff(SB['p'][8:13],axis=0)[SP['h'][8:12,:]>SB['h'][8:12,:]]))) 
