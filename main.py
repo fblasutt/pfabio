@@ -198,8 +198,12 @@ print("% marginal  is {}, data is {}".format(np.mean(SB['h'][7,:]==1),0.256))
 print("Baseline earnings (non marginal) is {}, data is 6108".format(np.mean(SB['wh'][7,:])*p.scale))
 print("Baseline earnings >0 (non marginal) is {}, data is 15819".format(np.mean(SB['wh'][7,:][SB['wh'][7,:]>0])*p.scale))
 print("Pension points are {}, data is {}".format(np.nanmean(np.diff(SB['p'][7:9,:],axis=0)),0.23))
+
+print("% Pension points <0 are {}, data is {}".format(np.nanmean((np.diff(SB['p'][7:9,:],axis=0)<=0.001)),0.638))
+print("% Pension points [0.0,0.33] are {}, data is {}".format(np.nanmean((np.diff(SB['p'][7:9,:],axis=0)>0.001) & (np.diff(SB['p'][7:9,:],axis=0)<0.33)),0.098))
+print("% Pension points [0.33,0.66] are {}, data is {}".format(np.nanmean((np.diff(SB['p'][7:9,:],axis=0)>0.33) & (np.diff(SB['p'][7:9,:],axis=0)<0.66)),0.147))
+print("% Pension points [0.66,1] are {}, data is {}".format(np.nanmean((np.diff(SB['p'][7:9,:],axis=0)>0.66) & (np.diff(SB['p'][7:9,:],axis=0)<1)),0.075))
 print("% Pension points>1 are {}, data is {}".format(np.nanmean(np.diff(SB['p'][7:9,:],axis=0)>1),0.043))
-print("% Pension points>0.66 are {}, data is {}".format(np.nanmean(np.diff(SB['p'][7:9,:],axis=0)>0.66),0.118))
 
 
 p033 =((np.diff(SB['p'][7:9,:],axis=0))>0.00).flatten() & ((np.diff(SB['p'][7:9,:],axis=0))<=0.33).flatten()

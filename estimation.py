@@ -29,6 +29,7 @@ def q(pt):
     p.β =pt[1]
     p.δ =pt[2]
     p.q_mini=pt[3]*pt[0]
+ 
    
 
     
@@ -60,12 +61,12 @@ def q(pt):
           (np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*19.25+np.mean(SB['h'][8:12,:]==3)*28.875+np.mean(SB['h'][8:12,:]==4)*38.5)
     eff_earn=np.nanmean(np.diff(SP['p'][8:13,:],axis=0))-np.nanmean(np.diff(SB['p'][8:13,:],axis=0))-np.mean(SP['pb'][8:12,:])
     #Print the point
-    print("The point is {}, the moments are {}, {}, {}, {} , {}".format(pt,sh_h,sh_noem,sh_min,eff_h,eff_earn))   
+    print("The point is {}, the moments are {}, {}, {}, {} , {}, {}".format(pt,sh_h,sh_noem,sh_min,eff_h,eff_e,eff_earn))   
 
         
     #return ((shpo-0.65)/0.65)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
     #return ((shpo-0.1956)/0.1956)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
-    return ((sh_h-14.11)/14.11)**2+((sh_noem-0.35)/0.35)**2+((0.256-sh_min)/0.256)**2+((eff_h-3.565)/3.565)**2#+((0.102-eff_earn)/0.102)**2
+    return ((sh_h-14.11)/14.11)**2+((sh_noem-0.35)/0.35)**2+((0.256-sh_min)/0.256)**2+((eff_h-3.565)/3.565)**2#+((0.099-eff_e)/0.099)**2
             
             
             
@@ -74,7 +75,7 @@ np.random.seed(10)
 
 
 #Define initial point (xc) and boundaries (xl,xu)
-xc=np.array([0.266, 0.63,   0.0452, 0.369])
+xc=np.array([0.247, 1.012 , 0.0159, 0.329])
 xl=np.array([0.08,0.05,0.00,0.1])
 xu=np.array([0.6,1.2,0.07,1.3])
 

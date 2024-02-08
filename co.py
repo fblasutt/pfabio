@@ -16,19 +16,19 @@ class setup():
         self.T = 56           # Number of time periods 
         self.R = 36           # Retirement period 
         self.r = 0.015        # Interest rate 
-        self.δ =0.04538683#0.00983949    # Discount rate 
-        self.β =0.63269594  # Utility weight on leisure 
+        self.δ = 0.01609919#0.00983949    # Discount rate 
+        self.β = 1.00536988 # Utility weight on leisure 
         self.γc = 1.0      # risk pameter on consumption!!!Check in upperenvelop if not 1 
         self.γh = 1.0    # risk pameter on labour 
         self.scale=1000 
-        self.scale_e=0.68
-        self.E_bar_now = 38800/self.scale*self.scale_e  # Average earnings 
-        self.q =0.26729438 #Fixed cost of pticipation 
-        self.q_mini =0.26729438*0.37069459#0.18283181*0.30219591 
+        self.scale_e=0.8875754678578208
+        self.E_bar_now = 29920/self.scale*self.scale_e  # Average earnings 
+        self.q =0.24691654 #Fixed cost of pticipation 
+        self.q_mini =0.24691654*0.33104748#0.18283181*0.30219591 
         self.ρ =350/self.scale      # Dollar value of points 
         self.ϵ=0.000000001 
-        self.σ=0.03#0.001#0.00428793          #Size of taste shock 
-                     
+        self.σ=0.045#0.001#0.00428793          #Size of taste shock 
+                       
               
         # Levels of WLS. From GSOEP hrs/week = (10/ 20 / 38.5 ) 
         self.wls=np.array([0.0,10.0,19.25,28.875,38.5])/38.5 
@@ -41,7 +41,7 @@ class setup():
             for i in range(self.nwls): 
                 if i ==1:self.wM[t,i]=np.exp(2.440857+.0099643*t -.0002273*t**2)/self.scale*38.5*52*self.scale_e 
                 if i ==2:self.wM[t,i]=np.exp(2.440857+.0099643*t -.0002273*t**2)/self.scale*38.5*52*self.scale_e 
-                if i ==3:self.wM[t,i]=np.exp(          2.440857+.0099643*t -.0002273*t**2)/self.scale*38.5*52*self.scale_e 
+                if i >=3:self.wM[t,i]=np.exp(2.440857+.0099643*t -.0002273*t**2)/self.scale*38.5*52*self.scale_e 
                  
          
         # Taxes 
@@ -49,7 +49,7 @@ class setup():
         for t in range(self.T):self.τ[t]=0.2 
           
         # Hourly wage dispersion  
-        self.nw=11 
+        self.nw=11
         self.σw=0.31 #dispersion of wages  
         self.wv,self.Π=addaco_dist(self.σw,self.nw)
          
@@ -69,11 +69,11 @@ class setup():
         self.y_N=np.zeros((self.T,self.nw))  
         for t in range(self.R): 
             for i in range(self.nw): 
-                self.y_N[t,i]=np.exp(10.14251+.0232318*t-.0005649*t**2+self.wv[i]*0.5)/self.scale*self.scale_e 
+                self.y_N[t,i]=np.exp(10.14251+.0232318*t-.0005649*t**2+self.wv[i]*1.0)/self.scale*self.scale_e 
                  
         for t in range(self.R,self.T): 
             for i in range(self.nw):             
-                 self.y_N[t,i]=self.y_N[self.R-1,i]*0.4/self.scale 
+                 self.y_N[t,i]=self.y_N[self.R-1,i]*0.4
          
      
         # precision pameters 
