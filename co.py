@@ -16,22 +16,22 @@ class setup():
         self.T = 56           # Number of time periods 
         self.R = 36           # Retirement period 
         self.r = 0.015        # Interest rate 
-        self.δ =0.02#0.00983949    # Discount rate 
-        self.β =0.86  # Utility weight on leisure 
+        self.δ =0.04538683#0.00983949    # Discount rate 
+        self.β =0.63269594  # Utility weight on leisure 
         self.γc = 1.0      # risk pameter on consumption!!!Check in upperenvelop if not 1 
         self.γh = 1.0    # risk pameter on labour 
         self.scale=1000 
-        self.scale_e=0.75 
-        self.E_bar_now = 35000/self.scale*self.scale_e  # Average earnings 
-        self.q =0.25 #Fixed cost of pticipation 
-        self.q_mini =0.25*0.34#0.18283181*0.30219591 
+        self.scale_e=0.68
+        self.E_bar_now = 38800/self.scale*self.scale_e  # Average earnings 
+        self.q =0.26729438 #Fixed cost of pticipation 
+        self.q_mini =0.26729438*0.37069459#0.18283181*0.30219591 
         self.ρ =350/self.scale      # Dollar value of points 
         self.ϵ=0.000000001 
-        self.σ=0.05#0.001#0.00428793          #Size of taste shock 
+        self.σ=0.03#0.001#0.00428793          #Size of taste shock 
                      
               
         # Levels of WLS. From GSOEP hrs/week = (10/ 20 / 38.5 ) 
-        self.wls=np.array([0.0,10.0,20.0,38.5])/38.5 
+        self.wls=np.array([0.0,10.0,19.25,28.875,38.5])/38.5 
          
         self.nwls=len(self.wls) 
             

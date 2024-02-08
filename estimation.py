@@ -29,6 +29,8 @@ def q(pt):
     p.β =pt[1]
     p.δ =pt[2]
     p.q_mini=pt[3]*pt[0]
+   
+
     
     #Pension reform
     ModP= sol.solveEulerEquation(p,model='pension reform')
@@ -47,21 +49,23 @@ def q(pt):
     
     #
     shpo=np.mean(SB['h'][7,:]==2)
-    sh1=np.mean(SB['h'][7,:]==3)
+    sh1=np.mean(SB['h'][7,:]>=3)
     sh_min=np.mean(SB['h'][7,:]==1)
+    sh_noem=np.mean(SB['h'][7,:]==0)
+    sh_h=np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*19.25+np.mean(SB['h'][8:12,:]==3)*28.875+np.mean(SB['h'][8:12,:]==4)*38.5
     eff_e=np.mean(SP['h'][8:12,:]>0)-np.mean(SB['h'][8:12,:]>0)
     eff_full=np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3)
     eff_points=np.mean(np.diff(SP['p'][8:12,:],axis=0))-np.mean(np.diff(SB['p'][8:12,:],axis=0))
-    eff_h=(np.mean(SP['h'][8:12,:]==0)*0.0+np.mean(SP['h'][8:12,:]==1)*10.0+np.mean(SP['h'][8:12,:]==2)*20+np.mean(SP['h'][8:12,:]==3)*38.5)-\
-          (np.mean(SB['h'][8:12,:]==0)*0.0+np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*20+np.mean(SB['h'][8:12,:]==3)*38.5)
-    
+    eff_h=(np.mean(SP['h'][8:12,:]==1)*10.0+np.mean(SP['h'][8:12,:]==2)*19.25+np.mean(SP['h'][8:12,:]==3)*28.875+np.mean(SP['h'][8:12,:]==4)*38.5)-\
+          (np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*19.25+np.mean(SB['h'][8:12,:]==3)*28.875+np.mean(SB['h'][8:12,:]==4)*38.5)
+    eff_earn=np.nanmean(np.diff(SP['p'][8:13,:],axis=0))-np.nanmean(np.diff(SB['p'][8:13,:],axis=0))-np.mean(SP['pb'][8:12,:])
     #Print the point
-    print("The point is {}, the moments are {}, {}, {}, {} , {}, {}, {}".format(pt,shpo,sh1,sh_min,eff_h,eff_e,eff_full,eff_points))   
+    print("The point is {}, the moments are {}, {}, {}, {} , {}".format(pt,sh_h,sh_noem,sh_min,eff_h,eff_earn))   
 
         
     #return ((shpo-0.65)/0.65)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
     #return ((shpo-0.1956)/0.1956)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
-    return ((shpo-0.1956)/0.1956)**2+((sh1-0.1984)/0.1984)**2+((eff_h-3.565)/3.565)**2+((0.256-sh_min)/0.256)**2
+    return ((sh_h-14.11)/14.11)**2+((sh_noem-0.35)/0.35)**2+((0.256-sh_min)/0.256)**2+((eff_h-3.565)/3.565)**2#+((0.102-eff_earn)/0.102)**2
             
             
             
@@ -70,14 +74,14 @@ np.random.seed(10)
 
 
 #Define initial point (xc) and boundaries (xl,xu)
-xc=np.array([0.197, 0.86, 0.044, 0.51])
+xc=np.array([0.266, 0.63,   0.0452, 0.369])
 xl=np.array([0.08,0.05,0.00,0.1])
 xu=np.array([0.6,1.2,0.07,1.3])
 
 
 #Optimization below
-# res=pybobyqa.solve(q, xc, rhobeg = 0.3, rhoend=1e-8, maxfun=200, bounds=(xl,xu),
-#                 npt=len(xc)+5,scaling_within_bounds=True, seek_global_minimum=False,
+# res=pybobyqa.solve(q, xc, rhobeg = 0.3, rhoend=1e-5, maxfun=200, bounds=(xl,xu),
+#                 npt=len(xc)+5,scaling_within_bounds=True, seek_global_minimum=True,
 #                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
 #                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
 #                 objfun_has_noise=False)

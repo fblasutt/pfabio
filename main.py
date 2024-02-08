@@ -192,7 +192,7 @@ plt.show()
 
 
 
-print("% Full time is {}, data is {}".format(np.mean(SB['h'][7,:]==3),0.1984))
+print("% Full time is {}, data is {}".format(np.mean(SB['h'][7,:]>=3),0.1984))
 print("% part time is {}, data is {}".format(np.mean(SB['h'][7,:]==2),0.1986))
 print("% marginal  is {}, data is {}".format(np.mean(SB['h'][7,:]==1),0.256))
 print("Baseline earnings (non marginal) is {}, data is 6108".format(np.mean(SB['wh'][7,:])*p.scale))
@@ -215,9 +215,9 @@ print("Additional average caregiver pension points in p (0.66,1.00]     at *base
 
 print("-----------------------------------------------------------------------------------------------------------------------------------------------------------")
 print("Effect on hours is {}, data is 3.565 hours".format(
-    (np.mean(SP['h'][8:12,:]==0)*0.0+np.mean(SP['h'][8:12,:]==1)*10.0+np.mean(SP['h'][8:12,:]==2)*20+np.mean(SP['h'][8:12,:]==3)*38.5)-
-    (np.mean(SB['h'][8:12,:]==0)*0.0+np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*20+np.mean(SB['h'][8:12,:]==3)*38.5)
-    ))
+   (np.mean(SP['h'][8:12,:]==1)*10.0+np.mean(SP['h'][8:12,:]==2)*19.25+np.mean(SP['h'][8:12,:]==3)*28.875+np.mean(SP['h'][8:12,:]==4)*38.5)-\
+    (np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*19.25+np.mean(SB['h'][8:12,:]==3)*28.875+np.mean(SB['h'][8:12,:]==4)*38.5)))
+        
 print("The effect on all employment is {}, data is {}".format(np.mean(SP['h'][8:12,:]>0)-np.mean(SB['h'][8:12,:]>0),0.099))
 print("The effect on full time employment is {}, data is {}".format(np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3),0.045))
 print("The effect on marginal employment is {}, data is {}".format(np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1),-0.11))
@@ -238,9 +238,9 @@ print("Effect of behavioral earinngs points for poor women is {}".format(np.mean
 
 
 for i in range(p.nw):
-    print("Share in mini-jobs for wage {} is {}".format(p.w[7,3,i],np.mean(SB['h'][7,:][SB['w'][7,:]==p.w[7,3,i]]==1)))
+    print("Share in mini-jobs or no job for wage {} is {}".format(p.w[7,3,i],np.mean(SB['h'][7,:][SB['w'][7,:]==p.w[7,3,i]]<=1)))
 for i in range(p.nw):
-    print("Share LS           for wage {} is {}".format(p.w[8,3,i],np.mean((SP['h'][8,:]>SB['h'][8,:])[(SB['h'][8,:]==1) & (SB['w'][8,:]==p.w[8,3,i])])))
+    print("Share LS or no job          for wage {} is {}".format(p.w[8,3,i],np.mean((SP['h'][8,:]>SB['h'][8,:])[(SB['h'][8,:]<=1) & (SB['w'][8,:]==p.w[8,3,i])])))
 print("-----------------------------------------------------------------------------------------------------------------------------------------------------------") 
  
 print("Share of women increasing LS is {}, their avg points at basline are {}".format(np.mean(SP['h'][8:12,:]>SB['h'][8:12,:]) ,np.mean(np.diff(SB['p'][8:13],axis=0)[SP['h'][8:12,:]>SB['h'][8:12,:]]))) 
