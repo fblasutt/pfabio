@@ -49,6 +49,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
     r=p.r;δ=p.δ;γc=p.γc;R=p.R;τt=p.τ;β=p.β;q=p.q;amin=p.amin;wls=p.wls;nwls=p.nwls;
     w=np.array(p.w);agrid=p.agrid;y_N=p.y_N;γh=p.γh;T=p.T;NA=p.NA;nw=p.nw;σ=p.σ;
     NP=p.NP;pgrid=p.pgrid;maxHours=p.maxHours;ρ=p.ρ;E_bar_now=p.E_bar_now;q_mini=p.q_mini
+    Pmax=p.Pmax;add_points=p.add_points
     
     ce,pe,ae,ce_bc,pe_bc,ae_bc=np.zeros((6,p.nwls,NA, NP,nw))
     V1,c1=np.zeros((2,NA, NP,nw))
@@ -84,7 +85,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
         policy=((t >=8) & (t <=11) & (reform==1))
         
         #Multiplier of points based on points
-        mp=1.5 if policy else 1.0
+        mp=add_points if policy else 1.0
         
         ################################################
         #Endogenous gridpoints here
@@ -109,11 +110,11 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
                 
                 #Unconstrained
                 ce[i,...]=c1*np.power(((1+r)/(1+δ)),(-1/γc)) #Euler eq.
-                pe[i,...]=pgrid_box-np.maximum(np.minimum(mp*wls[i]*wt/E_bar_now,1.0),wls[i]*wt/E_bar_now)*(i!=1)   #Pens. points
+                pe[i,...]=pgrid_box-np.maximum(np.minimum(mp*wls[i]*wt/E_bar_now,Pmax),wls[i]*wt/E_bar_now)*(i!=1)   #Pens. points
                 ae[i,...]=(agrid_box-wt*wls[i]*(1-tax)-y_Nt+ce[i,...])/(1+r)#Savings
                 
                 #Constrained (assets)
-                pe_bc[i,...]=pgrid_box-  np.maximum(np.minimum(mp*wls[i]*wt/E_bar_now,1.0),wls[i]*wt/E_bar_now)*(i!=1)      #Pens. points
+                pe_bc[i,...]=pgrid_box-  np.maximum(np.minimum(mp*wls[i]*wt/E_bar_now,Pmax),wls[i]*wt/E_bar_now)*(i!=1)      #Pens. points
                 ce_bc[i,...]=cgrid_box.copy()
                 ae_bc[i,...]=(ce_bc[i,...] - wt*(1-tax)*wls[i] - y_Nt+amin)/(1+r)#Savings
         
@@ -158,7 +159,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
                         pe[i,...],ae[i,...],ce[i,...],pe_bc[i,...],ae_bc[i,...],ce_bc[i,...],#computed above...
                         i, # which foc to take in upperenvelop
                         V1,
-                        γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,tax,y_Nt,E_bar_now,δ,pen,amin,wls[i],mp,q_min) 
+                        γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,tax,y_Nt,E_bar_now,Pmax,δ,pen,amin,wls[i],mp,q_min) 
     
         #Retired
         else:

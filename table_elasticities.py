@@ -117,6 +117,6 @@ table=r'\begin{table}[htbp]'+\
       r'\end{table}'
       
 #Write table to tex file
-with open('C:/Users/Fabio/Dropbox/occupation/model/pfabio/output/table_elasticities.tex', 'w') as f:
+with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_elasticities.tex', 'w') as f:
     f.write(table)
     f.close()

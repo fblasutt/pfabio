@@ -21,7 +21,7 @@ def compute(out_c,out_n,pmua,out_v,holes,
             m,n,c,m_bc,n_bc,c_bc, 
             num, 
             w, 
-            γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,q_mini,valt=np.array([[]])): 
+            γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,Pmax,δ,q,amin,wls,mp,q_mini,valt=np.array([[]])): 
      
     # a. infer shape 
     Nb,Na,nw = w.shape 
@@ -67,17 +67,17 @@ def compute(out_c,out_n,pmua,out_v,holes,
                         upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w, 
                                       m,n,c,m_bc,n_bc,c_bc, 
                                       Na,Nb,valid,num,w, 
-                                      γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,q_mini)                     
+                                      γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,Pmax,δ,q,amin,wls,mp,q_mini)                     
                          
         # iii. fill holes (technique: nearest neighbor) 
-        fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,q_mini,Nb,Na,nw) 
+        fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,Pmax,δ,q,amin,wls,mp,q_mini,Nb,Na,nw) 
  
 @njit 
 #@profile 
 def upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w, 
                   m_ok,n_ok,c_ok,m_bc,n_bc,c_bc, 
                   Na,Nb,valid,num,w, 
-                  γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,q_mini, 
+                  γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,Pmax,δ,q,amin,wls,mp,q_mini, 
                   egm_extrap_add=2,egm_extrap_w=-0.25): 
      
     # a. simplex in (a,b)-space (or similar with constrained choices) 
@@ -177,13 +177,13 @@ def upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,
                     if j==0: 
                         #No borrowing constrained case 
                         c_interp = w1*c[i_b_1,i_a_1,i_w] + w2*c[i_b_2,i_a_2,i_w] + w3*c[i_b_3,i_a_3,i_w] 
-                        a_interp = m_now + np.maximum(np.minimum(mp*wls*wt[i_w]/E_bar_now,1.0),wls*wt[i_w]/E_bar_now)*(num!=1)                  #points 
+                        a_interp = m_now + np.maximum(np.minimum(mp*wls*wt[i_w]/E_bar_now,Pmax),wls*wt[i_w]/E_bar_now)*(num!=1)                  #points 
                         b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*wls + y_N[i_n,i_m,i_w] 
      
                      
                     if j==1: 
                         #Borrowing constrained case 
-                        a_interp = m_now + np.maximum(np.minimum(mp*wls*wt[i_w]/E_bar_now,1.0),wls*wt[i_w]/E_bar_now)*(num!=1)   
+                        a_interp = m_now + np.maximum(np.minimum(mp*wls*wt[i_w]/E_bar_now,Pmax),wls*wt[i_w]/E_bar_now)*(num!=1)   
                         b_interp = amin 
                         c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*wls + y_N[i_n,i_m,i_w] 
                   
@@ -205,7 +205,7 @@ def upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,
                         holes[i_n,i_m,i_w,j] = 0 
  
 @njit 
-def fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,δ,q,amin,wls,mp,q_mini,Nn,Nm,nw): 
+def fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,Pmax,δ,q,amin,wls,mp,q_mini,Nn,Nm,nw): 
  
     # a. locate global bounding box with content 
     i_n_min = 0 
@@ -278,14 +278,14 @@ def fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,maxHours,γh,ρ,agrid,pgri
                                     #No borrowing constrained case 
                                     if j==0: 
                                         c_interp = out_c[i_n_close,i_m_close,i_w] 
-                                        a_interp = m_now + np.maximum(np.minimum(mp*wls*wt[i_w]/E_bar_now,1.0),wls*wt[i_w]/E_bar_now)*(num!=1)                    #points 
+                                        a_interp = m_now + np.maximum(np.minimum(mp*wls*wt[i_w]/E_bar_now,Pmax),wls*wt[i_w]/E_bar_now)*(num!=1)                    #points 
                                         b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*wls + y_N[i_n,i_m,i_w] 
                   
                                       
                                                                       
                                    #Borrowing constrained case 
                                     if j==1: 
-                                        a_interp = m_now + np.maximum(np.minimum(mp*wls*wt[i_w]/E_bar_now,1.0),wls*wt[i_w]/E_bar_now)*(num!=1)   
+                                        a_interp = m_now + np.maximum(np.minimum(mp*wls*wt[i_w]/E_bar_now,Pmax),wls*wt[i_w]/E_bar_now)*(num!=1)   
                                         b_interp = amin 
                                         c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*wls + y_N[i_n,i_m,i_w] 
                                         

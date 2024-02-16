@@ -33,19 +33,24 @@ p = co.setup()
 # solve the model
 ########################################
 
-#Models: pension regorm (P), baseline (B), lower taxes(τ)
+#Models: pension reform (P), baseline (B), lower taxes(τ), pension reform without limit (PN)
 ModP= sol.solveEulerEquation(p,model='pension reform')
 ModB = sol.solveEulerEquation(p,model='baseline')
-pτ = co.setup();pτ.τ[3:11]=p.τ[3:11]-0.088
+
+pτ = co.setup();pτ.τ[7:11]=p.τ[7:11]-0.105
 Modτ = sol.solveEulerEquation(pτ,model='baseline')
+
+pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.5
+ModPN = sol.solveEulerEquation(pPN,model='pension reform')
 
 ########################################
 # simulate the models
 ########################################
 
-SB= sim.simNoUncer_interp(p, ModB,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
-SP= sim.simNoUncer_interp(p, ModP,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
-Sτ= sim.simNoUncer_interp(pτ,Modτ,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
+SB = sim.simNoUncer_interp(p,  ModB, Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
+SP = sim.simNoUncer_interp(p,  ModP, Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
+Sτ = sim.simNoUncer_interp(pτ, Modτ, Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
+SPN= sim.simNoUncer_interp(pPN,ModPN,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
 
 
 ########################################
@@ -66,33 +71,45 @@ for i in np.linspace(0.0,10.0,100):
         welf_τ=i*p.scale
         break
     
+    
+for i in np.linspace(0.0,10.0,100):
+    St= sim.simNoUncer_interp(p, ModB,Astart=p.startA+i,Pstart=np.ones(p.N)*p.startP)
+    if np.mean(St['v'][0,:]-1)*100>np.mean(SPN['v'][0,:]-1)*100:
+        welf_PN=i*p.scale
+        break
+    
 #2) Govt. budget
 
 #pension expenditures
 expe_P=p.ρ*SP['p'][p.R:,:]
 expe_B=p.ρ*SB['p'][p.R:,:]
 expe_τ=pτ.ρ*Sτ['p'][pτ.R:,:]
+expe_PN=pPN.ρ*SPN['p'][pPN.R:,:]
 
 #taxes
 tax_P=p.τ[:p.R,None]*p.wls[SP['h'][:p.R,:]]*SP['wh'][:p.R,:]
 tax_B=p.τ[:p.R,None]*p.wls[SB['h'][:p.R,:]]*SB['wh'][:p.R,:]
 tax_τ=pτ.τ[:pτ.R,None]*p.wls[Sτ['h'][:pτ.R,:]]*Sτ['wh'][:pτ.R,:]
+tax_PN=pτ.τ[:pPN.R,None]*p.wls[SPN['h'][:pPN.R,:]]*SPN['wh'][:pPN.R,:]
 
 #adjusted deficits
 adjust=np.ones(SP['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 deficit_B=(np.mean(expe_B*adjust[p.R:,:])-np.mean(tax_B*adjust[:p.R,:]))
 deficit_P=(np.mean(expe_P*adjust[p.R:,:])-np.mean(tax_P*adjust[:p.R,:]))
 deficit_τ=(np.mean(expe_τ*adjust[p.R:,:])-np.mean(tax_τ*adjust[:p.R,:]))
+deficit_PN=(np.mean(expe_PN*adjust[p.R:,:])-np.mean(tax_PN*adjust[:p.R,:]))
 
 #3) Gender wage gaps in old age
 ggap_old_B=1.0-(np.mean(p.ρ*SB['p'][p.R:,:]))/np.mean(p.y_N[p.R:,:])
 ggap_old_P=1.0-(np.mean(p.ρ*SP['p'][p.R:,:]))/np.mean(p.y_N[p.R:,:])
 ggap_old_τ=1.0-(np.mean(pτ.ρ*Sτ['p'][pτ.R:,:]))/np.mean(pτ.y_N[p.R:,:])
+ggap_old_PN=1.0-(np.mean(pPN.ρ*SPN['p'][pPN.R:,:]))/np.mean(pPN.y_N[p.R:,:])
 
 #4) WLP
-WLP_B=np.mean(SB['h'][3:11,:]>0)
-WLP_P=np.mean(SP['h'][3:11,:]>0)
-WLP_τ=np.mean(Sτ['h'][3:11,:]>0)
+WLP_B=np.mean(SB['h'][7:11,:]>0)
+WLP_P=np.mean(SP['h'][7:11,:]>0)
+WLP_τ=np.mean(Sτ['h'][7:11,:]>0)
+WLP_PN=np.mean(SPN['h'][7:11,:]>0)
 
 # Table with experiments
 def p42(x): return str('%4.2f' % x) 
@@ -106,18 +123,19 @@ table=r'\begin{table}[htbp]'+\
        r"& Pension & Women's labor & Welfare gains  \\"+\
        r"&gender gap &participation & wrt baseline (euros)  \\"+\
        r'\midrule   '+\
-       r' Baseline                 &'+p43(ggap_old_B)+'&'+p43(WLP_B)+'& 0.0\\\\'+\
-       r' Caregiver credits        &'+p43(ggap_old_P)+'&'+p43(WLP_P)+'&'+p50(welf_P)+'\\\\'+\
-       r' Lower income taxes              &'+p43(ggap_old_τ)+'&'+p43(WLP_τ)+'&'+p50(welf_τ)+'\\\\'+\
+       r' Baseline                                &'+p43(ggap_old_B) +'&'+p43(WLP_B) +'& 0.0\\\\'+\
+       r' Caregiver credits                       &'+p43(ggap_old_P) +'&'+p43(WLP_P) +'&'+p50(welf_P)+'\\\\'+\
+       r' Lower income taxes                      &'+p43(ggap_old_τ) +'&'+p43(WLP_τ) +'&'+p50(welf_τ)+'\\\\'+\
+       r' Caregiver credits, no upper threshold   &'+p43(ggap_old_PN)+'&'+p43(WLP_PN)+'&'+p50(welf_PN)+'\\\\'+\
        r'  \bottomrule'+\
-       r'\multicolumn{4}{l}{\textsc{Notes:} The experiments in the last two rows imply the same government deficit}'+'\\\\'+\
+       r'\multicolumn{4}{l}{\textsc{Notes:} The experiments in the last three rows imply the same government deficit}'+'\\\\'+\
        r'\multicolumn{4}{l}{of '+p50((deficit_P-deficit_B)*p.scale)+' euros. Welfare gains = equivalent transfer in baseline model at age 30. }'+\
       """\end{tabular}
       """+\
       r'\end{table}'
       
 #Write table to tex file
-with open('C:/Users/Fabio/Dropbox/occupation/model/pfabio/output/table_expe.tex', 'w') as f:
+with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_expe.tex', 'w') as f:
     f.write(table)
     f.close()
 
@@ -127,13 +145,13 @@ with open('C:/Users/Fabio/Dropbox/occupation/model/pfabio/output/table_expe.tex'
 ####################################
 
 #1) effect of the reform on employment
-eff_empl=np.mean(p.wls[SP['h'][3:11,:]]>0)-np.mean(p.wls[SB['h'][3:11,:]]>0)
+eff_empl=np.mean(p.wls[SP['h'][7:11,:]]>0)-np.mean(p.wls[SB['h'][7:11,:]]>0)
 
 #2) employment at baseline
-employment_rate=np.mean(SB['h'][3:11,:]>0)
+employment_rate=np.mean(SB['h'][7:11,:]>0)
 
 #3) fulltime employment
-work_fulltime=np.mean(SB['h'][3:11,:]==1)
+work_fulltime=np.mean(SB['h'][7:11,:]==1)
 
 #Table with parameters    
 table=r'\begin{table}[htbp]'+\
@@ -152,7 +170,7 @@ table=r'\begin{table}[htbp]'+\
       r'\end{table}'
       
 #Write table to tex file
-with open('C:/Users/Fabio/Dropbox/occupation/model/pfabio/output/table_params.tex', 'w') as f:
+with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_params.tex', 'w') as f:
     f.write(table)
     f.close()
    
@@ -167,13 +185,13 @@ MPE=((np.mean(p.wls[Sw['h'][1:3,:]]*Sw['wh'][1:3,:])-np.mean(p.wls[SB['h'][1:3,:
 #Effect of pension reform on:
     
 #1) pension points
-eff_points=np.mean(np.diff(SP['p'][3:11,:],axis=0))-np.mean(np.diff(SB['p'][3:11,:],axis=0))
+eff_points=np.mean(np.diff(SP['p'][7:11,:],axis=0))-np.mean(np.diff(SB['p'][7:11,:],axis=0))
 
 #2) full employment
-eff_earn=(np.mean(p.wls[SP['h'][3:11,:]]*SP['wh'][3:11,:])-np.mean(p.wls[SB['h'][3:11,:]]*SB['wh'][3:11,:]))*p.scale
+eff_earn=(np.mean(p.wls[SP['h'][7:11,:]]*SP['wh'][7:11,:])-np.mean(p.wls[SB['h'][7:11,:]]*SB['wh'][7:11,:]))*p.scale
 
 #3) earnings
-eff_emp=np.mean(SP['h'][3:11,:][SP['h'][3:11,:]>0]==2)-np.mean(SB['h'][3:11,:][SB['h'][3:11,:]>0]==2)
+eff_emp=np.mean(SP['h'][7:11,:][SP['h'][7:11,:]>0]==2)-np.mean(SB['h'][7:11,:][SB['h'][7:11,:]>0]==2)
 
 ############################################
 #Table with parameters
@@ -193,6 +211,6 @@ table=r'\begin{table}[htbp]'+\
       r'\end{table}'
       
 #Write table to tex file
-with open('C:/Users/Fabio/Dropbox/occupation/model/pfabio/output/table_nontargetd.tex', 'w') as f:
+with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_nontargetd.tex', 'w') as f:
     f.write(table)
     f.close()

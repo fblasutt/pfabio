@@ -12,13 +12,13 @@ def simNoUncer_interp(p, model, Tstart=0, Astart=0.0, Pstart=0.0, Vstart= -1.0*n
     
     #Call the simulator
     epath,ppath,cpath,apath,hpath,pepath,pepath2,vpath,wpath=\
-        fast_simulate(Tstart,Astart,Pstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,p.tw,p.ts,p.wls,p.nwls,
+        fast_simulate(Tstart,Astart,Pstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,p.Pmax,p.add_points,p.tw,p.ts,p.wls,p.nwls,
                       model['A'],model['c'],model['p'],model['pr'],model['V'],model['model'])
     
     return {'wh':epath,'p':ppath,'c':cpath,'A':apath,'h':hpath,'pb':pepath, 'pb2':pepath2, 'v':vpath,'w':wpath}
     
 @njit
-def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,tw,ts,wls,nwls,
+def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,Pmax,add_points,tw,ts,wls,nwls,
                   policyA1,policyC,policyP,pr,V,reform):
 
     # Arguments for output
@@ -49,8 +49,8 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
             
             policy=((t >=4) & (t <=11))#& (reform==1))
             policy2=((t >=4) & (t <=11) & (reform==1))
-            mp=1.5 #if policy else 1.0
-            mp2=1.5 if policy2 else 1.0
+            mp=add_points #if policy else 1.0
+            mp2=add_points if policy2 else 1.0
             #Get the discrete choices first...
             prs=np.zeros(nwls)
             for pp in range(nwls):
@@ -67,8 +67,8 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,t
 
             cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])
             hpath[t, n] = i#linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])
-            pepath[t, n] = np.maximum(np.minimum(mp2*wls[i]*w[t,i,tw[n]]/E_bar_now,1.0),wls[i]*w[t,i,tw[n]]/E_bar_now)*(i>1)-wls[i]*w[t,i,tw[n]]/E_bar_now*(i>1)
-            pepath2[t, n]= np.maximum(np.minimum(mp *wls[i]*w[t,i,tw[n]]/E_bar_now,1.0),wls[i]*w[t,i,tw[n]]/E_bar_now)*(i>1)-wls[i]*w[t,i,tw[n]]/E_bar_now*(i>1)
+            pepath[t, n] = np.maximum(np.minimum(mp2*wls[i]*w[t,i,tw[n]]/E_bar_now,Pmax),wls[i]*w[t,i,tw[n]]/E_bar_now)*(i>1)-wls[i]*w[t,i,tw[n]]/E_bar_now*(i>1)
+            pepath2[t, n]= np.maximum(np.minimum(mp *wls[i]*w[t,i,tw[n]]/E_bar_now,Pmax),wls[i]*w[t,i,tw[n]]/E_bar_now)*(i>1)-wls[i]*w[t,i,tw[n]]/E_bar_now*(i>1)
             wpath[t, n] = w[t,3,tw[n]]
             epath[t, n] = wpath[t, n]*wls[hpath[t, n]]*(i>1)+0*(i<1)
             vpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Vp,apath[t,n],ppath[t,n])

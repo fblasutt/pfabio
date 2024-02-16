@@ -16,18 +16,20 @@ class setup():
         self.T = 56           # Number of time periods 
         self.R = 36           # Retirement period 
         self.r = 0.015        # Interest rate 
-        self.δ = 0.01609919#0.00983949    # Discount rate 
-        self.β = 1.00536988 # Utility weight on leisure 
+        self.δ = 0.01503498#0.00983949    # Discount rate 
+        self.β = 1.02602303 # Utility weight on leisure 
         self.γc = 1.0      # risk pameter on consumption!!!Check in upperenvelop if not 1 
         self.γh = 1.0    # risk pameter on labour 
         self.scale=1000 
-        self.scale_e=0.8875754678578208
-        self.E_bar_now = 29920/self.scale*self.scale_e  # Average earnings 
-        self.q =0.24691654 #Fixed cost of pticipation 
-        self.q_mini =0.24691654*0.33104748#0.18283181*0.30219591 
+        self.scale_e=0.9114647914816217
+        self.E_bar_now = 29136/self.scale*self.scale_e  # Average earnings 
+        self.q =0.25501504 #Fixed cost of pticipation 
+        self.q_mini =0.25501504*0.33651745#0.18283181*0.30219591 
         self.ρ =350/self.scale      # Dollar value of points 
         self.ϵ=0.000000001 
         self.σ=0.045#0.001#0.00428793          #Size of taste shock 
+        self.Pmax = 1 #threshold for pension points reform
+        self.add_points=1.5 #point multiplicator during reform
                        
               
         # Levels of WLS. From GSOEP hrs/week = (10/ 20 / 38.5 ) 
