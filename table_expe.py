@@ -37,10 +37,10 @@ p = co.setup()
 ModP= sol.solveEulerEquation(p,model='pension reform')
 ModB = sol.solveEulerEquation(p,model='baseline')
 
-pτ = co.setup();pτ.τ[7:11]=p.τ[7:11]-0.105
+pτ = co.setup();pτ.τ[8:12]=p.τ[8:12]-0.072
 Modτ = sol.solveEulerEquation(pτ,model='baseline')
 
-pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.5
+pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.355
 ModPN = sol.solveEulerEquation(pPN,model='pension reform')
 
 ########################################
@@ -48,9 +48,9 @@ ModPN = sol.solveEulerEquation(pPN,model='pension reform')
 ########################################
 
 SB = sim.simNoUncer_interp(p,  ModB, Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
-SP = sim.simNoUncer_interp(p,  ModP, Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
-Sτ = sim.simNoUncer_interp(pτ, Modτ, Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
-SPN= sim.simNoUncer_interp(pPN,ModPN,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
+SP = sim.simNoUncer_interp(p,  ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:])
+Sτ = sim.simNoUncer_interp(pτ, Modτ,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:])
+SPN= sim.simNoUncer_interp(pPN,ModPN,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:])
 
 
 ########################################
@@ -59,25 +59,22 @@ SPN= sim.simNoUncer_interp(pPN,ModPN,Astart=p.startA,Pstart=np.ones(p.N)*p.start
 
 
 #1) Welfare effects in the model, measured as wealth
-for i in np.linspace(0.0,10.0,100):
-    St= sim.simNoUncer_interp(p, ModB,Astart=p.startA+i,Pstart=np.ones(p.N)*p.startP)
-    if np.mean(St['v'][0,:]-1)*100>np.mean(SP['v'][0,:]-1)*100:
-        welf_P=i*p.scale
-        break
+for i in np.linspace(0.1,4.0,100):
+    St= sim.simNoUncer_interp(p, ModB,Tstart=8,Astart=SB['A'][8,:]+i,Pstart=SB['p'][8,:])
     
-for i in np.linspace(0.0,10.0,100):
-    St= sim.simNoUncer_interp(p, ModB,Astart=p.startA+i,Pstart=np.ones(p.N)*p.startP)
-    if np.mean(St['v'][0,:]-1)*100>np.mean(Sτ['v'][0,:]-1)*100:
-        welf_τ=i*p.scale
-        break
+    Pbetter=np.nanmean(St['v'][8,:]-1)*100<np.nanmean(SP['v'][8,:]-1)*100
+    τbetter=np.nanmean(St['v'][8,:]-1)*100<np.nanmean(Sτ['v'][8,:]-1)*100
+    PNbetter=np.nanmean(St['v'][8,:]-1)*100<np.nanmean(SPN['v'][8,:]-1)*100
+    
+    if Pbetter: welf_P=i*p.scale   
+    if τbetter: welf_τ=i*p.scale
+    if PNbetter:welf_PN=i*p.scale
+    
+    if (~Pbetter) & (~τbetter) & (~PNbetter): break
+
     
     
-for i in np.linspace(0.0,10.0,100):
-    St= sim.simNoUncer_interp(p, ModB,Astart=p.startA+i,Pstart=np.ones(p.N)*p.startP)
-    if np.mean(St['v'][0,:]-1)*100>np.mean(SPN['v'][0,:]-1)*100:
-        welf_PN=i*p.scale
-        break
-    
+
 #2) Govt. budget
 
 #pension expenditures
@@ -87,29 +84,29 @@ expe_τ=pτ.ρ*Sτ['p'][pτ.R:,:]
 expe_PN=pPN.ρ*SPN['p'][pPN.R:,:]
 
 #taxes
-tax_P=p.τ[:p.R,None]*p.wls[SP['h'][:p.R,:]]*SP['wh'][:p.R,:]
-tax_B=p.τ[:p.R,None]*p.wls[SB['h'][:p.R,:]]*SB['wh'][:p.R,:]
-tax_τ=pτ.τ[:pτ.R,None]*p.wls[Sτ['h'][:pτ.R,:]]*Sτ['wh'][:pτ.R,:]
-tax_PN=pτ.τ[:pPN.R,None]*p.wls[SPN['h'][:pPN.R,:]]*SPN['wh'][:pPN.R,:]
+tax_P=p.τ[:p.R,None]*SP['wh'][:p.R,:]
+tax_B=p.τ[:p.R,None]*SB['wh'][:p.R,:]
+tax_τ=pτ.τ[:pτ.R,None]*Sτ['wh'][:pτ.R,:]
+tax_PN=p.τ[:pPN.R,None]*SPN['wh'][:pPN.R,:]
 
 #adjusted deficits
 adjust=np.ones(SP['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
-deficit_B=(np.mean(expe_B*adjust[p.R:,:])-np.mean(tax_B*adjust[:p.R,:]))
-deficit_P=(np.mean(expe_P*adjust[p.R:,:])-np.mean(tax_P*adjust[:p.R,:]))
-deficit_τ=(np.mean(expe_τ*adjust[p.R:,:])-np.mean(tax_τ*adjust[:p.R,:]))
-deficit_PN=(np.mean(expe_PN*adjust[p.R:,:])-np.mean(tax_PN*adjust[:p.R,:]))
+deficit_B=(np.nanmean(expe_B*adjust[p.R:,:])-np.nanmean(tax_B*adjust[:p.R,:]))
+deficit_P=(np.nanmean(expe_P*adjust[p.R:,:])-np.nanmean(tax_P*adjust[:p.R,:]))
+deficit_τ=(np.nanmean(expe_τ*adjust[p.R:,:])-np.nanmean(tax_τ*adjust[:p.R,:]))
+deficit_PN=(np.nanmean(expe_PN*adjust[p.R:,:])-np.nanmean(tax_PN*adjust[:p.R,:]))
 
 #3) Gender wage gaps in old age
-ggap_old_B=1.0-(np.mean(p.ρ*SB['p'][p.R:,:]))/np.mean(p.y_N[p.R:,:])
-ggap_old_P=1.0-(np.mean(p.ρ*SP['p'][p.R:,:]))/np.mean(p.y_N[p.R:,:])
-ggap_old_τ=1.0-(np.mean(pτ.ρ*Sτ['p'][pτ.R:,:]))/np.mean(pτ.y_N[p.R:,:])
-ggap_old_PN=1.0-(np.mean(pPN.ρ*SPN['p'][pPN.R:,:]))/np.mean(pPN.y_N[p.R:,:])
+ggap_old_B=1.0-(np.nanmean(p.ρ*SB['p'][p.R:,:]))/np.nanmean(p.y_N[p.R:,:])
+ggap_old_P=1.0-(np.nanmean(p.ρ*SP['p'][p.R:,:]))/np.nanmean(p.y_N[p.R:,:])
+ggap_old_τ=1.0-(np.nanmean(pτ.ρ*Sτ['p'][pτ.R:,:]))/np.nanmean(pτ.y_N[p.R:,:])
+ggap_old_PN=1.0-(np.nanmean(pPN.ρ*SPN['p'][pPN.R:,:]))/np.nanmean(pPN.y_N[p.R:,:])
 
 #4) WLP
-WLP_B=np.mean(SB['h'][7:11,:]>0)
-WLP_P=np.mean(SP['h'][7:11,:]>0)
-WLP_τ=np.mean(Sτ['h'][7:11,:]>0)
-WLP_PN=np.mean(SPN['h'][7:11,:]>0)
+WLP_B=np.nanmean(SB['h'][8:12,:]>0)
+WLP_P=np.nanmean(SP['h'][8:12,:]>0)
+WLP_τ=np.nanmean(Sτ['h'][8:12,:]>0)
+WLP_PN=np.nanmean(SPN['h'][8:12,:]>0)
 
 # Table with experiments
 def p42(x): return str('%4.2f' % x) 
@@ -145,13 +142,13 @@ with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_expe.tex'
 ####################################
 
 #1) effect of the reform on employment
-eff_empl=np.mean(p.wls[SP['h'][7:11,:]]>0)-np.mean(p.wls[SB['h'][7:11,:]]>0)
+eff_empl=np.nanmean(p.wls[SP['h'][8:12,:]]>0)-np.nanmean(p.wls[SB['h'][8:12,:]]>0)
 
 #2) employment at baseline
-employment_rate=np.mean(SB['h'][7:11,:]>0)
+employment_rate=np.nanmean(SB['h'][8:12,:]>0)
 
 #3) fulltime employment
-work_fulltime=np.mean(SB['h'][7:11,:]==1)
+work_fulltime=np.nanmean(SB['h'][8:12,:]==1)
 
 #Table with parameters    
 table=r'\begin{table}[htbp]'+\
@@ -180,18 +177,18 @@ with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_params.te
 
 #MPE out of pension wealth
 Sw= sim.simNoUncer_interp(p,ModB,Astart=p.startA+100/p.scale,Pstart=np.ones(p.N)*p.startP)
-MPE=((np.mean(p.wls[Sw['h'][1:3,:]]*Sw['wh'][1:3,:])-np.mean(p.wls[SB['h'][1:3,:]]*SB['wh'][1:3,:]))*p.scale)
+MPE=((np.nanmean(p.wls[Sw['h'][1:3,:]]*Sw['wh'][1:3,:])-np.nanmean(p.wls[SB['h'][1:3,:]]*SB['wh'][1:3,:]))*p.scale)
 
 #Effect of pension reform on:
     
 #1) pension points
-eff_points=np.mean(np.diff(SP['p'][7:11,:],axis=0))-np.mean(np.diff(SB['p'][7:11,:],axis=0))
+eff_points=np.nanmean(np.diff(SP['p'][8:12,:],axis=0))-np.nanmean(np.diff(SB['p'][8:12,:],axis=0))
 
 #2) full employment
-eff_earn=(np.mean(p.wls[SP['h'][7:11,:]]*SP['wh'][7:11,:])-np.mean(p.wls[SB['h'][7:11,:]]*SB['wh'][7:11,:]))*p.scale
+eff_earn=(np.nanmean(p.wls[SP['h'][8:12,:]]*SP['wh'][8:12,:])-np.nanmean(p.wls[SB['h'][8:12,:]]*SB['wh'][8:12,:]))*p.scale
 
 #3) earnings
-eff_emp=np.mean(SP['h'][7:11,:][SP['h'][7:11,:]>0]==2)-np.mean(SB['h'][7:11,:][SB['h'][7:11,:]>0]==2)
+eff_emp=np.nanmean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==2)-np.nanmean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==2)
 
 ############################################
 #Table with parameters

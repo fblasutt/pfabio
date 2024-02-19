@@ -70,7 +70,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,P
             pepath[t, n] = np.maximum(np.minimum(mp2*wls[i]*w[t,i,tw[n]]/E_bar_now,Pmax),wls[i]*w[t,i,tw[n]]/E_bar_now)*(i>1)-wls[i]*w[t,i,tw[n]]/E_bar_now*(i>1)
             pepath2[t, n]= np.maximum(np.minimum(mp *wls[i]*w[t,i,tw[n]]/E_bar_now,Pmax),wls[i]*w[t,i,tw[n]]/E_bar_now)*(i>1)-wls[i]*w[t,i,tw[n]]/E_bar_now*(i>1)
             wpath[t, n] = w[t,3,tw[n]]
-            epath[t, n] = wpath[t, n]*wls[hpath[t, n]]*(i>1)+0*(i<1)
+            epath[t, n] = wpath[t, n]*wls[hpath[t, n]]*(i>1)+0*(i<=1)
             vpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Vp,apath[t,n],ppath[t,n])
             
             if t<T-1:apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])
