@@ -61,7 +61,7 @@ class setup():
         for t in range(self.T): 
             for i in range(self.nwls): 
                 if i>=1: 
-                    self.w[t,i,:]=np.exp(np.log(self.wM[t,i])+self.wv)  
+                    self.w[t,i,:]=np.exp(np.log(self.wM[t,i])+0*self.wv)  
                 elif i<1: 
                     self.w[t,i,:]=self.wM[t,i]  
                      
@@ -71,13 +71,13 @@ class setup():
         self.y_N=np.zeros((self.T,self.nw))  
         for t in range(self.R): 
             for i in range(self.nw): 
-                self.y_N[t,i]=np.exp(10.14251+.0232318*t-.0005649*t**2+self.wv[i]*1.0)/self.scale*self.scale_e 
+                self.y_N[t,i]=np.exp(10.14251+.0232318*t-.0005649*t**2+self.wv[i]*0.0)/self.scale*self.scale_e 
                  
         for t in range(self.R,self.T): 
             for i in range(self.nw):             
                  self.y_N[t,i]=self.y_N[self.R-1,i]*0.4
          
-     
+        for t in range(self.R): self.y_N[t,:]=1.6*21-21/56*t
         # precision pameters 
         self.tol = 1e-7       # max allowed error 
         self.minCons = 1e-5   # min allowed consumption 
@@ -109,7 +109,7 @@ class setup():
         self.startApr=np.cumsum(np.ones(self.N)/self.N)  
         self.startAt=np.zeros(self.N,dtype=np.int64)  
         for i in range(self.N):self.startAt[i]=np.argmin(self.startApr[i]>self.startAd)  
-        self.startA=self.agrid[self.startAt]  
+        self.startA=self.agrid[self.startAt]*0.0
          
         # Pension points 
         self.NP =7 
@@ -133,6 +133,12 @@ class setup():
  
 from scipy.stats import norm 
  
+
+def hours(params,data,beg,end):
+    
+    D=data['h'][beg:end,:]
+    return np.mean(D==1)*10.0+np.mean(D==2)*19.25+np.mean(D==3)*28.875+np.mean(D==4)*38.5
+    
 def addaco_dist(sd_z,npts): 
    
  

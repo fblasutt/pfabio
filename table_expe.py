@@ -37,10 +37,10 @@ p = co.setup()
 ModP= sol.solveEulerEquation(p,model='pension reform')
 ModB = sol.solveEulerEquation(p,model='baseline')
 
-pτ = co.setup();pτ.τ[8:12]=p.τ[8:12]-0.072
+pτ = co.setup();pτ.τ[8:12]=p.τ[8:12]-0.086
 Modτ = sol.solveEulerEquation(pτ,model='baseline')
 
-pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.355
+pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.43
 ModPN = sol.solveEulerEquation(pPN,model='pension reform')
 
 ########################################
@@ -59,16 +59,33 @@ SPN= sim.simNoUncer_interp(pPN,ModPN,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p']
 
 
 #1) Welfare effects in the model, measured as wealth
-for i in np.linspace(0.1,4.0,100):
-    St= sim.simNoUncer_interp(p, ModB,Tstart=8,Astart=SB['A'][8,:]+i,Pstart=SB['p'][8,:])
+# for i in np.linspace(2.0,4.0,100):
+#     St= sim.simNoUncer_interp(p, ModB,Tstart=8,Astart=SB['A'][8,:]+i,Pstart=SB['p'][8,:])
     
-    Pbetter=np.nanmean(St['v'][8,:]-1)*100<np.nanmean(SP['v'][8,:]-1)*100
-    τbetter=np.nanmean(St['v'][8,:]-1)*100<np.nanmean(Sτ['v'][8,:]-1)*100
-    PNbetter=np.nanmean(St['v'][8,:]-1)*100<np.nanmean(SPN['v'][8,:]-1)*100
+#     Pbetter=np.nanmean(St['ev'][8,:]-1)*100<np.nanmean(SP['ev'][8,:]-1)*100
+#     τbetter=np.nanmean(St['ev'][8,:]-1)*100<np.nanmean(Sτ['ev'][8,:]-1)*100
+#     PNbetter=np.nanmean(St['ev'][8,:]-1)*100<np.nanmean(SPN['ev'][8,:]-1)*100
     
-    if Pbetter: welf_P=i*p.scale   
-    if τbetter: welf_τ=i*p.scale
-    if PNbetter:welf_PN=i*p.scale
+#     if Pbetter: welf_P=i*p.scale   
+#     if τbetter: welf_τ=i*p.scale
+#     if PNbetter:welf_PN=i*p.scale
+    
+#     if (~Pbetter) & (~τbetter) & (~PNbetter): break
+
+
+adjust=np.ones(SB['c'].shape)/((1+p.δ)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
+for i in np.linspace(1.01,1.03,100):
+    St= sim.simNoUncer_interp(p, ModB,cadjust=i)
+    EV=(np.cumsum((adjust*St['v'])[::-1],axis=0)[::-1])
+    EV_time=EV[8]*(1+p.δ)**8
+    
+    Pbetter=np.nanmean(EV_time)<np.nanmean(SP['ev'][8,:])
+    τbetter=np.nanmean(EV_time)<np.nanmean(Sτ['ev'][8,:])
+    PNbetter=np.nanmean(EV_time)<np.nanmean(SPN['ev'][8,:])
+    
+    if Pbetter: welf_P=i-1
+    if τbetter: welf_τ=i-1
+    if PNbetter:welf_PN=i-1
     
     if (~Pbetter) & (~τbetter) & (~PNbetter): break
 
@@ -84,17 +101,17 @@ expe_τ=pτ.ρ*Sτ['p'][pτ.R:,:]
 expe_PN=pPN.ρ*SPN['p'][pPN.R:,:]
 
 #taxes
-tax_P=p.τ[:p.R,None]*SP['wh'][:p.R,:]
-tax_B=p.τ[:p.R,None]*SB['wh'][:p.R,:]
-tax_τ=pτ.τ[:pτ.R,None]*Sτ['wh'][:pτ.R,:]
-tax_PN=p.τ[:pPN.R,None]*SPN['wh'][:pPN.R,:]
+tax_P=p.τ[8:p.R,None]*SP['wh'][8:p.R,:]
+tax_B=p.τ[8:p.R,None]*SB['wh'][8:p.R,:]
+tax_τ=pτ.τ[8:pτ.R,None]*Sτ['wh'][8:pτ.R,:]
+tax_PN=p.τ[8:pPN.R,None]*SPN['wh'][8:pPN.R,:]
 
 #adjusted deficits
 adjust=np.ones(SP['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
-deficit_B=(np.nanmean(expe_B*adjust[p.R:,:])-np.nanmean(tax_B*adjust[:p.R,:]))
-deficit_P=(np.nanmean(expe_P*adjust[p.R:,:])-np.nanmean(tax_P*adjust[:p.R,:]))
-deficit_τ=(np.nanmean(expe_τ*adjust[p.R:,:])-np.nanmean(tax_τ*adjust[:p.R,:]))
-deficit_PN=(np.nanmean(expe_PN*adjust[p.R:,:])-np.nanmean(tax_PN*adjust[:p.R,:]))
+deficit_B=(np.nanmean(expe_B*adjust[p.R:,:])-np.nanmean(tax_B*adjust[8:p.R,:]))
+deficit_P=(np.nanmean(expe_P*adjust[p.R:,:])-np.nanmean(tax_P*adjust[8:p.R,:]))
+deficit_τ=(np.nanmean(expe_τ*adjust[p.R:,:])-np.nanmean(tax_τ*adjust[8:p.R,:]))
+deficit_PN=(np.nanmean(expe_PN*adjust[p.R:,:])-np.nanmean(tax_PN*adjust[8:p.R,:]))
 
 #3) Gender wage gaps in old age
 ggap_old_B=1.0-(np.nanmean(p.ρ*SB['p'][p.R:,:]))/np.nanmean(p.y_N[p.R:,:])
@@ -103,10 +120,10 @@ ggap_old_τ=1.0-(np.nanmean(pτ.ρ*Sτ['p'][pτ.R:,:]))/np.nanmean(pτ.y_N[p.R:,
 ggap_old_PN=1.0-(np.nanmean(pPN.ρ*SPN['p'][pPN.R:,:]))/np.nanmean(pPN.y_N[p.R:,:])
 
 #4) WLP
-WLP_B=np.nanmean(SB['h'][8:12,:]>0)
-WLP_P=np.nanmean(SP['h'][8:12,:]>0)
-WLP_τ=np.nanmean(Sτ['h'][8:12,:]>0)
-WLP_PN=np.nanmean(SPN['h'][8:12,:]>0)
+WLP_B=co.hours(p,SB,8,12)#  np.nanmean(SB['h'][8:12,:]>0)
+WLP_P=co.hours(p,SP,8,12)#np.nanmean(SP['h'][8:12,:]>0)
+WLP_τ=co.hours(p,Sτ,8,12)#np.nanmean(Sτ['h'][8:12,:]>0)
+WLP_PN=co.hours(p,SPN,8,12)#=np.nanmean(SPN['h'][8:12,:]>0)
 
 # Table with experiments
 def p42(x): return str('%4.2f' % x) 

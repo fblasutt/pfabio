@@ -24,19 +24,20 @@ def solveEulerEquation(p,model='baseline'):
         
     #Initiate some variables
     policyA1,policyC,pr,V,policyp,pmutil= np.zeros((6,p.T,p.nwls,p.NA, p.NP,p.nw))-1e8
+    V1=np.zeros((p.T,p.NA, p.NP,p.nw))
     holes=np.ones((p.T,p.nwls,p.NA, p.NP,p.nw,2))
     #Call the routing to solve the model
-    solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p)
+    solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,p)
 
     #End timer and print elapsed time
     elapsed = time.time() - time_start    
     #print('Finished, Reform =', reform, 'Elapsed time is', elapsed, 'seconds')   
     
-    return {'A':policyA1,'c':policyC,'V':V,'p':policyp,'pr':pr,'model':reform}
+    return {'A':policyA1,'c':policyC,'V':V,'V1':V1,'p':policyp,'pr':pr,'model':reform}
 
 #@profile
 #@njit
-def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
+def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,p):
     
     """ Use the method of endogenous gridpoint in 2 dimensions to solve the model.
         Source: JDruedahlThomas and Jørgensen (2017). This method is robust to
@@ -52,8 +53,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
     Pmax=p.Pmax;add_points=p.add_points
     
     ce,pe,ae,ce_bc,pe_bc,ae_bc=np.zeros((6,p.nwls,NA, NP,nw))
-    V1,c1=np.zeros((2,NA, NP,nw))
-    #Pmua=np.zeros((4,NA, NP,nw))
+    c1=np.zeros((NA, NP,nw))
     
     #Grid for assets and points
     agrid_box=np.repeat(np.transpose(np.tile(agrid,(NP,1)))[:,:,np.newaxis],nw,axis=2)
@@ -75,7 +75,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
     for t in range(T-2,-2,-1):
          
         #Get variables useful for next iteration t-1
-        expectation(t,NA,NP,nw,V,V1,σ,γc,pr,c1,policyC)             
+        expectation(t,NA,NP,nw,V,V1[t+1,...],σ,γc,pr,c1,policyC)             
                 
         if t==-1:break
 
@@ -158,7 +158,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
                 upperenvelop.compute(policyC[t,i,...],policyA1[t,i,:,:,:],policyp[t,i,:,:,:],V[t,i,...],holes[t,i,...],
                         pe[i,...],ae[i,...],ce[i,...],pe_bc[i,...],ae_bc[i,...],ce_bc[i,...],#computed above...
                         i, # which foc to take in upperenvelop
-                        V1,
+                        V1[t+1,...],
                         γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,tax,y_Nt,E_bar_now,Pmax,δ,pen,amin,wls[i],mp,q_min) 
     
         #Retired
@@ -171,7 +171,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,pmutil,pr,holes,reform,p):
                     policyC[t,0,:,i,j] =agrid*(1+r)+ρ*pe[0,:,i,j]+y_Nt[:,i,j]-policyA1[t,0,:,i,j]
                     policyp[t,0,:,:,:]=pgrid_box
                     V[t,0,:,i,j]=co.utility(policyC[t,0,:,i,j],wls[0],p)+\
-                         (1/(1+δ))*np.interp(policyA1[t,0,:,i,j],agrid,V1[:,i,j])
+                         (1/(1+δ))*np.interp(policyA1[t,0,:,i,j],agrid,V1[t+1,:,i,j])
                          
      
 @njit
