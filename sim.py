@@ -14,20 +14,20 @@ def simNoUncer_interp(p, model, Tstart=0, Astart=0.0, Pstart=0.0, Vstart= -1.0*n
     epath,ppath,cpath,apath,hpath,pepath,pepath2,vpath,evpath,wpath=\
         fast_simulate(Tstart,Astart,Pstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,p.Pmax,p.add_points,p.tw,p.ts,p.wls,p.nwls,
                       p.δ,p.q_mini,p.q,p.β,p.γh,p.σ,
-                      model['A'],model['c'],model['p'],model['pr'],model['V'],model['V1'],model['model'],cadjust=cadjust)
+                      model['A'],model['c'],model['p'],model['pr'],model['V'],model['V1'],model['model'],cadjust,p.wls_point)
     
     return {'wh':epath,'p':ppath,'c':cpath,'A':apath,'h':hpath,'pb':pepath, 'pb2':pepath2, 'v':vpath,'ev':evpath,'w':wpath}
     
 @njit
 def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,Pmax,add_points,tw,ts,wls,nwls,δ,q_mini,q,β,γh,σ,
-                  policyA1,policyC,policyP,pr,V,V1,reform,cadjust):
+                  policyA1,policyC,policyP,pr,V,V1,reform,cadjust,wls_point):
 
     # Arguments for output
     cpath = np.nan+ np.zeros((T, N))           # consumption
     hpath = np.zeros((T, N),dtype=np.int32)           # earnings path
     pepath = np.nan+ np.zeros((T, N))           #corrected potints path
     pepath2 = np.nan+ np.zeros((T, N))           #additional caregiver credits
-    epath = np.nan+ np.zeros((T, N))            # earnings path
+    epath = np.zeros((T, N))            # earnings path
     wpath = np.nan+ np.zeros((T, N))           # wage path
     vpath = np.nan+ np.zeros((T, N))           # utility
     evpath = np.nan+ np.zeros((T, N))           # expected utility
@@ -69,14 +69,14 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,P
 
             cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])
             hpath[t, n] = i#linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])
-            pepath[t, n] = np.maximum(np.minimum(mp2*wls[i]*w[t,i,tw[n]]/E_bar_now,Pmax),wls[i]*w[t,i,tw[n]]/E_bar_now)*(i>1)-wls[i]*w[t,i,tw[n]]/E_bar_now*(i>1)
-            pepath2[t, n]= np.maximum(np.minimum(mp *wls[i]*w[t,i,tw[n]]/E_bar_now,Pmax),wls[i]*w[t,i,tw[n]]/E_bar_now)*(i>1)-wls[i]*w[t,i,tw[n]]/E_bar_now*(i>1)
+            pepath[t, n] = np.maximum(np.minimum(mp2*wls[i]*w[t,i,tw[n]]/E_bar_now,Pmax),wls[i]*w[t,i,tw[n]]/E_bar_now)*(i>wls_point)-wls[i]*w[t,i,tw[n]]/E_bar_now*(i>wls_point)
+            pepath2[t, n]= np.maximum(np.minimum(mp *wls[i]*w[t,i,tw[n]]/E_bar_now,Pmax),wls[i]*w[t,i,tw[n]]/E_bar_now)*(i>wls_point)-wls[i]*w[t,i,tw[n]]/E_bar_now*(i>wls_point)
             wpath[t, n] = w[t,3,tw[n]]
-            epath[t, n] = wpath[t, n]*wls[hpath[t, n]]*(i>1)+0*(i<=1)
-            evpath[t, n] = linear_interp.interp_2d(agrid,pgrid,V1[t, :,:,tw[n]],apath[t,n],ppath[t,n])
+            epath[t, n] = wpath[t, n]*wls[hpath[t, n]]*(i>wls_point)
+            evpath[t, n] = linear_interp.interp_2d(agrid,pgrid,V1[t,:,:,tw[n]],apath[t,n],ppath[t,n])#+σ*np.euler_gamma-σ*np.log(prs[i])
             
-            vpath[t, n] = np.log(cpath[t, n]*cadjust)-β*wls[hpath[t, n]]**(1+1/γh)/(1+1/γh)-q+q_mini*(hpath[t, n]==1)+\
-                σ*np.e-σ*np.log(prs[i])
+            vpath[t, n] = np.log(cpath[t, n]*cadjust)-β*wls[hpath[t, n]]**(1+1/γh)/(1+1/γh)-q*(hpath[t, n]>0)+q_mini*(hpath[t, n]==1)+\
+                σ*np.euler_gamma-σ*np.log(prs[i])
             
             if t<T-1:apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])
             if t<T-1:ppath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,Pp,apath[t,n],ppath[t,n])

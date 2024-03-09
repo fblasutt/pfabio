@@ -69,7 +69,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,p
     policyC[T-1,0,:,:,:] = agrid_box*(1+r) + y_N_box[T-1,] +ρ*pgrid_box # optimal consumption   
     policyp[T-1,0,:,:,:] = pgrid_box # optimal consumption                              
     pmutil[T-1,0,:,:,:]=co.mcutility(policyC[T-1,0,:,:,:], p)   # mu of more pension points        
-    V[T-1,0,:,:,:]=co.utility(policyC[T-1,0,:,:,:],wls[0],p)
+    V[T-1,0,:,:,:]=np.log(policyC[T-1,0,:,:,:])
    
     #Decisions below
     for t in range(T-2,-2,-1):
@@ -106,15 +106,15 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,p
                 wt=w[t,i,:]
                 
                 #modify for the mini-jobs case
-                tax=τ  if i!=1 else 0.0
+                tax=τ  if (i>p.wls_point) else 0.0
                 
                 #Unconstrained
                 ce[i,...]=c1*np.power(((1+r)/(1+δ)),(-1/γc)) #Euler eq.
-                pe[i,...]=pgrid_box-np.maximum(np.minimum(mp*wls[i]*wt/E_bar_now,Pmax),wls[i]*wt/E_bar_now)*(i!=1)   #Pens. points
+                pe[i,...]=pgrid_box-np.maximum(np.minimum(mp*wls[i]*wt/E_bar_now,Pmax),wls[i]*wt/E_bar_now)*(i>p.wls_point)   #Pens. points
                 ae[i,...]=(agrid_box-wt*wls[i]*(1-tax)-y_Nt+ce[i,...])/(1+r)#Savings
                 
                 #Constrained (assets)
-                pe_bc[i,...]=pgrid_box-  np.maximum(np.minimum(mp*wls[i]*wt/E_bar_now,Pmax),wls[i]*wt/E_bar_now)*(i!=1)      #Pens. points
+                pe_bc[i,...]=pgrid_box-  np.maximum(np.minimum(mp*wls[i]*wt/E_bar_now,Pmax),wls[i]*wt/E_bar_now)*(i>p.wls_point)      #Pens. points
                 ce_bc[i,...]=cgrid_box.copy()
                 ae_bc[i,...]=(ce_bc[i,...] - wt*(1-tax)*wls[i] - y_Nt+amin)/(1+r)#Savings
         
@@ -145,12 +145,12 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,p
                 
                 wt=w[t,i,:]
                 
-                #Penalty for not working?
+                #Penalty for working?
                 pen=q if i>0 else 0.0
                 
                 #Mini jobs below
                 #modify for the mini-jobs case
-                tax=τ      if i!=1 else 0.0
+                tax=τ      if (i>p.wls_point) else 0.0
                 #mpp=mp     if i!=1 else 0.0
                 q_min=0.0  if i!=1 else q_mini
                 
@@ -159,7 +159,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,p
                         pe[i,...],ae[i,...],ce[i,...],pe_bc[i,...],ae_bc[i,...],ce_bc[i,...],#computed above...
                         i, # which foc to take in upperenvelop
                         V1[t+1,...],
-                        γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,tax,y_Nt,E_bar_now,Pmax,δ,pen,amin,wls[i],mp,q_min) 
+                        γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,tax,y_Nt,E_bar_now,Pmax,δ,pen,amin,wls[i],mp,q_min,p.wls_point) 
     
         #Retired
         else:
@@ -182,7 +182,7 @@ def expectation(t,NA,NP,nw,V,V1,σ,γc,pr,c1,policyC):
                 for i_w in prange(nw):
                     
                     lc=np.max(V[t+1,:,i_n,i_m,i_w])/σ#local normalizing variable
-                    V1[i_n,i_m,i_w] = σ*(lc+np.log(np.sum(np.exp(V[t+1,:,i_n,i_m,i_w]/σ-lc)))  )
-                    pr[t+1,:,i_n,i_m,i_w]=np.exp(V[t+1,:,i_n,i_m,i_w]/σ-V1[i_n,i_m,i_w]/σ)
+                    V1[i_n,i_m,i_w] = σ*np.euler_gamma+σ*(lc+np.log(np.sum(np.exp(V[t+1,:,i_n,i_m,i_w]/σ-lc)))  )
+                    pr[t+1,:,i_n,i_m,i_w]=np.exp(V[t+1,:,i_n,i_m,i_w]/σ-(V1[i_n,i_m,i_w]-σ*np.euler_gamma)/σ)
                     c1[i_n,i_m,i_w] = np.sum(pr[t+1,:,i_n,i_m,i_w]*policyC[t+1,:,i_n,i_m,i_w])
  

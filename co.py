@@ -34,6 +34,7 @@ class setup():
               
         # Levels of WLS. From GSOEP hrs/week = (10/ 20 / 38.5 ) 
         self.wls=np.array([0.0,10.0,19.25,28.875,38.5])/38.5 
+        self.wls_point = 1 #smallest position on 
          
         self.nwls=len(self.wls) 
             
@@ -48,7 +49,7 @@ class setup():
          
         # Taxes 
         self.τ=np.zeros(self.T)  
-        for t in range(self.T):self.τ[t]=0.2 
+        for t in range(self.T):self.τ[t]=0.2
           
         # Hourly wage dispersion  
         self.nw=11
@@ -61,7 +62,7 @@ class setup():
         for t in range(self.T): 
             for i in range(self.nwls): 
                 if i>=1: 
-                    self.w[t,i,:]=np.exp(np.log(self.wM[t,i])+0*self.wv)  
+                    self.w[t,i,:]=np.exp(np.log(self.wM[t,i])+self.wv)  
                 elif i<1: 
                     self.w[t,i,:]=self.wM[t,i]  
                      
@@ -71,13 +72,13 @@ class setup():
         self.y_N=np.zeros((self.T,self.nw))  
         for t in range(self.R): 
             for i in range(self.nw): 
-                self.y_N[t,i]=np.exp(10.14251+.0232318*t-.0005649*t**2+self.wv[i]*0.0)/self.scale*self.scale_e 
+                self.y_N[t,i]=np.exp(10.14251+.0232318*t-.0005649*t**2+1.0*self.wv[i])/self.scale*self.scale_e 
                  
         for t in range(self.R,self.T): 
             for i in range(self.nw):             
                  self.y_N[t,i]=self.y_N[self.R-1,i]*0.4
          
-        for t in range(self.R): self.y_N[t,:]=1.6*21-21/56*t
+        
         # precision pameters 
         self.tol = 1e-7       # max allowed error 
         self.minCons = 1e-5   # min allowed consumption 
@@ -90,7 +91,7 @@ class setup():
         # 2. GENERATE GRID 
          
         # Assets 
-        self.NA = 20 
+        self.NA = 80 
         self.amin=0.0 
         self.amax=1000000/self.scale 
         self.agrid=nonlinspace(self.amin,self.amax,self.NA,1.4)#np.linspace(self.amin,self.amax,self.NA)#np.linspace(0.0,250000,self.NA)# 
@@ -109,10 +110,10 @@ class setup():
         self.startApr=np.cumsum(np.ones(self.N)/self.N)  
         self.startAt=np.zeros(self.N,dtype=np.int64)  
         for i in range(self.N):self.startAt[i]=np.argmin(self.startApr[i]>self.startAd)  
-        self.startA=self.agrid[self.startAt]*0.0
+        self.startA=self.agrid[self.startAt]
          
         # Pension points 
-        self.NP =7 
+        self.NP =7
         self.startP = 5.99 
         self.pgrid=nonlinspace(self.startP,self.R,self.NP,1.4)#np.linspace(0,self.R,self.NP)## # max one point per year in the law... 
           # points people start life with 

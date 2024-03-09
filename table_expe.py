@@ -37,11 +37,14 @@ p = co.setup()
 ModP= sol.solveEulerEquation(p,model='pension reform')
 ModB = sol.solveEulerEquation(p,model='baseline')
 
-pτ = co.setup();pτ.τ[8:12]=p.τ[8:12]-0.086
+pτ = co.setup();pτ.τ[8:12]=p.τ[8:12]-0.0715
 Modτ = sol.solveEulerEquation(pτ,model='baseline')
 
-pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.43
+pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.3555
 ModPN = sol.solveEulerEquation(pPN,model='pension reform')
+
+pm = co.setup();pm.wls_point=0;pm.add_points=1.19
+Modm = sol.solveEulerEquation(pm,model='pension reform')
 
 ########################################
 # simulate the models
@@ -51,6 +54,7 @@ SB = sim.simNoUncer_interp(p,  ModB, Astart=p.startA,Pstart=np.ones(p.N)*p.start
 SP = sim.simNoUncer_interp(p,  ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:])
 Sτ = sim.simNoUncer_interp(pτ, Modτ,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:])
 SPN= sim.simNoUncer_interp(pPN,ModPN,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:])
+Sm = sim.simNoUncer_interp(pm, Modm,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:])
 
 
 ########################################
@@ -58,38 +62,33 @@ SPN= sim.simNoUncer_interp(pPN,ModPN,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p']
 ########################################
 
 
-#1) Welfare effects in the model, measured as wealth
-# for i in np.linspace(2.0,4.0,100):
-#     St= sim.simNoUncer_interp(p, ModB,Tstart=8,Astart=SB['A'][8,:]+i,Pstart=SB['p'][8,:])
+adjustb=np.ones(SB['c'].shape)/((1+p.δ)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
+t=8
+EVP    =np.mean(((np.cumsum((adjustb*SP['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])
+EVτ    =np.mean(((np.cumsum((adjustb*Sτ['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])
+EVPN   =np.mean(((np.cumsum((adjustb*SPN['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])
+EVm    =np.mean(((np.cumsum((adjustb*Sm['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])
+for i in np.linspace(1.00,1.01,100):
     
-#     Pbetter=np.nanmean(St['ev'][8,:]-1)*100<np.nanmean(SP['ev'][8,:]-1)*100
-#     τbetter=np.nanmean(St['ev'][8,:]-1)*100<np.nanmean(Sτ['ev'][8,:]-1)*100
-#     PNbetter=np.nanmean(St['ev'][8,:]-1)*100<np.nanmean(SPN['ev'][8,:]-1)*100
-    
-#     if Pbetter: welf_P=i*p.scale   
-#     if τbetter: welf_τ=i*p.scale
-#     if PNbetter:welf_PN=i*p.scale
-    
-#     if (~Pbetter) & (~τbetter) & (~PNbetter): break
-
-
-adjust=np.ones(SB['c'].shape)/((1+p.δ)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
-for i in np.linspace(1.01,1.03,100):
-    St= sim.simNoUncer_interp(p, ModB,cadjust=i)
-    EV=(np.cumsum((adjust*St['v'])[::-1],axis=0)[::-1])
-    EV_time=EV[8]*(1+p.δ)**8
-    
-    Pbetter=np.nanmean(EV_time)<np.nanmean(SP['ev'][8,:])
-    τbetter=np.nanmean(EV_time)<np.nanmean(Sτ['ev'][8,:])
-    PNbetter=np.nanmean(EV_time)<np.nanmean(SPN['ev'][8,:])
+    St= sim.simNoUncer_interp(p, ModB,cadjust=i,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
+    EVt = np.mean(((np.cumsum((adjustb*St['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])#np.nanmean(EV_time)
+    Pbetter=EVt<EVP
+    τbetter=EVt<EVτ
+    PNbetter=EVt<EVPN
+    mbetter=EVt<EVm
     
     if Pbetter: welf_P=i-1
     if τbetter: welf_τ=i-1
     if PNbetter:welf_PN=i-1
+    if mbetter: welf_m=i-1
     
-    if (~Pbetter) & (~τbetter) & (~PNbetter): break
+    if (~Pbetter) & (~τbetter) & (~PNbetter) & (~mbetter): break
 
-    
+
+
+
+#welf_τ*np.mean(SB['c'][8:])*48    
+#0.0715*np.mean(SB['wh'][8:12])*4+
     
 
 #2) Govt. budget
@@ -99,12 +98,14 @@ expe_P=p.ρ*SP['p'][p.R:,:]
 expe_B=p.ρ*SB['p'][p.R:,:]
 expe_τ=pτ.ρ*Sτ['p'][pτ.R:,:]
 expe_PN=pPN.ρ*SPN['p'][pPN.R:,:]
+expe_m=pm.ρ*Sm['p'][pm.R:,:]
 
 #taxes
 tax_P=p.τ[8:p.R,None]*SP['wh'][8:p.R,:]
 tax_B=p.τ[8:p.R,None]*SB['wh'][8:p.R,:]
 tax_τ=pτ.τ[8:pτ.R,None]*Sτ['wh'][8:pτ.R,:]
 tax_PN=p.τ[8:pPN.R,None]*SPN['wh'][8:pPN.R,:]
+tax_m=pm.τ[8:pm.R,None]*Sm['wh'][8:pm.R,:]
 
 #adjusted deficits
 adjust=np.ones(SP['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
@@ -112,38 +113,56 @@ deficit_B=(np.nanmean(expe_B*adjust[p.R:,:])-np.nanmean(tax_B*adjust[8:p.R,:]))
 deficit_P=(np.nanmean(expe_P*adjust[p.R:,:])-np.nanmean(tax_P*adjust[8:p.R,:]))
 deficit_τ=(np.nanmean(expe_τ*adjust[p.R:,:])-np.nanmean(tax_τ*adjust[8:p.R,:]))
 deficit_PN=(np.nanmean(expe_PN*adjust[p.R:,:])-np.nanmean(tax_PN*adjust[8:p.R,:]))
+deficit_m=(np.nanmean(expe_m*adjust[p.R:,:])-np.nanmean(tax_m*adjust[8:p.R,:]))
 
 #3) Gender wage gaps in old age
 ggap_old_B=1.0-(np.nanmean(p.ρ*SB['p'][p.R:,:]))/np.nanmean(p.y_N[p.R:,:])
 ggap_old_P=1.0-(np.nanmean(p.ρ*SP['p'][p.R:,:]))/np.nanmean(p.y_N[p.R:,:])
 ggap_old_τ=1.0-(np.nanmean(pτ.ρ*Sτ['p'][pτ.R:,:]))/np.nanmean(pτ.y_N[p.R:,:])
 ggap_old_PN=1.0-(np.nanmean(pPN.ρ*SPN['p'][pPN.R:,:]))/np.nanmean(pPN.y_N[p.R:,:])
+ggap_old_m=1.0-(np.nanmean(pm.ρ*Sm['p'][pm.R:,:]))/np.nanmean(pm.y_N[p.R:,:])
 
 #4) WLP
-WLP_B=co.hours(p,SB,8,12)#  np.nanmean(SB['h'][8:12,:]>0)
-WLP_P=co.hours(p,SP,8,12)#np.nanmean(SP['h'][8:12,:]>0)
-WLP_τ=co.hours(p,Sτ,8,12)#np.nanmean(Sτ['h'][8:12,:]>0)
-WLP_PN=co.hours(p,SPN,8,12)#=np.nanmean(SPN['h'][8:12,:]>0)
+WLS_B=co.hours(p,SB,8,12)#  np.nanmean(SB['h'][8:12,:]>0)
+WLS_P=co.hours(p,SP,8,12)#np.nanmean(SP['h'][8:12,:]>0)
+WLS_τ=co.hours(p,Sτ,8,12)#np.nanmean(Sτ['h'][8:12,:]>0)
+WLS_PN=co.hours(p,SPN,8,12)#=np.nanmean(SPN['h'][8:12,:]>0)
+WLS_m=co.hours(p,Sm,8,12)#np.nanmean(Sτ['h'][8:12,:]>0)
+
+WLP_B=np.nanmean(SB['h'][8:12,:]>0)
+WLP_P=np.nanmean(SP['h'][8:12,:]>0)
+WLP_τ=np.nanmean(Sτ['h'][8:12,:]>0)
+WLP_PN=np.nanmean(SPN['h'][8:12,:]>0)
+WLP_m=np.nanmean(Sm['h'][8:12,:]>0)
+
+
+#5) mini-jobs
+mini_B=np.nanmean(SB['h'][8:12,:]==1)
+mini_P=np.nanmean(SP['h'][8:12,:]==1)
+mini_τ=np.nanmean(Sτ['h'][8:12,:]==1)
+mini_PN=np.nanmean(SPN['h'][8:12,:]==1)
+mini_m=np.nanmean(Sm['h'][8:12,:]==1)
 
 # Table with experiments
 def p42(x): return str('%4.2f' % x) 
-def p43(x): return str('%4.3f' % x)    
-def p50(x): return str('%5.0f' % x)      
+def p43(x): return str('%4.2f' % x)    
+def p50(x): return str('%4.2f' % x)      
 table=r'\begin{table}[htbp]'+\
        r'\caption{Lifecycle model: counterfactual experiments}\label{table:experiments}'+\
        r'\centering\footnotesize'+\
-       r'\begin{tabular}{lccc}'+\
+       r'\begin{tabular}{lccccc}'+\
        r' \toprule '+\
-       r"& Pension & Women's labor & Welfare gains  \\"+\
-       r"&gender gap &participation & wrt baseline (euros)  \\"+\
+       r"& Pension & Women's labor & Women's labor & Women in &  Welfare gains  \\"+\
+       r"&gender gap &hours &  participation  (\%) & marginal jobs (\%)  & wrt baseline (\%)  \\"+\
        r'\midrule   '+\
-       r' Baseline                                &'+p43(ggap_old_B) +'&'+p43(WLP_B) +'& 0.0\\\\'+\
-       r' Caregiver credits                       &'+p43(ggap_old_P) +'&'+p43(WLP_P) +'&'+p50(welf_P)+'\\\\'+\
-       r' Lower income taxes                      &'+p43(ggap_old_τ) +'&'+p43(WLP_τ) +'&'+p50(welf_τ)+'\\\\'+\
-       r' Caregiver credits, no upper threshold   &'+p43(ggap_old_PN)+'&'+p43(WLP_PN)+'&'+p50(welf_PN)+'\\\\'+\
-       r'  \bottomrule'+\
-       r'\multicolumn{4}{l}{\textsc{Notes:} The experiments in the last three rows imply the same government deficit}'+'\\\\'+\
-       r'\multicolumn{4}{l}{of '+p50((deficit_P-deficit_B)*p.scale)+' euros. Welfare gains = equivalent transfer in baseline model at age 30. }'+\
+       r' Baseline                                   &'+p43(ggap_old_B) +'&'+p43(WLS_B) +'&'+p43(WLP_B*100) +'&'+p43(mini_B*100) +'& 0.0\\\\'+\
+       r' Caregiver credits                          &'+p43(ggap_old_P) +'&'+p43(WLS_P) +'&'+p43(WLP_P*100) +'&'+p43(mini_P*100) +'&'+p50(welf_P*100)+'\\\\'+\
+       r' Lower income taxes                         &'+p43(ggap_old_τ) +'&'+p43(WLS_τ) +'&'+p43(WLP_τ*100) +'&'+p43(mini_τ*100) +'&'+p50(welf_τ*100)+'\\\\'+\
+       r' Pension points + taxes for mini-jobs&'+p43(ggap_old_m) +'&'+p43(WLS_m) +'&'+p43(WLP_m*100) +'&'+p43(mini_m*100) +'&'+p50(welf_m*100)+'\\\\'+\
+       r' Caregiver credits, no upper threshold      &'+p43(ggap_old_PN)+'&'+p43(WLS_PN)+'&'+p43(WLP_PN*100)+'&'+p43(mini_PN*100)+'&'+p50(welf_PN*100)+'\\\\'+\
+       r' \bottomrule'+\
+       r'\multicolumn{5}{l}{\textsc{Notes:} The experiments in the last three rows imply the same government deficit.}'+'\\\\'+\
+       r'\multicolumn{5}{l}{Welfare gains = increase in consumption at baseline to be indifferent with the experiment under analysis. }'+\
       """\end{tabular}
       """+\
       r'\end{table}'
