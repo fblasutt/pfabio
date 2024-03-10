@@ -49,7 +49,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,p
     #Initialize some variables
     r=p.r;δ=p.δ;γc=p.γc;R=p.R;τt=p.τ;β=p.β;q=p.q;amin=p.amin;wls=p.wls;nwls=p.nwls;
     w=np.array(p.w);agrid=p.agrid;y_N=p.y_N;γh=p.γh;T=p.T;NA=p.NA;nw=p.nw;σ=p.σ;
-    NP=p.NP;pgrid=p.pgrid;maxHours=p.maxHours;ρ=p.ρ;E_bar_now=p.E_bar_now;q_mini=p.q_mini
+    NP=p.NP;pgrid=p.pgrid;ρ=p.ρ;E_bar_now=p.E_bar_now;q_mini=p.q_mini
     Pmax=p.Pmax;add_points=p.add_points
     
     ce,pe,ae,ce_bc,pe_bc,ae_bc=np.zeros((6,p.nwls,NA, NP,nw))
@@ -61,7 +61,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,p
     y_N_box=np.repeat(np.repeat(y_N[:,np.newaxis,np.newaxis,:],NA,axis=1),NP,axis=2)
     
     #Grid for consumption
-    cgrid=nonlinspace(agrid[0],agrid[-1]*(1+r)+np.max(y_N)+np.max(w)*maxHours*(1-np.min(τt)),NA,1.4)
+    cgrid=nonlinspace(agrid[0]*0.001,agrid[-1]*(1+r)+np.max(y_N)+np.max(w)*(1-np.min(τt)),NA,1.4)
     cgrid_box=np.repeat(np.transpose(np.tile(cgrid,(NP,1)))[:,:,np.newaxis],nw,axis=2)
     
     #Last period decisions below
@@ -69,7 +69,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,p
     policyC[T-1,0,:,:,:] = agrid_box*(1+r) + y_N_box[T-1,] +ρ*pgrid_box # optimal consumption   
     policyp[T-1,0,:,:,:] = pgrid_box # optimal consumption                              
     pmutil[T-1,0,:,:,:]=co.mcutility(policyC[T-1,0,:,:,:], p)   # mu of more pension points        
-    V[T-1,0,:,:,:]=np.log(policyC[T-1,0,:,:,:])
+    V[T-1,0,:,:,:]=co.utility(policyC[T-1,0,:,:,:],wls[0],p) #np.log(policyC[T-1,0,:,:,:])
    
     #Decisions below
     for t in range(T-2,-2,-1):
@@ -115,8 +115,12 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,p
                 
                 #Constrained (assets)
                 pe_bc[i,...]=pgrid_box-  np.maximum(np.minimum(mp*wls[i]*wt/E_bar_now,Pmax),wls[i]*wt/E_bar_now)*(i>p.wls_point)      #Pens. points
+                             
                 ce_bc[i,...]=cgrid_box.copy()
                 ae_bc[i,...]=(ce_bc[i,...] - wt*(1-tax)*wls[i] - y_Nt+amin)/(1+r)#Savings
+                
+                
+               
         
 
              
@@ -159,7 +163,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,p
                         pe[i,...],ae[i,...],ce[i,...],pe_bc[i,...],ae_bc[i,...],ce_bc[i,...],#computed above...
                         i, # which foc to take in upperenvelop
                         V1[t+1,...],
-                        γc,maxHours,γh,ρ,agrid,pgrid,β,r,wt,tax,y_Nt,E_bar_now,Pmax,δ,pen,amin,wls[i],mp,q_min,p.wls_point) 
+                        γc,γh,ρ,agrid,pgrid,β,r,wt,tax,y_Nt,E_bar_now,Pmax,δ,pen,amin,wls[i],mp,q_min,p.wls_point) 
     
         #Retired
         else:

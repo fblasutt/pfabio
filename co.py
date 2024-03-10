@@ -52,7 +52,7 @@ class setup():
         for t in range(self.T):self.τ[t]=0.2
           
         # Hourly wage dispersion  
-        self.nw=11
+        self.nw=10
         self.σw=0.31 #dispersion of wages  
         self.wv,self.Π=addaco_dist(self.σw,self.nw)
          
@@ -79,20 +79,15 @@ class setup():
                  self.y_N[t,i]=self.y_N[self.R-1,i]*0.4
          
         
-        # precision pameters 
-        self.tol = 1e-7       # max allowed error 
-        self.minCons = 1e-5   # min allowed consumption 
-        self.minHours = 1e-5  # min allowed hours 
-        self.maxHours = 1880 
-         
+
         # simulations 
         self.N = 20000        # agents to simulate 
          
         # 2. GENERATE GRID 
          
         # Assets 
-        self.NA = 80 
-        self.amin=0.0 
+        self.NA = 40 
+        self.amin=0.0
         self.amax=1000000/self.scale 
         self.agrid=nonlinspace(self.amin,self.amax,self.NA,1.4)#np.linspace(self.amin,self.amax,self.NA)#np.linspace(0.0,250000,self.NA)# 
          
@@ -115,7 +110,7 @@ class setup():
         # Pension points 
         self.NP =7
         self.startP = 5.99 
-        self.pgrid=nonlinspace(self.startP,self.R,self.NP,1.4)#np.linspace(0,self.R,self.NP)## # max one point per year in the law... 
+        self.pgrid=nonlinspace(self.startP,self.R*2,self.NP,1.4)#np.linspace(0,self.R,self.NP)## # max one point per year in the law... 
           # points people start life with 
          
         #Multidimensional grid 
