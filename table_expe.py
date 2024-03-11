@@ -37,13 +37,13 @@ p = co.setup()
 ModP= sol.solveEulerEquation(p,model='pension reform')
 ModB = sol.solveEulerEquation(p,model='baseline')
 
-pτ = co.setup();pτ.τ[8:12]=p.τ[8:12]-0.0715
+pτ = co.setup();pτ.τ[8:12]=p.τ[8:12]-0.0568
 Modτ = sol.solveEulerEquation(pτ,model='baseline')
 
-pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.3555
+pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.3667
 ModPN = sol.solveEulerEquation(pPN,model='pension reform')
 
-pm = co.setup();pm.wls_point=0;pm.add_points=1.19
+pm = co.setup();pm.wls_point=0;pm.add_points=1.543
 Modm = sol.solveEulerEquation(pm,model='pension reform')
 
 ########################################
@@ -68,7 +68,7 @@ EVP    =np.mean(((np.cumsum((adjustb*SP['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[
 EVτ    =np.mean(((np.cumsum((adjustb*Sτ['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])
 EVPN   =np.mean(((np.cumsum((adjustb*SPN['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])
 EVm    =np.mean(((np.cumsum((adjustb*Sm['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])
-for i in np.linspace(1.00,1.01,100):
+for i in np.linspace(1.001,1.002,100):
     
     St= sim.simNoUncer_interp(p, ModB,cadjust=i,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
     EVt = np.mean(((np.cumsum((adjustb*St['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])#np.nanmean(EV_time)
@@ -109,11 +109,11 @@ tax_m=pm.τ[8:pm.R,None]*Sm['wh'][8:pm.R,:]
 
 #adjusted deficits
 adjust=np.ones(SP['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
-deficit_B=(np.nanmean(expe_B*adjust[p.R:,:])-np.nanmean(tax_B*adjust[8:p.R,:]))
-deficit_P=(np.nanmean(expe_P*adjust[p.R:,:])-np.nanmean(tax_P*adjust[8:p.R,:]))
-deficit_τ=(np.nanmean(expe_τ*adjust[p.R:,:])-np.nanmean(tax_τ*adjust[8:p.R,:]))
-deficit_PN=(np.nanmean(expe_PN*adjust[p.R:,:])-np.nanmean(tax_PN*adjust[8:p.R,:]))
-deficit_m=(np.nanmean(expe_m*adjust[p.R:,:])-np.nanmean(tax_m*adjust[8:p.R,:]))
+deficit_B=(np.nansum(expe_B*adjust[p.R:,:])  -np.nansum(tax_B*adjust[8:p.R,:]))
+deficit_P=(np.nansum(expe_P*adjust[p.R:,:])  -np.nansum(tax_P*adjust[8:p.R,:]))
+deficit_τ=(np.nansum(expe_τ*adjust[p.R:,:])  -np.nansum(tax_τ*adjust[8:p.R,:]))
+deficit_PN=(np.nansum(expe_PN*adjust[p.R:,:])-np.nansum(tax_PN*adjust[8:p.R,:]))
+deficit_m=(np.nansum(expe_m*adjust[p.R:,:])  -np.nansum(tax_m*adjust[8:p.R,:]))
 
 #3) Gender wage gaps in old age
 ggap_old_B=1.0-(np.nanmean(p.ρ*SB['p'][p.R:,:]))/np.nanmean(p.y_N[p.R:,:])

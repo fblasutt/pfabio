@@ -13,7 +13,7 @@ class setup():
     def __init__(self): 
      
         # Economic Environment: set pameters 
-        self.T = 56           # Number of time periods 
+        self.T = 56          # Number of time periods 
         self.R = 36           # Retirement period 
         self.r = 0.015        # Interest rate 
         self.δ = 0.01503498#0.00983949    # Discount rate 
