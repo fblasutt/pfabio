@@ -16,67 +16,104 @@ class setup():
         self.T = 56          # Number of time periods 
         self.R = 36           # Retirement period 
         self.r = 0.015        # Interest rate 
-        self.δ = 0.01503498#0.00983949    # Discount rate 
-        self.β = 1.02602303 # Utility weight on leisure 
+        self.δ =0.00454988#0.00983949    # Discount rate 
+        self.β =  0.0 # Utility weight on leisure 
+        self.ζ = 0.0 #time cost of children under age 11
         self.γc = 1.0      # risk pameter on consumption!!!Check in upperenvelop if not 1 
         self.γh = 1.0    # risk pameter on labour 
         self.scale=1000 
-        self.scale_e=0.9114647914816217
-        self.E_bar_now = 29136/self.scale*self.scale_e  # Average earnings 
-        self.q =0.25501504 #Fixed cost of pticipation 
-        self.q_mini =0.25501504*0.33651745#0.18283181*0.30219591 
-        self.ρ =350/self.scale      # Dollar value of points 
-        self.ϵ=0.000000001 
-        self.σ=0.045#0.001#0.00428793          #Size of taste shock 
-        self.Pmax = 1 #threshold for pension points reform
-        self.add_points=1.5 #point multiplicator during reform
-                       
-              
+        self.scale_e=0.92365653
+        
+        #https://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256
+        #exchange rate 1.9569471624266144
+        self.E_bar_now = 27740.65230618203/self.scale*1.4  # Average earnings 
+        
+        
         # Levels of WLS. From GSOEP hrs/week = (10/ 20 / 38.5 ) 
-        self.wls=np.array([0.0,10.0,19.25,28.875,38.5])/38.5 
-        self.wls_point = 1 #smallest position on 
+        self.wls=np.array([0.0,10.0,20.0,38.5])/38.5 
+        self.wls_point = np.array([0.0,0.2,1.0,1.0]) #smallest position on 
          
         self.nwls=len(self.wls) 
+        
+        
+        self.q =np.array([0.0,0.01095495, 0.19125356, 0.63027815])  #Fixed cost of pticipation - mean
+        self.σq = 0.41788212 #Fixed cost of pticipation -sd 
+        self.nq = 2
+        
+        self.q_gridt,self.Πq=addaco_dist(self.σq,self.nq) 
+        
+        self.q_grid=np.ones((self.nq,self.nwls))
+        for iq in range(self.nq):
+            for il in range(self.nwls):
+                self.q_grid[iq,il] = self.q[il]
+                if il==0: self.q_grid[iq,il] = self.q_gridt[iq]
+        
+        
+        self.q_mini =0.0#0.21689193*0.42137996 #0.18283181*0.30219591 
+        self.ρ =350/self.scale      # Dollar value of points 
+        self.ϵ=0.000000001 
+        self.σ=0.0001#0.00428793          #Size of taste shock 
+        self.Pmax = 1 #threshold for pension points reform
+        self.add_points=1.5 #point multiplicator during reform
+        #self.apoints=np.array([0.0,0.0,1.0,1.0])
+        
+                       
+              
+
             
         # Hourly wage  
         self.wM=np.zeros((self.T,self.nwls))  
         for t in range(self.T): 
             for i in range(self.nwls): 
-                if i ==1:self.wM[t,i]=np.exp(2.440857+.0099643*t -.0002273*t**2)/self.scale*38.5*52*self.scale_e 
-                if i ==2:self.wM[t,i]=np.exp(2.440857+.0099643*t -.0002273*t**2)/self.scale*38.5*52*self.scale_e 
-                if i >=3:self.wM[t,i]=np.exp(2.440857+.0099643*t -.0002273*t**2)/self.scale*38.5*52*self.scale_e 
-                 
+                self.wM[t,i]=np.exp(-0.1806434+.0297458*t -.0005628 *t**2)/self.scale
+                
          
         # Taxes 
         self.τ=np.zeros(self.T)  
         for t in range(self.T):self.τ[t]=0.2
-          
-        # Hourly wage dispersion  
-        self.nw=10
-        self.σw=0.31 #dispersion of wages  
-        self.wv,self.Π=addaco_dist(self.σw,self.nw)
+        
+
+  
+        
+        
+        
+        # Hourly wage dispersion   
+        self.nw=10 
+        self.σw=0.31 #dispersion of wages   
+        self.wv2,self.Π=addaco_dist(self.σw,self.nw) 
          
- 
-        #Create actual wages  
-        self.w=np.zeros((self.T,self.nwls,self.nw))  
-        for t in range(self.T): 
-            for i in range(self.nwls): 
-                if i>=1: 
-                    self.w[t,i,:]=np.exp(np.log(self.wM[t,i])+self.wv)  
-                elif i<1: 
-                    self.w[t,i,:]=self.wM[t,i]  
+        self.wv=np.array([ 
+   7.631935, 
+   8.090471, 
+   8.286575 , 
+   8.44488, 
+   8.580534 , 
+   8.709507, 
+   8.827328, 
+   8.96867, 
+   9.145868, 
+   9.563336]) 
+          
+  
+        #Create actual wages   
+        self.w=np.zeros((self.T,self.nwls,self.nw))   
+        for t in range(self.T):  
+            for i in range(self.nwls):  
+                if i>=1:  
+                    self.w[t,i,:]=np.exp(self.wM[t,i]+self.wv)/self.scale/13.96*38.5
+                # elif i<1:  
                      
           
   
-        # Earnings of men 
-        self.y_N=np.zeros((self.T,self.nw))  
-        for t in range(self.R): 
-            for i in range(self.nw): 
-                self.y_N[t,i]=np.exp(10.14251+.0232318*t-.0005649*t**2+1.0*self.wv[i])/self.scale*self.scale_e 
-                 
-        for t in range(self.R,self.T): 
-            for i in range(self.nw):             
-                 self.y_N[t,i]=self.y_N[self.R-1,i]*0.4
+        self.wv_men=np.array([16735.71,16920.84,19447.71,18881.82,22105.11,18759.2,19781.31,21205.22,24253.39,26751.28]) 
+        self.y_N=np.zeros((self.T,self.nw))   
+        for t in range(self.R):  
+            for i in range(self.nw):  
+                self.y_N[t,i]=(-2930.40118+501.4029*(t)-11.82488*(t)**2+self.wv_men[i])/self.scale
+                  
+        for t in range(self.R,self.T):  
+            for i in range(self.nw):              
+                 self.y_N[t,i]=self.y_N[self.R-1,i]*0.45
          
         
 
@@ -86,7 +123,7 @@ class setup():
         # 2. GENERATE GRID 
          
         # Assets 
-        self.NA = 40 
+        self.NA = 15
         self.amin=0.0
         self.amax=1000000/self.scale 
         self.agrid=nonlinspace(self.amin,self.amax,self.NA,1.4)#np.linspace(self.amin,self.amax,self.NA)#np.linspace(0.0,250000,self.NA)# 
@@ -95,22 +132,22 @@ class setup():
                   
           
         #Initial assets  
-        self.Aμ = 30000.0/self.scale        # Assets people start life with (ave)  
-        self.Aσ = 20000.0/self.scale   # Assets people start life with  
-        self.startAd   = norm.cdf(self.agrid[1:],self.Aμ,self.Aσ)-\
-                        norm.cdf(self.agrid[:-1],self.Aμ,self.Aσ)  
-        self.startAd = np.append(self.startAd,0.0)  
-        self.startAd[self.startAd<0.00001]=0.0  
-        self.startAd=np.cumsum(self.startAd/self.startAd.sum())  
-        self.startApr=np.cumsum(np.ones(self.N)/self.N)  
-        self.startAt=np.zeros(self.N,dtype=np.int64)  
-        for i in range(self.N):self.startAt[i]=np.argmin(self.startApr[i]>self.startAd)  
-        self.startA=self.agrid[self.startAt]
+        self.startA=np.zeros(self.N)  
+        assets=np.array([5877.601,21127.74,10671.82,7991.483,21614.71,15574.05,15981.4,24145.36,34662.95,32189.31]) 
+        for i in range(self.N): 
+            index=int(i/self.N*10) 
+            self.startA[i]=assets[index]/self.scale 
          
         # Pension points 
-        self.NP =7
-        self.startP = 5.99 
-        self.pgrid=nonlinspace(self.startP,self.R*2,self.NP,1.4)#np.linspace(0,self.R,self.NP)## # max one point per year in the law... 
+        self.NP =5
+        self.startPd = np.array([2.509712,2.732802,3.061959,2.951443,3.380279,3.498868,3.528733,4.050392,4.264604,4.733748])
+        
+        self.startP=np.zeros(self.N) 
+        for i in range(self.N): 
+            index=int(i/self.N*10) 
+            self.startP[i]=self.startPd[index]
+        
+        self.pgrid=nonlinspace(self.startP.min(),self.R*2,self.NP,1.4)#np.linspace(0,self.R,self.NP)## # max one point per year in the law... 
           # points people start life with 
          
         #Multidimensional grid 
@@ -122,6 +159,13 @@ class setup():
         #Distribution of types and taste shocks 
         self.tw=np.sort(qe.MarkovChain(self.Π).simulate(self.N))# Type here 
         self.ts=np.random.rand(self.T,self.N) 
+        
+        self.q_sim = np.zeros((self.T,self.N),dtype=np.int32)  
+        
+        j=0
+        for i in range(self.N):
+            self.q_sim[:,i] = j
+            j = j+1 if j<self.nq-1 else 0
          
         ############################################################## 
         #Compute the present value of life-time wealth for each group 
@@ -133,7 +177,7 @@ from scipy.stats import norm
 def hours(params,data,beg,end):
     
     D=data['h'][beg:end,:]
-    return np.mean(D==1)*10.0+np.mean(D==2)*19.25+np.mean(D==3)*28.875+np.mean(D==4)*38.5
+    return np.mean(D==1)*10.0+np.mean(D==2)*20.0+np.mean(D==3)*38.5
     
 def addaco_dist(sd_z,npts): 
    

@@ -219,8 +219,8 @@ print("Additional average caregiver pension points in p (0.66,1.00]     at *base
 
 print("-----------------------------------------------------------------------------------------------------------------------------------------------------------")
 print("Effect on hours is {}, data is 3.565 hours".format(
-   (np.mean(SP['h'][8:12,:]==1)*10.0+np.mean(SP['h'][8:12,:]==2)*19.25+np.mean(SP['h'][8:12,:]==3)*28.875+np.mean(SP['h'][8:12,:]==4)*38.5)-\
-    (np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*19.25+np.mean(SB['h'][8:12,:]==3)*28.875+np.mean(SB['h'][8:12,:]==4)*38.5)))
+   (np.mean(SP['h'][8:12,:]==1)*10.0+np.mean(SP['h'][8:12,:]==2)*20.0+np.mean(SP['h'][8:12,:]==3)*38.5)-\
+   (np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*20.0+np.mean(SB['h'][8:12,:]==3)*38.5)))
         
 print("The effect on all employment is {}, data is {}".format(np.mean(SP['h'][8:12,:]>0)-np.mean(SB['h'][8:12,:]>0),0.099))
 print("The effect on full time employment is {}, data is {}".format(np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3),0.045))
