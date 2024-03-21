@@ -1,5 +1,5 @@
 import numpy as np 
-from numba import njit,prange 
+from numba import njit 
  
 ############################################################################### 
 # This is an adaptation of the CONVSAV packages 
@@ -58,11 +58,11 @@ def compute(out_c,out_n,pmua,out_v,holes,
         #holes = np.ones((Nb,Na)) 
  
         # ii. upperenvelope 
-        for i_b in prange(Nb): 
-            for i_a in prange(Na): 
-                for i_w in prange(nw): 
-                    for i_q in prange(nq): 
-                        for tri in prange(2): #consider both upper and lower triangle      
+        for i_b in range(Nb): 
+            for i_a in range(Na): 
+                for i_w in range(nw): 
+                    for i_q in range(nq): 
+                        for tri in range(2): #consider both upper and lower triangle      
                      
                          
                
@@ -152,11 +152,11 @@ def upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,i_q,
      
      
         # e. loop through common grid nodes in interior of bounding box 
-        for i_n in prange(in_low,in_high):        
+        for i_n in range(in_low,in_high):        
              
             n_now = agrid[i_n] 
             den=n_now-n3 
-            for i_m in prange(im_low,im_high): 
+            for i_m in range(im_low,im_high): 
                 if holes[i_n,i_m,i_w,i_q,j]>0: 
                      
                     # i. common grid values 
@@ -206,7 +206,7 @@ def upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,i_q,
                         pmua[i_n,i_m,i_w,i_q]  = a_interp 
                         holes[i_n,i_m,i_w,i_q,j] = 0 
  
-@njit(parallel=True)
+@njit
 def fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,γh,ρ,agrid,pgrid,β,r,wt,τ,y_N,E_bar_now,Pmax,δ,q,amin,wls,mp,q_mini,wls_point,ζ,Nn,Nm,nw,nq): 
  
     # a. locate global bounding box with content 

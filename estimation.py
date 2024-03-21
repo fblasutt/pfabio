@@ -26,9 +26,11 @@ def q(pt):
     p = co.setup()
     
     #..and update them
-    p.q =np.array([0.0,pt[0],pt[1],pt[2]])  #Fixed cost of pticipation - mean
-    p.σq =pt[3] #Fixed cost of pticipation -sd 
-    p.δ=pt[4]
+    p.q =np.array([0.0,pt[2]*pt[0],pt[1]*pt[0],pt[0]])  #Fixed cost of pticipation - mean
+    
+    p.δ=pt[3]
+    #p.ρq=pt[5]
+    p.σq =pt[4] #Fixed cost of pticipation -sd 
     
     p.q_gridt,p.Πq=co.addaco_dist(p.σq,p.nq) 
     p.q_grid=np.ones((p.nq,p.nwls))
@@ -69,18 +71,18 @@ def q(pt):
     eff_points=np.mean(np.diff(SP['p'][8:12,:],axis=0))-np.mean(np.diff(SB['p'][8:12,:],axis=0))
     eff_h=(np.mean(SP['h'][8:12,:]==1)*10.0+np.mean(SP['h'][8:12,:]==2)*20.0+np.mean(SP['h'][8:12,:]==3)*38.5)-\
           (np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*20.0+np.mean(SB['h'][8:12,:]==3)*38.5)
-    eff_earn=np.nanmean(np.diff(SP['p'][8:13,:],axis=0))-np.nanmean(np.diff(SB['p'][8:13,:],axis=0))-np.mean(SP['pb'][8:12,:])
+    eff_earn=np.nanmean(np.diff(SP['p'][8:12,:],axis=0))-np.nanmean(np.diff(SB['p'][8:12,:],axis=0))-np.mean(SP['pb'][8:12,:])
     
     pension_points=np.nanmean(np.diff(SB['p'][7:9,:],axis=0))
     #Print the point
-    print("The point is {}, the moments are {}, {}, {}, {} , {}".format(pt,sh_min,shpo,sh1,eff_e,eff_nomarg))   
+    print("The point is {}, the moments are {}, {}, {}, {} , {},  {}, {}, {}".format(pt,sh1,shpo,sh_min,eff_h,eff_e,eff_full,eff_nomarg,eff_earn))   
 
         
     #return ((shpo-0.65)/0.65)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
     #return ((shpo-0.1956)/0.1956)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
     #return ((sh_h-13.96)/13.96)**2+((sh_noem-0.36)/0.36)**2+((0.256-sh_min)/0.256)**2+((eff_h-3.565)/3.565)**2+((0.099-eff_e)/0.099)**2
-    return [((sh_min-.256)/.256),((shpo-.1986)/.1986),((sh1-.1984)/.1984),((eff_e-0.099)/0.099),((eff_h-3.565)/3.565),((eff_nomarg+0.115)/0.115)]#,((sh_hl-6108)/6108)]#,((eff_marg+0.115)/0.115)]#+((0.099-eff_e)/0.099)**2
-            
+    return [((sh1-.1984)/.1984),((shpo-.1986)/.1986),((sh_min-.256)/.256),((eff_full-.045)/.045),((eff_e-.099)/.099)]#,((eff_full-0.045)/0.045),((eff_nomarg+0.115)/0.115)]#,((sh_hl-6108)/6108)]#,((eff_marg+0.115)/0.115)]#+((0.099-eff_e)/0.099)**2
+    #return ((sh_min-.256)/.256)**2+((shpo-.1986)/.1986)**2+((sh1-.1984)/.1984)**2+((eff_e-0.099)/0.099)**2+((eff_full-0.045)/0.045)**2+((eff_nomarg+0.115)/0.115)**2#        
             
             
 #Initialize seed
@@ -89,9 +91,15 @@ np.random.seed(10)
 
 #Define initial point (xc) and boundaries (xl,xu)
 
-xc=np.array([0.06074889, 0.22388518, 0.60054827, 0.3593514 , 0.00967452])#3.0
-xl=np.array([0.0,0.05,0.05,0.000001,-0.04])
-xu=np.array([1.0,2.0,1.5,0.99,0.04])
+xc=np.array([-0.025039152000000002,0.131607396,0.5373229553100001,0.4157,0.0070501072363,0.0])#3.0
+xl=np.array([-0.2,0.00,0.05,0.000001,-0.04,-0.05])
+xu=np.array([1.0,2.0,1.5,0.99,0.04,0.07])
+
+
+xc=np.array([0.76350597, 0.47245261, 0.24951672, 0.0101742 , 0.11123842])
+xl=np.array([0.05,-0.4,-0.6,-0.05,0.0001])
+xu=np.array([2.5 ,0.9,0.5,0.04,0.8])
+
 
 
 #Optimization below

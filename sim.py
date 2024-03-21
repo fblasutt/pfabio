@@ -8,7 +8,24 @@ from consav import linear_interp
 def simNoUncer_interp(p, model, Tstart=0, Astart=0.0, Pstart=0.0, Vstart= -1.0*np.ones((2,2,2,2,2)),cadjust=1.0):
  
     
+    np.random.seed(3) 
+    p.Πq = np.ones((p.nq,10))/2
+    
+    for iw in range(10): 
+        if iw<5:#if just to get symmetry
+            p.Πq[0,iw] = 1/2 - (5-iw)*p.ρq
+            p.Πq[1,iw] = 1/2 + (5-iw)*p.ρq
+        else:
+            p.Πq[0,iw] = 1/2 - (5-1-iw)*p.ρq
+            p.Πq[1,iw] = 1/2 + (5-1-iw)*p.ρq
+        
+    p.q_sim = np.zeros((p.N),dtype=np.int32)+1
+    #p.q_sim[np.random.rand(p.N)<np.cumsum(p.Πq,axis=0)[1][p.tw]]=1
+    p.q_sim[np.random.rand(p.N)<np.cumsum(p.Πq,axis=0)[0][p.tw]]=0
+    
+    
 
+        
     
     #Call the simulator
     epath,ppath,cpath,apath,hpath,pepath,pepath2,vpath,evpath,wpath=\
@@ -50,7 +67,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,P
         for t in range(Ti,T):  # loop through time periods for a pticular individual
 
             
-            iq = q_sim[t,n]
+            iq = q_sim[n]
             #policy=((t >=4) & (t <=11))#& (reform==1))
             policy2=((t >=4) & (t <=11) & (reform==1))
             mp=add_points #if policy else 1.0

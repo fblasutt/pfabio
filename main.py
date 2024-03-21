@@ -122,6 +122,7 @@ plt.show()
 
 
 
+
 # 4
 fig = plt.figure(figsize=(10,4)) 
 plt.plot(t,np.mean(SP['A'],axis=1), 'blue', t, np.mean(SB['A'],axis=1), 'red')
@@ -242,7 +243,7 @@ print("Effect of behavioral earinngs points for poor women is {}".format(np.mean
 
 
 for i in range(p.nw):
-    print("Share in mini-jobs or no job for wage {} is {}".format(p.w[7,3,i],np.mean(SB['h'][7,:][SB['w'][7,:]==p.w[7,3,i]]<=1)))
+    print("Share in mini-jobs or no job for wage {} is {}".format(p.w[7,3,i],np.mean(SB['h'][7,:][SB['w'][7,:]==p.w[7,3,i]]<1)))
 for i in range(p.nw):
     print("Share LS or no job          for wage {} is {}".format(p.w[8,3,i],np.mean((SP['h'][8,:]>SB['h'][8,:])[(SB['h'][8,:]<=1) & (SB['w'][8,:]==p.w[8,3,i])])))
 print("-----------------------------------------------------------------------------------------------------------------------------------------------------------") 

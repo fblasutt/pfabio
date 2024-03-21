@@ -16,7 +16,7 @@ class setup():
         self.T = 56          # Number of time periods 
         self.R = 36           # Retirement period 
         self.r = 0.015        # Interest rate 
-        self.δ =0.00454988#0.00983949    # Discount rate 
+        self.δ =0.00506781#0.00983949    # Discount rate 
         self.β =  0.0 # Utility weight on leisure 
         self.ζ = 0.0 #time cost of children under age 11
         self.γc = 1.0      # risk pameter on consumption!!!Check in upperenvelop if not 1 
@@ -26,7 +26,7 @@ class setup():
         
         #https://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256
         #exchange rate 1.9569471624266144
-        self.E_bar_now = 27740.65230618203/self.scale*1.4  # Average earnings 
+        self.E_bar_now = 27740.65230618203/self.scale*1.2  # Average earnings 
         
         
         # Levels of WLS. From GSOEP hrs/week = (10/ 20 / 38.5 ) 
@@ -36,11 +36,12 @@ class setup():
         self.nwls=len(self.wls) 
         
         
-        self.q =np.array([0.0,0.01095495, 0.19125356, 0.63027815])  #Fixed cost of pticipation - mean
-        self.σq = 0.41788212 #Fixed cost of pticipation -sd 
+        self.q =np.array([0.0,.87971439*0.27649443,.87971439*0.4615335,.87971439])  #Fixed cost of pticipation - mean
+        self.σq =  0.16027449 #Fixed cost of pticipation -sd 
+        self.ρq = 0.0#0.00195224
         self.nq = 2
         
-        self.q_gridt,self.Πq=addaco_dist(self.σq,self.nq) 
+        self.q_gridt,_=addaco_dist(self.σq,self.nq) 
         
         self.q_grid=np.ones((self.nq,self.nwls))
         for iq in range(self.nq):
@@ -52,7 +53,7 @@ class setup():
         self.q_mini =0.0#0.21689193*0.42137996 #0.18283181*0.30219591 
         self.ρ =350/self.scale      # Dollar value of points 
         self.ϵ=0.000000001 
-        self.σ=0.0001#0.00428793          #Size of taste shock 
+        self.σ=0.005#0.00428793          #Size of taste shock 
         self.Pmax = 1 #threshold for pension points reform
         self.add_points=1.5 #point multiplicator during reform
         #self.apoints=np.array([0.0,0.0,1.0,1.0])
@@ -160,13 +161,31 @@ class setup():
         self.tw=np.sort(qe.MarkovChain(self.Π).simulate(self.N))# Type here 
         self.ts=np.random.rand(self.T,self.N) 
         
-        self.q_sim = np.zeros((self.T,self.N),dtype=np.int32)  
+        self.q_sim = np.zeros(self.N,dtype=np.int32)  
         
-        j=0
-        for i in range(self.N):
-            self.q_sim[:,i] = j
-            j = j+1 if j<self.nq-1 else 0
-         
+        # j=0
+        # for i in range(self.N):
+        #     self.q_sim[i] = j
+        #     j = j+1 if j<self.nq-1 else 0
+        
+        # np.random.seed(3) 
+        # self.Πq = np.ones((self.nq,10))/3
+        
+        # for iw in range(10): 
+        #     if iw<5:#if just to get symmetry
+        #         self.Πq[0,iw] = 1/3 - (5-iw)*self.ρq
+        #         self.Πq[2,iw] = 1/3 + (5-iw)*self.ρq
+        #     else:
+        #         self.Πq[0,iw] = 1/3 - (5-1-iw)*self.ρq
+        #         self.Πq[2,iw] = 1/3 + (5-1-iw)*self.ρq
+            
+        # self.q_sim = np.zeros((self.N),dtype=np.int32)+2
+        # self.q_sim[np.random.rand(self.N)<np.cumsum(self.Πq,axis=0)[1][self.tw]]=1
+        # self.q_sim[np.random.rand(self.N)<np.cumsum(self.Πq,axis=0)[0][self.tw]]=0
+        
+
+        #self.q_sim = np.repeat(self.q_sim[:,None],self.T,axis=1).T
+        
         ############################################################## 
         #Compute the present value of life-time wealth for each group 
         ############################################################## 
