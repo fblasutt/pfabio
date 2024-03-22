@@ -1,6 +1,6 @@
 import numpy as np 
 from numba import njit 
- 
+import co
 ############################################################################### 
 # This is an adaptation of the CONVSAV packages 
 # https://github.com/NumEconCopenhagen/ConsumptionSavingNotebooks/tree/master/03.%20G2EGM 
@@ -180,14 +180,14 @@ def upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,i_q,
                         #No borrowing constrained case 
                         c_interp = w1*c[i_b_1,i_a_1,i_w,i_q] + w2*c[i_b_2,i_a_2,i_w,i_q] + w3*c[i_b_3,i_a_3,i_w,i_q] 
                         a_interp = m_now + np.maximum(np.minimum(mp*wls*wt[i_w]/E_bar_now,Pmax),wls*wt[i_w]/E_bar_now)*(wls_point)                 #points 
-                        b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*wls + y_N[i_n,i_m,i_w,i_q] 
+                        b_interp = n_now*(1+r) - c_interp +co.after_tax_income(wt[i_w]*wls,y_N[i_w],E_bar_now,wls_point,τ)
      
                      
                     if j==1: 
                         #Borrowing constrained case 
                         a_interp = m_now + np.maximum(np.minimum(mp*wls*wt[i_w]/E_bar_now,Pmax),wls*wt[i_w]/E_bar_now)*(wls_point)     
                         b_interp = amin 
-                        c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*wls + y_N[i_n,i_m,i_w,i_q] - b_interp
+                        c_interp = n_now*(1+r)+co.after_tax_income(wt[i_w]*wls,y_N[i_w],E_bar_now,wls_point,τ) - b_interp
                   
          
                     if c_interp <= 0.0 or a_interp < 0 or b_interp < amin: 
@@ -195,7 +195,7 @@ def upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,i_q,
                      
                     # v. value of choice 
                     w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w,i_q],b_interp,a_interp) 
-                    v_interp=np.log(max(0.00000001,c_interp))-β*(wls+ζ)**(1+1/γh) / (1+1/γh)-q[i_q,num]+w_interp/(1+δ)      
+                    v_interp=np.log(max(0.00000001,c_interp))-q[i_q,num]+w_interp/(1+δ)      
      
                     # vi. update if max 
                     if v_interp >out_v[i_n,i_m,i_w,i_q]: 
@@ -283,7 +283,7 @@ def fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,γh,ρ,agrid,pgrid,β,r,wt
                                         if j==0: 
                                             c_interp = out_c[i_n_close,i_m_close,i_w,i_q] 
                                             a_interp = m_now + np.maximum(np.minimum(mp*wls*wt[i_w]/E_bar_now,Pmax),wls*wt[i_w]/E_bar_now)*(wls_point)                      #points 
-                                            b_interp = n_now*(1+r) - c_interp + wt[i_w]*(1-τ)*wls + y_N[i_n,i_m,i_w,i_q] 
+                                            b_interp = n_now*(1+r) - c_interp + co.after_tax_income(wt[i_w]*wls,y_N[i_w],E_bar_now,wls_point,τ)
                       
                                           
                                                                           
@@ -291,12 +291,12 @@ def fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,γh,ρ,agrid,pgrid,β,r,wt
                                         if j==1: 
                                             a_interp = m_now + np.maximum(np.minimum(mp*wls*wt[i_w]/E_bar_now,Pmax),wls*wt[i_w]/E_bar_now)*(wls_point)   
                                             b_interp = amin 
-                                            c_interp = n_now*(1+r)+wt[i_w]*(1-τ)*wls + y_N[i_n,i_m,i_w,i_q] - b_interp
+                                            c_interp = n_now*(1+r)+co.after_tax_income(wt[i_w]*wls,y_N[i_w],E_bar_now,wls_point,τ) - b_interp
                                             
                                              
                                         #Value of choice 
                                         w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w,i_q],b_interp,a_interp) 
-                                        v_interp=np.log(max(0.00000001,c_interp))-β*(wls+ζ)**(1+1/γh) / (1+1/γh)-q[i_q,num]+1/(1+δ)*w_interp 
+                                        v_interp=np.log(max(0.00000001,c_interp))-q[i_q,num]+1/(1+δ)*w_interp 
                                                      
                                             
                                         if c_interp <= 0.0 or a_interp < 0 or b_interp < amin: 

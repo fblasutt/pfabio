@@ -2,6 +2,9 @@
 clear all
 use "C:\Users\32489\Dropbox\occupation\soepdata\data_sample_selection", replace
 set seed 12345
+keep if sex==2 
+
+*Average earnings in the population = 25732.04
 
 * Create new variable hours_group with the following categories:
 * == 1 if unemployed (pgemplst == 5 meaning not employed)
@@ -10,7 +13,8 @@ set seed 12345
 * == 4 if 20 < agreed upon hours <= 30
 * == 5 if agreed upon hours is larger than 30
 
-global treated 
+global sample  treated==1 & phrf>0 
+global samplew treated==1 & phrf>0 [weight=phrf]
 *Model start at age 29, when every women has a kid
 
 gen adjust=1.0

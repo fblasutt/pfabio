@@ -16,7 +16,7 @@ class setup():
         self.T = 56          # Number of time periods 
         self.R = 36           # Retirement period 
         self.r = 0.015        # Interest rate 
-        self.δ =0.00506781#0.00983949    # Discount rate 
+        self.δ =0.02279778#0.00983949    # Discount rate 
         self.β =  0.0 # Utility weight on leisure 
         self.ζ = 0.0 #time cost of children under age 11
         self.γc = 1.0      # risk pameter on consumption!!!Check in upperenvelop if not 1 
@@ -26,9 +26,9 @@ class setup():
         
         #https://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256
         #exchange rate 1.9569471624266144
-        self.E_bar_now = 27740.65230618203/self.scale*1.2  # Average earnings 
+        self.E_bar_now = 27740.65230618203/self.scale  # Average earnings 
         
-        
+            
         # Levels of WLS. From GSOEP hrs/week = (10/ 20 / 38.5 ) 
         self.wls=np.array([0.0,10.0,20.0,38.5])/38.5 
         self.wls_point = np.array([0.0,0.2,1.0,1.0]) #smallest position on 
@@ -36,8 +36,8 @@ class setup():
         self.nwls=len(self.wls) 
         
         
-        self.q =np.array([0.0,.87971439*0.27649443,.87971439*0.4615335,.87971439])  #Fixed cost of pticipation - mean
-        self.σq =  0.16027449 #Fixed cost of pticipation -sd 
+        self.q =np.array([0.0,0.38291281*0.33105918,0.38291281*0.29281174,0.38291281])  #Fixed cost of pticipation - mean
+        self.σq =  0.09087302 #Fixed cost of pticipation -sd 
         self.ρq = 0.0#0.00195224
         self.nq = 2
         
@@ -47,7 +47,7 @@ class setup():
         for iq in range(self.nq):
             for il in range(self.nwls):
                 self.q_grid[iq,il] = self.q[il]
-                if il==0: self.q_grid[iq,il] = self.q_gridt[iq]
+                if il<1: self.q_grid[iq,il] = self.q[il]+self.q_gridt[iq]
         
         
         self.q_mini =0.0#0.21689193*0.42137996 #0.18283181*0.30219591 
@@ -163,6 +163,18 @@ class setup():
         
         self.q_sim = np.zeros(self.N,dtype=np.int32)  
         
+        # ya=100
+        # y=np.linspace(0.0,200.0,1000)
+        # tax = np.zeros(1000)
+        # atax = np.zeros(1000)
+        
+        # for i in range(len(y)): tax[i] = after_tax_income(y[i],y[i],ya)
+        
+      
+        
+        # import matplotlib.pyplot as plt
+        # plt.plot(y,tax)
+        
         # j=0
         # for i in range(self.N):
         #     self.q_sim[i] = j
@@ -192,6 +204,68 @@ class setup():
  
 from scipy.stats import norm 
  
+
+
+#taxes: based on page 72 in https://www.fabian-kindermann.de/docs/progressive_pensions.pdf
+#                           https://www.fabian-kindermann.de/docs/women_redistribution pg 20
+#needs to be updated with 2000 rules: 
+#    file:///C:/Users/32489/Downloads/Incentives_to_Work_The_Case_of_Germany.pdf
+#    https://taxation-customs.ec.europa.eu/system/files/2016-09/structures2003.pdf pg 117
+#    https://www.wiwiss.fu-berlin.de/fachbereich/vwl/corneo/dp/BachCorneoSteiner_DP080208.pdf
+#    https://docs.iza.org/dp2245.pdf income splitting
+
+@njit
+def after_tax_income(y1g,y2g,y_mean,fraction,τ,no_retired = True):
+    
+    y1c = min(y1g*fraction,2*y_mean)
+    y2c = min(y2g,         2*y_mean)
+    
+    payroll_tax_1 = τ*y1c
+    payroll_tax_2 = τ*y2c
+    
+    y1 = y1g -  payroll_tax_1 if no_retired else y1g
+    y2 = y2g -  payroll_tax_2 if no_retired else y2g
+    
+    share_married=1.65
+    j_income = (y1+y2)/(share_married)
+    rel_income = j_income/y_mean
+    
+    tax=0.0
+    
+    if rel_income<0.24: 
+        tax = 0.0
+    
+    elif (rel_income<0.37) & (rel_income>=0.24): 
+        tax = y_mean*share_married*(\
+                                (rel_income-0.24)*0.14+\
+                                (rel_income-0.24)*((0.2397-0.14)*(rel_income-0.24)/(0.37-0.24))/2                               
+                                )
+            
+    elif (rel_income<1.46) & (rel_income>=0.37): 
+        tax = y_mean*share_married*(\
+                                 (0.37-0.24)*0.14+\
+                                 (0.37-0.24)*((0.2397-0.14)*(0.37-0.24)/(0.37-0.24))/2+\
+                                
+                                 (rel_income-0.37)*0.2397+\
+                                 (rel_income-0.37)*((0.42-0.2397)*(rel_income-0.37)/(1.46-0.37))/2     
+                                
+                                 )
+    else:
+        
+        tax = y_mean*share_married*(\
+                                 (0.37-0.24)*0.14+\
+                                 (0.37-0.24)*((0.2397-0.14)*(0.37-0.24)/(0.37-0.24))/2+\
+                                
+                                 (1.46-0.37)*0.2397+\
+                                 (1.46-0.37)*((0.42-0.2397)*(1.46-0.37)/(1.46-0.37))/2 +\
+                                     
+                                 (rel_income-1.46)*0.42
+                                          
+                                 )
+        
+    nety = y1g + y2g - tax - payroll_tax_1 - payroll_tax_2 if no_retired else  y1g + y2g - tax
+    
+    return nety
 
 def hours(params,data,beg,end):
     

@@ -93,11 +93,9 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,P
             pepath[t, n] = np.maximum(np.minimum(mp2*wls[i]*w[t,i,tw[n]]/E_bar_now,Pmax),wls[i]*w[t,i,tw[n]]/E_bar_now)*(wls_point[i])-wls[i]*w[t,i,tw[n]]/E_bar_now*(wls_point[i])
             pepath2[t, n]= np.maximum(np.minimum(mp *wls[i]*w[t,i,tw[n]]/E_bar_now,Pmax),wls[i]*w[t,i,tw[n]]/E_bar_now)*(wls_point[i])-wls[i]*w[t,i,tw[n]]/E_bar_now*(wls_point[i])
             wpath[t, n] = w[t,3,tw[n]]
-            epath[t, n] = wpath[t, n]*wls[hpath[t, n]]*(i>1)
-            evpath[t, n] = linear_interp.interp_2d(agrid,pgrid,V1[t,:,:,tw[n],iq],apath[t,n],ppath[t,n])#+σ*np.euler_gamma-σ*np.log(prs[i])
-            
-            vpath[t, n] = np.log(cpath[t, n]*cadjust)-β*wls[hpath[t, n]]**(1+1/γh)/(1+1/γh)-q[iq,hpath[t, n]]+\
-                σ*np.euler_gamma-σ*np.log(prs[i])
+            epath[t, n] = wpath[t, n]*wls[hpath[t, n]]*wls_point[i]
+            evpath[t, n] = linear_interp.interp_2d(agrid,pgrid,V1[t,:,:,tw[n],iq],apath[t,n],ppath[t,n])#+σ*np.euler_gamma-σ*np.log(prs[i])            
+            vpath[t, n] = np.log(cpath[t, n]*cadjust)-q[iq,hpath[t, n]]+σ*np.euler_gamma-σ*np.log(prs[i])
             
             if t<T-1:apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])
             if t<T-1:ppath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,Pp,apath[t,n],ppath[t,n])
