@@ -172,17 +172,18 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,
             for i in prange(NP):
                 for j in range(nw):
                     for iq in range(nq):
-    
-                        policyA1[t,0,:,i,j,iq]=np.interp(agrid, ae[0,:,i,j,iq],agrid)
-                        EV=np.interp(policyA1[t,0,:,i,j,iq],agrid,V1[t+1,:,i,j,iq])
+                        
+                        idx=(0,slice(None),i,j,iq)
+     
+                        policyA1[t,*idx]=np.interp(agrid, ae[idx],agrid)
+                        EV=np.interp(policyA1[t,*idx],agrid,V1[t+1,*idx[1:]])
                         
                         for ia in range(NA): 
-                            
-                            
-                            
-                            policyC[t,0,ia,i,j,iq] =agrid[ia]*(1+r)+co.after_tax_income(ρ*pe[0,ia,i,j,iq],y_N[t,j],E_bar_now,wls_point[0],τ,False)-policyA1[t,0,ia,i,j,iq]
-                            policyp[t,0,ia,i,j,iq]=pgrid[i]
-                            V[t,0,ia,i,j,iq]=np.log(max(policyC[t,0,ia,i,j,iq],0.00000001))-q_grid[iq,0]+(1/(1+δ))*EV[ia]
+                            idx_ia=(0,ia,i,j,iq)
+                                                 
+                            policyC[t,*idx_ia] =agrid[ia]*(1+r)+co.after_tax_income(ρ*pe[idx_ia],y_N[t,j],E_bar_now,wls_point[0],τ,False)-policyA1[t,*idx_ia]
+                            policyp[t,*idx_ia]=pgrid[i]
+                            V[t,*idx_ia]=co.log(policyC[t,*idx_ia])-q_grid[iq,0]+EV[ia]/(1+δ)
                      
      
 @njit
@@ -193,9 +194,9 @@ def expectation(t,NA,NP,nw,nq,V,V1,σ,γc,pr,c1,policyC):
                 for i_w in range(nw):
                     for iq in range(nq):
                     
-                           
-                        lc=np.max(V[t+1,:,i_n,i_m,i_w,iq])/σ#local normalizing variable
-                        V1[i_n,i_m,i_w,iq] = σ*np.euler_gamma+σ*(lc+np.log(np.sum(np.exp(V[t+1,:,i_n,i_m,i_w,iq]/σ-lc)))  )
-                        pr[t+1,:,i_n,i_m,i_w,iq]=np.exp(V[t+1,:,i_n,i_m,i_w,iq]/σ-(V1[i_n,i_m,i_w,iq]-σ*np.euler_gamma)/σ)
-                        c1[i_n,i_m,i_w,iq] = np.sum(pr[t+1,:,i_n,i_m,i_w,iq]*policyC[t+1,:,i_n,i_m,i_w,iq])
+                        idx=(t+1,slice(None),i_n,i_m,i_w,iq)
+                        lc=np.max(V[idx])/σ#local normalizing variable
+                        V1[i_n,i_m,i_w,iq] = σ*np.euler_gamma+σ*(lc+np.log(np.sum(np.exp(V[idx]/σ-lc)))  )
+                        pr[idx]=np.exp(V[idx]/σ-(V1[i_n,i_m,i_w,iq]-σ*np.euler_gamma)/σ)
+                        c1[i_n,i_m,i_w,iq] = np.sum(pr[idx]*policyC[t+1,:,i_n,i_m,i_w,iq])
  

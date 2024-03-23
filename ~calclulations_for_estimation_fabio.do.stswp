@@ -87,7 +87,7 @@ replace earnings_p=0 if pglabgro_p==0
 reg earnings_p age age_2 i.syear 
 
 ********************************************************************************
-keep if syear>=1995 & syear<=2002  & treated==1 & sex==2
+keep if syear>=1995 & syear<=2002  & treated==1 & sex==2 & east_germany==0
 
 *Create categories
 pctile pct = log_wage_corrected [weight=phrf], nq(10) genp(percent) 

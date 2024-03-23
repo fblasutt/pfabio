@@ -52,7 +52,7 @@ def q(pt):
     SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
 
     #Pension reform
-    SP= sim.simNoUncer_interp(p,ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:])
+    SP= sim.simNoUncer_interp(p,ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['pb3'][8,:])
    
    
     
@@ -92,9 +92,9 @@ np.random.seed(10)
 #Define initial point (xc) and boundaries (xl,xu)
 
 #[0.76349505, 0.47244936, 0.24951372, 0.01017474, 0.11123974]
-xc=np.array([0.38291281, 0.29281174, 0.33105918, 0.02279778, 0.09087302])
-xl=np.array([0.05,-0.4,-0.6,-0.05,0.0001])
-xu=np.array([2.5 ,0.9,0.5,0.04,0.8])
+xc=np.array([ 0.56220702,  0.21652744,  0.17281227, -0.0099963 ,  0.39021443])
+xl=np.array([0.05,-0.6,-0.6,-0.05,0.0001])
+xu=np.array([2.5 ,0.9,0.9,0.04,0.8])
 
 
 

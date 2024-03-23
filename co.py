@@ -16,28 +16,27 @@ class setup():
         self.T = 56          # Number of time periods 
         self.R = 36           # Retirement period 
         self.r = 0.015        # Interest rate 
-        self.δ =0.02279778#0.00983949    # Discount rate 
+        self.δ = 0.00822386#0.00983949    # Discount rate 
         self.β =  0.0 # Utility weight on leisure 
         self.ζ = 0.0 #time cost of children under age 11
         self.γc = 1.0      # risk pameter on consumption!!!Check in upperenvelop if not 1 
         self.γh = 1.0    # risk pameter on labour 
         self.scale=1000 
-        self.scale_e=0.92365653
-        
+
         #https://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256
         #exchange rate 1.9569471624266144
         self.E_bar_now = 27740.65230618203/self.scale  # Average earnings 
         
             
         # Levels of WLS. From GSOEP hrs/week = (10/ 20 / 38.5 ) 
-        self.wls=np.array([0.0,10.0,20.0,38.5])/38.5 
+        self.wls=np.array([0.0,9.36, 21.17, 36.31])/36.31#np.array([0.0,10.0,20.0,38.5])/38.5 
         self.wls_point = np.array([0.0,0.2,1.0,1.0]) #smallest position on 
          
         self.nwls=len(self.wls) 
         
-        
-        self.q =np.array([0.0,0.38291281*0.33105918,0.38291281*0.29281174,0.38291281])  #Fixed cost of pticipation - mean
-        self.σq =  0.09087302 #Fixed cost of pticipation -sd 
+       
+        self.q =np.array([0.0,0.37540013*0.20562697,0.37540013*0.18011759,0.37540013])  #Fixed cost of pticipation - mean
+        self.σq =  0.1940021 #Fixed cost of pticipation -sd 
         self.ρq = 0.0#0.00195224
         self.nq = 2
         
@@ -66,17 +65,14 @@ class setup():
         self.wM=np.zeros((self.T,self.nwls))  
         for t in range(self.T): 
             for i in range(self.nwls): 
-                self.wM[t,i]=np.exp(-0.1806434+.0297458*t -.0005628 *t**2)/self.scale
+                self.wM[t,i]=-0.1806434+.0297458*t -.0005628 *t**2
                 
          
         # Taxes 
         self.τ=np.zeros(self.T)  
         for t in range(self.T):self.τ[t]=0.2
         
-
-  
-        
-        
+      
         
         # Hourly wage dispersion   
         self.nw=10 
@@ -96,13 +92,15 @@ class setup():
    9.563336]) 
           
   
-        #Create actual wages   
+        #Create actual wages    
         self.w=np.zeros((self.T,self.nwls,self.nw))   
         for t in range(self.T):  
             for i in range(self.nwls):  
-                if i>=1:  
-                    self.w[t,i,:]=np.exp(self.wM[t,i]+self.wv)/self.scale/13.96*38.5
-                # elif i<1:  
+        
+                self.w[t,i,:]=np.exp(self.wM[t,i]+self.wv)/self.scale/13.96*36.31
+                if i==1: #miniwages are floored at 325*12 euros a year
+                    self.w[t,i,:]=np.minimum(324*12/self.scale/self.wls[i],self.w[t,i,:])
+                
                      
           
   
@@ -146,9 +144,9 @@ class setup():
         self.startP=np.zeros(self.N) 
         for i in range(self.N): 
             index=int(i/self.N*10) 
-            self.startP[i]=self.startPd[index]
+            self.startP[i]=self.startPd[index]+3.0
         
-        self.pgrid=nonlinspace(self.startP.min(),self.R*2,self.NP,1.4)#np.linspace(0,self.R,self.NP)## # max one point per year in the law... 
+        self.pgrid=nonlinspace(self.startP.min(),self.R*2,self.NP,1.0)#np.linspace(0,self.R,self.NP)## # max one point per year in the law... 
           # points people start life with 
          
         #Multidimensional grid 
@@ -161,7 +159,11 @@ class setup():
         self.tw=np.sort(qe.MarkovChain(self.Π).simulate(self.N))# Type here 
         self.ts=np.random.rand(self.T,self.N) 
         
-        self.q_sim = np.zeros(self.N,dtype=np.int32)  
+        self.q_sim = np.zeros(self.N,dtype=np.int32) 
+        j=0
+        for i in range(self.N):
+            self.q_sim[i] = j
+            j = j+1 if j<self.nq-1 else 0
         
         # ya=100
         # y=np.linspace(0.0,200.0,1000)
@@ -175,10 +177,7 @@ class setup():
         # import matplotlib.pyplot as plt
         # plt.plot(y,tax)
         
-        # j=0
-        # for i in range(self.N):
-        #     self.q_sim[i] = j
-        #     j = j+1 if j<self.nq-1 else 0
+
         
         # np.random.seed(3) 
         # self.Πq = np.ones((self.nq,10))/3
@@ -287,52 +286,10 @@ def addaco_dist(sd_z,npts):
  
     return X, Pi 
              
-# #Compute the present value of life-time wealth for each group 
-# def Ωt(p,ts): 
-#     Ω=np.zeros(p.w.shape) 
-     
-#     #Working life part... 
-#     for t in range(ts,p.R): 
-#         for ti in range(t,p.R): 
-#             Ω[t,:]=Ω[t,:]+((p.y_N+p.maxHours*p.w[ti,:])/(1+p.r)**(ti-t)) 
-             
-             
-#     #Max points and welath afterwards 
-#     p.maxpoints=np.zeros(p.nw) 
-#     for t in range(ts,p.R):p.maxpoints=p.maxpoints+p.maxHours*p.w[t,:]/p.E_bar_now 
  
-#     for t in range(ts,p.T): 
-#         for ti in range(max(t,p.R),p.T): 
-#             Ω[t,:]=Ω[t,:]+((p.y_N+p.maxpoints*p.ρ)/(1+p.r)**(ti-t))     
- 
-#     return Ω 
-  
-# Define the utility function 
-def utility(c,h,p): 
- 
-    utils_c=np.full_like(c,-1e-8,dtype=np.float64) 
-    where=(c>0.000000001) 
- 
-    utils_c[where] = np.log(c[where]) #(c[where])**(1-p.γc)/(1-p.γc) 
-     
- 
-    return utils_c - p.β*(h)**(1+1/p.γh) / (1+1/p.γh) 
- 
-def mcutility(c,p): 
- 
-    utils_c=np.inf*np.ones(c.shape) 
-    where=(c>0.000000001) 
-    if p.γc == 1: 
-        utils_c[where] = 1/c[where]*p.ρ 
-    else: 
-        utils_c[where] = c[where]**(-p.γc)*p.ρ 
- 
-   
- 
-    return utils_c 
- 
- 
- 
+@njit
+def log(c):
+    return np.log(max(c,0.00000001))
  
    
                       

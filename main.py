@@ -60,7 +60,7 @@ Modτt = sol.solveEulerEquation(pτt,model='baseline')
 SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
 
 #Pension reform
-SP= sim.simNoUncer_interp(p,ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:])
+SP= sim.simNoUncer_interp(p,ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['pb3'][8,:])
 
 #Wages 1% higher than baseline in t=3 only 
 SWt= sim.simNoUncer_interp(pWt,ModWt,Tstart=7,Astart=SB['A'][7,:],Pstart=SB['p'][7,:])
@@ -196,8 +196,8 @@ plt.show()
 print("% Full time is {}, data is {}".format(np.mean(SB['h'][7,:]>=3),0.1984))
 print("% part time is {}, data is {}".format(np.mean(SB['h'][7,:]==2),0.1986))
 print("% marginal  is {}, data is {}".format(np.mean(SB['h'][7,:]==1),0.256))
-print("Baseline earnings (non marginal) is {}, data is 6108".format(np.mean(SB['wh'][7,:])*p.scale))
-print("Baseline earnings >0 (non marginal) is {}, data is 15819".format(np.mean(SB['wh'][7,:][SB['wh'][7,:]>0])*p.scale))
+print("Baseline earnings is {}, data is 7,694".format(np.mean(SB['wh'][7,:])*p.scale))
+print("Baseline earnings >0 (non marginal) is {}, data is 15819".format(np.mean(SB['wh'][7,:][SB['h'][7,:]>1])*p.scale))
 print("Pension points are {}, data is {}".format(np.nanmean(np.diff(SB['p'][7:9,:],axis=0)),0.23))
 
 print("% Pension points <0 are {}, data is {}".format(np.nanmean((np.diff(SB['p'][7:9,:],axis=0)<=0.001)),0.638))
