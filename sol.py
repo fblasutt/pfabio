@@ -76,7 +76,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,
                     policyC[idx] = agrid[ia]*(1+r) + co.after_tax_income(ρ*pgrid[ip],y_N[T-1,iw],E_bar_now,wls_point[0],τt[T-1],False)   
                     policyp[idx] = pgrid[ip] # optimal consumption                              
                     pmutil[idx]=1.0/policyC[idx]   # mu of more pension points        
-                    V[idx]=np.log(policyC[idx]) - q_grid[iq,0]
+                    V[idx]=np.log(policyC[idx]) - q_grid[iq,0,iw]
    
     #Decisions below
     for t in range(T-2,-2,-1):
@@ -183,7 +183,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,
                                                  
                             policyC[t,*idx_ia] =agrid[ia]*(1+r)+co.after_tax_income(ρ*pe[idx_ia],y_N[t,j],E_bar_now,wls_point[0],τ,False)-policyA1[t,*idx_ia]
                             policyp[t,*idx_ia]=pgrid[i]
-                            V[t,*idx_ia]=co.log(policyC[t,*idx_ia])-q_grid[iq,0]+EV[ia]/(1+δ)
+                            V[t,*idx_ia]=co.log(policyC[t,*idx_ia])-q_grid[iq,0,j]+EV[ia]/(1+δ)
                      
      
 @njit

@@ -15,8 +15,8 @@ class setup():
         # Economic Environment: set pameters 
         self.T = 56          # Number of time periods 
         self.R = 36           # Retirement period 
-        self.r = 0.015        # Interest rate 
-        self.δ = 0.00822386#0.00983949    # Discount rate 
+        self.r = 0.03        # Interest rate 
+        self.δ = -0.00369722#0.00983949    # Discount rate 
         self.β =  0.0 # Utility weight on leisure 
         self.ζ = 0.0 #time cost of children under age 11
         self.γc = 1.0      # risk pameter on consumption!!!Check in upperenvelop if not 1 
@@ -35,24 +35,18 @@ class setup():
         self.nwls=len(self.wls) 
         
        
-        self.q =np.array([0.0,0.37540013*0.20562697,0.37540013*0.18011759,0.37540013])  #Fixed cost of pticipation - mean
-        self.σq =  0.1940021 #Fixed cost of pticipation -sd 
+        self.q =np.array([0.0, 0.4916778*0.25150333, 0.4916778*0.1728193,  0.4916778])  #Fixed cost of pticipation - mean
+        
+        self.σq = 0.38629206 #Fixed cost of pticipation -sd 
         self.ρq = 0.0#0.00195224
         self.nq = 2
         
-        self.q_gridt,_=addaco_dist(self.σq,self.nq) 
-        
-        self.q_grid=np.ones((self.nq,self.nwls))
-        for iq in range(self.nq):
-            for il in range(self.nwls):
-                self.q_grid[iq,il] = self.q[il]
-                if il<1: self.q_grid[iq,il] = self.q[il]+self.q_gridt[iq]
-        
+
         
         self.q_mini =0.0#0.21689193*0.42137996 #0.18283181*0.30219591 
         self.ρ =350/self.scale      # Dollar value of points 
         self.ϵ=0.000000001 
-        self.σ=0.005#0.00428793          #Size of taste shock 
+        self.σ=0.0005#0.00428793          #Size of taste shock 
         self.Pmax = 1 #threshold for pension points reform
         self.add_points=1.5 #point multiplicator during reform
         #self.apoints=np.array([0.0,0.0,1.0,1.0])
@@ -77,7 +71,7 @@ class setup():
         # Hourly wage dispersion   
         self.nw=10 
         self.σw=0.31 #dispersion of wages   
-        self.wv2,self.Π=addaco_dist(self.σw,self.nw) 
+        self.wv2,self.Π=addaco_dist(self.σw,0.0,self.nw) 
          
         self.wv=np.array([ 
    7.631935, 
@@ -92,6 +86,30 @@ class setup():
    9.563336]) 
           
   
+        self.q_grid=np.zeros((self.nq,self.nwls,10))
+        self.q_grid_π=np.zeros((self.nq,10))
+
+        for il in range(self.nwls):
+            for iw in range(10):
+                for iq in range(self.nq):self.q_grid[iq,il,iw] += self.q[il]
+                if il<1: 
+                    
+                    mean = self.σq/.5376561*self.ρq*(np.log(self.wv[iw])-2.15279653495785)
+                    sd = (1-self.ρq**2)**0.5*self.σq
+                    
+                    q_gridt,π = addaco_dist(sd,mean,self.nq) 
+                    self.q_grid_π[:,iw] =  π[0]
+                    for iq in range(self.nq):
+                    
+                        self.q_grid[iq,il,iw] += q_gridt[iq]
+                        
+        # self.q_gridt,_=addaco_dist(self.σq,0.0,self.nq) 
+        # self.q_grid=np.ones((self.nq,self.nwls,10)) 
+        # for iq in range(self.nq): 
+        #     for il in range(self.nwls): 
+        #         self.q_grid[iq,il,:] = self.q[il] 
+        #         if il<1: self.q_grid[iq,il,:] = self.q[il]+self.q_gridt[iq] 
+                        
         #Create actual wages    
         self.w=np.zeros((self.T,self.nwls,self.nw))   
         for t in range(self.T):  
@@ -114,6 +132,7 @@ class setup():
             for i in range(self.nw):              
                  self.y_N[t,i]=self.y_N[self.R-1,i]*0.45
          
+            
         
 
         # simulations 
@@ -271,7 +290,7 @@ def hours(params,data,beg,end):
     D=data['h'][beg:end,:]
     return np.mean(D==1)*10.0+np.mean(D==2)*20.0+np.mean(D==3)*38.5
     
-def addaco_dist(sd_z,npts): 
+def addaco_dist(sd_z,mu,npts): 
    
  
     #Probabilities per period 
@@ -280,8 +299,8 @@ def addaco_dist(sd_z,npts):
  
     X=np.zeros(npts) 
     for i in range(npts): 
-        X[i]= sd_z*npts*(norm.pdf(ϵ[i]/sd_z,0.0,1.0)-\
-                         norm.pdf(ϵ[i+1]/sd_z,0.0,1.0)) 
+        X[i]= mu+sd_z*npts*(norm.pdf((ϵ[i]-mu)/sd_z,0.0,1.0)-\
+                         norm.pdf((ϵ[i+1]-mu)/sd_z,0.0,1.0)) 
     Pi = np.ones((npts,npts))/npts 
  
     return X, Pi 

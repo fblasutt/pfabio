@@ -195,7 +195,7 @@ def upperenvelope(out_c,out_n,pmua,out_v,holes,i_a,i_b,tri,i_w,i_q,
                      
                     # v. value of choice 
                     w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w,i_q],b_interp,a_interp) 
-                    v_interp=co.log(c_interp)-q[i_q,num]+w_interp/(1+δ)      
+                    v_interp=co.log(c_interp)-q[i_q,num,i_w]+w_interp/(1+δ)      
      
                     # vi. update if max 
                     if v_interp >out_v[i_n,i_m,i_w,i_q]: 
@@ -296,7 +296,7 @@ def fill_holes(out_c,out_n,pmua,out_v,holes,w,num,γc,γh,ρ,agrid,pgrid,β,r,wt
                                              
                                         #Value of choice 
                                         w_interp = linear_interp.interp_2d(agrid,pgrid,w[:,:,i_w,i_q],b_interp,a_interp) 
-                                        v_interp=co.log(c_interp)-q[i_q,num]+w_interp/(1+δ) 
+                                        v_interp=co.log(c_interp)-q[i_q,num,i_w]+w_interp/(1+δ) 
                                                      
                                             
                                         if c_interp <= 0.0 or a_interp < 0 or b_interp < amin: 

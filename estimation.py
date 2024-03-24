@@ -32,12 +32,22 @@ def q(pt):
     #p.ρq=pt[5]
     p.σq =pt[4] #Fixed cost of pticipation -sd 
     
-    p.q_gridt,p.Πq=co.addaco_dist(p.σq,p.nq) 
-    p.q_grid=np.ones((p.nq,p.nwls))
-    for iq in range(p.nq):
-        for il in range(p.nwls):
-            p.q_grid[iq,il] = p.q[il]
-            if il<1: p.q_grid[iq,il] = p.q[il]+p.q_gridt[iq]
+    p.q_grid=np.zeros((p.nq,p.nwls,10))
+    p.q_grid_π=np.zeros((p.nq,10))
+
+    for il in range(p.nwls):
+        for iw in range(10):
+            for iq in range(p.nq):p.q_grid[iq,il,iw] += p.q[il]
+            if il<1: 
+                
+                mean = p.σq/.5376561*p.ρq*(np.log(p.wv[iw])-2.15279653495785)
+                sd = (1-p.ρq**2)**0.5*p.σq
+                
+                q_gridt,π = co.addaco_dist(sd,mean,p.nq) 
+                p.q_grid_π[:,iw] =  π[0]
+                for iq in range(p.nq):
+                
+                    p.q_grid[iq,il,iw] += q_gridt[iq]
    
 
     
@@ -69,19 +79,19 @@ def q(pt):
     eff_full=np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3)
     eff_nomarg=np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1)
     eff_points=np.mean(np.diff(SP['p'][8:12,:],axis=0))-np.mean(np.diff(SB['p'][8:12,:],axis=0))
-    eff_h=(np.mean(SP['h'][8:12,:]==1)*10.0+np.mean(SP['h'][8:12,:]==2)*20.0+np.mean(SP['h'][8:12,:]==3)*38.5)-\
-          (np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*20.0+np.mean(SB['h'][8:12,:]==3)*38.5)
+    eff_h=(np.mean(SP['h'][8:12,:]==1)*9.36+np.mean(SP['h'][8:12,:]==2)*21.17+np.mean(SP['h'][8:12,:]==3)*36.31)-\
+          (np.mean(SB['h'][8:12,:]==1)*9.36+np.mean(SB['h'][8:12,:]==2)*21.17+np.mean(SB['h'][8:12,:]==3)*36.31)
     eff_earn=np.nanmean(np.diff(SP['p'][8:12,:],axis=0))-np.nanmean(np.diff(SB['p'][8:12,:],axis=0))-np.mean(SP['pb'][8:12,:])
     
     pension_points=np.nanmean(np.diff(SB['p'][7:9,:],axis=0))
     #Print the point
-    print("The point is {}, the moments are {}, {}, {}, {} , {},  {}, {}, {}".format(pt,sh1,shpo,sh_min,eff_h,eff_e,eff_full,eff_nomarg,eff_earn))   
+    print("The point is {}, the moments are {}, {}, {}, {} , {},  {}, {}, {}, {}".format(pt,sh1,shpo,sh_min,eff_h,eff_e,eff_full,eff_nomarg,eff_earn,eff_points,s_hl))   
 
         
     #return ((shpo-0.65)/0.65)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
     #return ((shpo-0.1956)/0.1956)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
     #return ((sh_h-13.96)/13.96)**2+((sh_noem-0.36)/0.36)**2+((0.256-sh_min)/0.256)**2+((eff_h-3.565)/3.565)**2+((0.099-eff_e)/0.099)**2
-    return [((sh1-.1984)/.1984),((shpo-.1986)/.1986),((sh_min-.256)/.256),((eff_nomarg+.115)/.115),((eff_e-.099)/.099)]#,((eff_full-0.045)/0.045),((eff_nomarg+0.115)/0.115)]#,((sh_hl-6108)/6108)]#,((eff_marg+0.115)/0.115)]#+((0.099-eff_e)/0.099)**2
+    return [((sh1-.1984)/.1984),((shpo-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 3.565)/ 3.565),((eff_e-.099)/.099)]#,((eff_full-0.045)/0.045),((eff_nomarg+0.115)/0.115)]#,((sh_hl-6108)/6108)]#,((eff_marg+0.115)/0.115)]#+((0.099-eff_e)/0.099)**2
     #return ((sh_min-.256)/.256)**2+((shpo-.1986)/.1986)**2+((sh1-.1984)/.1984)**2+((eff_e-0.099)/0.099)**2+((eff_full-0.045)/0.045)**2+((eff_nomarg+0.115)/0.115)**2#        
             
             
@@ -92,9 +102,9 @@ np.random.seed(10)
 #Define initial point (xc) and boundaries (xl,xu)
 
 #[0.76349505, 0.47244936, 0.24951372, 0.01017474, 0.11123974]
-xc=np.array([ 0.56220702,  0.21652744,  0.17281227, -0.0099963 ,  0.39021443])
-xl=np.array([0.05,-0.6,-0.6,-0.05,0.0001])
-xu=np.array([2.5 ,0.9,0.9,0.04,0.8])
+xc=np.array([ 0.4619741 ,  0.09169414,  0.17013088, -0.00488372,  0.45150079])
+xl=np.array([0.05,-0.6,-0.6,-0.07,0.0001])
+xu=np.array([2.5 ,0.9,0.9,0.04,1.8])
 
 
 
