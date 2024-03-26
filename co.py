@@ -16,7 +16,7 @@ class setup():
         self.T = 56          # Number of time periods 
         self.R = 36           # Retirement period 
         self.r = 0.03        # Interest rate 
-        self.δ = -0.00369722#0.00983949    # Discount rate 
+        self.δ =  -0.00155062#0.00983949    # Discount rate 
         self.β =  0.0 # Utility weight on leisure 
         self.ζ = 0.0 #time cost of children under age 11
         self.γc = 1.0      # risk pameter on consumption!!!Check in upperenvelop if not 1 
@@ -35,11 +35,11 @@ class setup():
         self.nwls=len(self.wls) 
         
        
-        self.q =np.array([0.0, 0.4916778*0.25150333, 0.4916778*0.1728193,  0.4916778])  #Fixed cost of pticipation - mean
-        
-        self.σq = 0.38629206 #Fixed cost of pticipation -sd 
-        self.ρq = 0.0#0.00195224
-        self.nq = 2
+        self.q =np.array([0.0,  0.58504071* 0.43126951,  0.58504071* 0.345127694, 0.58504071])  #Fixed cost of pticipation - mean
+
+        self.σq =  0.10806  #Fixed cost of pticipation -sd 
+        self.ρq = 0.06973125#0.00195224
+        self.nq = 4
         
 
         
@@ -88,6 +88,7 @@ class setup():
   
         self.q_grid=np.zeros((self.nq,self.nwls,10))
         self.q_grid_π=np.zeros((self.nq,10))
+        self.q_gridt,_=addaco_dist(self.σq,0.0,self.nq)
 
         for il in range(self.nwls):
             for iw in range(10):
@@ -101,7 +102,7 @@ class setup():
                     self.q_grid_π[:,iw] =  π[0]
                     for iq in range(self.nq):
                     
-                        self.q_grid[iq,il,iw] += q_gridt[iq]
+                        self.q_grid[iq,il,iw] += self.q_gridt[iq]+(4-iw)*self.ρq#q_gridt[iq]
                         
         # self.q_gridt,_=addaco_dist(self.σq,0.0,self.nq) 
         # self.q_grid=np.ones((self.nq,self.nwls,10)) 
@@ -288,8 +289,8 @@ def after_tax_income(y1g,y2g,y_mean,fraction,τ,no_retired = True):
 def hours(params,data,beg,end):
     
     D=data['h'][beg:end,:]
-    return np.mean(D==1)*10.0+np.mean(D==2)*20.0+np.mean(D==3)*38.5
-    
+    return np.mean(D==1)*9.36+np.mean(D==2)*21.17+np.mean(D==3)*36.31
+
 def addaco_dist(sd_z,mu,npts): 
    
  

@@ -9,7 +9,7 @@ import quantecon as qe
 def simNoUncer_interp(p, model, Tstart=0, Astart=0.0, Pstart=0.0, Vstart= -1.0*np.ones((2,2,2,2,2)),cadjust=1.0):
  
  
-    p.q_sim=[qe.random.draw(np.cumsum(p.q_grid_π[:,iw]),p.N) for iw in range(10)]
+    #p.q_sim=[qe.random.draw(np.cumsum(p.q_grid_π[:,iw]),p.N) for iw in range(10)]
 
     # np.random.seed(3) 
     # p.Πq = np.ones((p.nq,10))/2
@@ -71,7 +71,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,P
         for t in range(Ti,T):  # loop through time periods for a pticular individual
 
             
-            iq = q_sim[tw[n]][n]
+            iq = q_sim[n]#[tw[n]][n]
             #policy=((t >=4) & (t <=11))#& (reform==1))
             policy2=((t >=4) & (t <=11) & (reform==1))
             mp=add_points #if policy else 1.0
