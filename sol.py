@@ -5,13 +5,15 @@
 import time
 import numpy as np
 from consav.grids import nonlinspace # grids
-from consav import linear_interp
+from consav import linear_interp,upperenvelope
 import numexpr as ne
 import upperenvelop
 from numba import njit,prange
 import co
 import time
 
+
+uppere=upperenvelope.create(co.log)
 
 def solveEulerEquation(p,model='baseline'):
     
@@ -26,28 +28,28 @@ def solveEulerEquation(p,model='baseline'):
     #Initiate some variables
     policyA1,policyC,pr,V,policyp,pmutil= np.zeros((6,p.T,p.nwls,p.NA, p.NP,p.nw,p.nq))-1e8
     V1=np.zeros((p.T,p.NA, p.NP,p.nw,p.nq))
-    holes=np.ones((p.T,p.nwls,p.NA, p.NP,p.nw,p.nq,2))
+    holes=np.ones((p.T,p.nwls,p.NA, p.NP,p.nw,p.nq))
     #Call the routing to solve the model
     solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,
                         p.r,p.δ,p.γc,p.R,p.τ,p.β,p.q,p.amin,p.wls,p.nwls,
                         np.array(p.w),p.agrid,p.y_N,p.γh,p.T,p.NA,p.nw,p.σ,
                         p.NP,p.pgrid,p.ρ,p.E_bar_now,p.q_mini,
-                        p.Pmax,p.add_points,p.nq,p.ζ,p.wls_point,p.q_grid)
+                        p.Pmax,p.add_points,p.nq,p.ζ,p.wls_point,p.q_grid,p.points_base)
                         
 
     #End timer and print elapsed time
     elapsed = time.time() - time_start    
     #print('Finished, Reform =', reform, 'Elapsed time is', elapsed, 'seconds')   
     
-    return {'A':policyA1,'c':policyC,'V':V,'V1':V1,'p':policyp,'pr':pr,'model':reform}
+    return {'A':policyA1,'c':policyC,'V':V,'V1':V1,'p':policyp,'pr':pr,'model':reform,'holes':holes}
 
 #@profile
-@njit(parallel=True)
+#@njit(parallel=True)
 def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,
                         r,δ,γc,R,τt,β,q,amin,wls,nwls,
                         w,agrid,y_N,γh,T,NA,nw,σ,
                         NP,pgrid,ρ,E_bar_now,q_mini,
-                        Pmax,add_points,nq,ζ_temp,wls_point,q_grid):
+                        Pmax,add_points,nq,ζ_temp,wls_point,q_grid,points_base):
     
     """ Use the method of endogenous gridpoint in 2 dimensions to solve the model.
         Source: JDruedahlThomas and Jørgensen (2017). This method is robust to
@@ -63,7 +65,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,
     
 
     #Grid for consumption
-    cgrid=np.linspace(agrid[0]*0.001,agrid[-1]*(1+r)+np.max(y_N)+np.max(w)*(1-np.min(τt)),NA)
+    cgrid=np.linspace(1e-10,agrid[-1]*(1+r)+np.max(y_N)+np.max(w)*(1-np.min(τt)),NA)
     
     #Last period decisions below
     for ia in prange(NA): 
@@ -74,9 +76,8 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,
                     
                     policyA1[idx] = 0.0   # optimal savings
                     policyC[idx] = agrid[ia]*(1+r) + co.after_tax_income(ρ*pgrid[ip],y_N[T-1,iw],E_bar_now,wls_point[0],τt[T-1],False)   
-                    policyp[idx] = pgrid[ip] # optimal consumption                              
-                    pmutil[idx]=1.0/policyC[idx]   # mu of more pension points        
-                    V[idx]=np.log(policyC[idx]) - q_grid[iq,0,iw]
+                    policyp[idx] = pgrid[ip] # optimal consumption                                
+                    V[idx]=co.log(policyC[idx],q_grid[iq,0,iw]) 
    
     #Decisions below
     for t in range(T-2,-2,-1):
@@ -96,7 +97,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,
         ζ = ζ_temp if t<=11 else 0.0
         
         #Multiplier of points based on points
-        mp=add_points if policy else 1.0
+        mp=add_points if policy else points_base
         
             ###################################################################
             #Not retired case
@@ -106,35 +107,21 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,
             for ip in range(NP): 
                 for iw in range(nw): 
                     for iq in range(nq): 
-                        for i in range(nwls):
+                        for i in range(nwls):                           
+                            if ((t+1<=R) | ((t+1>R) & (i==0))):
                                       
-                            idx=(i,ia,ip,iw,iq)
-                           
-                            if (t+1<=R):
-                                                          
+                                idx=(i,ia,ip,iw,iq)
+                                tax=τ      if (i>1) else 0.0
                                 
-                                #Unconstrained
-                                ce[idx]=c1[ia,ip,iw,iq]*((1+r)/(1+δ))**-1
-                                pe[idx]=pgrid[ip]-np.maximum(np.minimum(mp*wls[i]*w[t,i,iw]/E_bar_now,Pmax),wls[i]*w[t,i,iw]/E_bar_now)*wls_point[i]   #Pens. points
-                                ae[idx]=(agrid[ia]-co.after_tax_income(w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],τ)+ce[idx])/(1+r)#Savings
+                                if (t+1<=R): income  = co.after_tax_income(w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax,False) 
+                                else:        income  = co.after_tax_income(ρ*pgrid[ip]     ,y_N[t,iw],E_bar_now,wls_point[i],tax,False)
                                 
-                                #Constrained (assets)
-                                pe_bc[idx]=pgrid[ip]-  np.maximum(np.minimum(mp*wls[i]*w[t,i,iw]/E_bar_now,Pmax),wls[i]*w[t,i,iw]/E_bar_now)*wls_point[i]      #Pens. points
-                                             
-                                ce_bc[idx]=cgrid[ia]
-                                ae_bc[idx]=(ce_bc[idx] - co.after_tax_income(w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],τ)+amin)/(1+r)#Savings
-                                        
-                            else:
-                               
-                              if i==0:
+
+                                ce[idx]=c1[ia,ip,iw,iq]*(1+δ)/(1+r)
+                                pe[idx]=pgrid[ip]-np.maximum(np.minimum(mp*wls[i]*w[t,i,iw]/E_bar_now,Pmax),wls[i]*w[t,i,iw]/E_bar_now)*wls_point[i] if (t+1<=R) else pgrid[ip]
+                                ae[idx]=(agrid[ia]-income+ce[idx])/(1+r)#Savings
                                 
-                                ###################################################################
-                                #Retired case
-                                ###################################################################
-                                ce[idx]=c1[ia,ip,iw,iq]*((1+r)/(1+δ))**-1#Euler equation
-                                pe[idx]=pgrid[ip]                                  #Pens. points 
-                                ae[idx]=(agrid[ia]-co.after_tax_income(ρ*pe[idx],y_N[t,iw],E_bar_now,wls_point[0],τ,False)+ce[idx])/(1+r)#Savings
-                  
+                          
 
         ################################################
         # Now interpolate to be back on grid...
@@ -142,61 +129,82 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,
 
         
         #Not retired
-        if (t+1<=R):     
-            
-            # a. find policy for constrained and unconstrained choices
-            
-            #tic=time.time();
-            #Unconstrained
-            for i in prange(nwls):
-  
-                #Penalty for working?
-                q_pen=q_grid# if i>0 else np.zeros(q_grid.shape)
-                
-                #Mini jobs below
-                #modify for the mini-jobs case
-                tax=τ      if (i>1) else 0.0
-                q_min=0.0  if i!=1 else q_mini
-                
-                #Computation below
-                upperenvelop.compute(policyC[t,i,...],policyA1[t,i,:,:,:],policyp[t,i,:,:,:],V[t,i,...],holes[t,i,...], 
-                        pe[i,...],ae[i,...],ce[i,...],pe_bc[i,...],ae_bc[i,...],ce_bc[i,...],#computed above... 
-                        i, # which foc to take in upperenvelop 
-                        V1[t+1,...], 
-                        γc,γh,ρ,agrid,pgrid,β,r,w[t,i,:],tax,y_N[t,:],E_bar_now,Pmax,δ,q_pen,amin,wls[i],mp,q_min,wls_point[i],ζ)  
-     
 
-        # #Retired
-        else:
-            
-            for i in prange(NP):
-                for j in range(nw):
-                    for iq in range(nq):
-                        
-                        idx=(0,slice(None),i,j,iq)
-     
-                        policyA1[t,*idx]=np.interp(agrid, ae[idx],agrid)
-                        EV=np.interp(policyA1[t,*idx],agrid,V1[t+1,*idx[1:]])
-                        
-                        for ia in range(NA): 
-                            idx_ia=(0,ia,i,j,iq)
-                                                 
-                            policyC[t,*idx_ia] =agrid[ia]*(1+r)+co.after_tax_income(ρ*pe[idx_ia],y_N[t,j],E_bar_now,wls_point[0],τ,False)-policyA1[t,*idx_ia]
-                            policyp[t,*idx_ia]=pgrid[i]
-                            V[t,*idx_ia]=co.log(policyC[t,*idx_ia])-q_grid[iq,0,j]+EV[ia]/(1+δ)
+        
+        # a. find policy for constrained and unconstrained choices
+        
+        # #tic=time.time();
+        # #Unconstrained
+        aem=np.ones(ae.shape);cem=np.ones(ae.shape);vem=np.ones(ae.shape)
+        for ia in prange(NA):
+            for iw in range(nw):
+                for iq in range(nq):
+                    for i in range(nwls):
+                        if ((t+1<=R) | ((t+1>R) & (i==0))):
+                            
+                            
+                            idx=(i,ia,slice(None),iw,iq);tidx=(t,i,ia,slice(None),iw,iq);t1idx=(t+1,ia,slice(None),iw,iq)
+                            
+                            #Get policy functions conistent with pension points
+                            linear_interp.interp_1d_vec(pe[idx],ce[idx],pgrid,cem[idx])
+                            linear_interp.interp_1d_vec(pe[idx],ae[idx],pgrid,aem[idx])
+                            
+                            
+                            policyp[tidx]=pgrid+np.maximum(np.minimum(mp*wls[i]*w[t,i,iw]/E_bar_now,Pmax),wls[i]*w[t,i,iw]/E_bar_now)*wls_point[i] if (t+1<=R) else pgrid
+                            linear_interp.interp_1d_vec(pgrid,V1[t1idx],policyp[tidx],vem[idx])
+                           
+        
+        
+                            
+                            
+        for iw in prange(nw):
+            for ip in range(NP):
+                for iq in range(nq):
+                    for i in range(nwls):
+                        if ((t+1<=R) | ((t+1>R) & (i==0))):
+                            
+                            
+                            tax=τ      if (i>1) else 0.0
+                            
+                            tidx=(t,i,slice(None),ip,iw,iq);idx=(i,slice(None),ip,iw,iq);idxp=(i,0,ip,iw,iq)
+                            t1idx=(t+1,slice(None),slice(None),iw,iq)
+                            #Preliminaries
+                           
+                           
+                             
+                            
+                            if (t+1<=R): income  = co.after_tax_income(w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax,False) 
+                            else:        income  = co.after_tax_income(ρ*pgrid[ip]     ,y_N[t,iw],E_bar_now,wls_point[i],tax,False)
+                            cash=agrid*(1+r)+income;cashe=aem[idx]*(1+r)+income
+                            
+                            
+                            # linear_interp.interp_1d_vec(aem[idx],cem[idx],agrid,policyC[tidx])
+                            # constrained = cash<=cashe[0]
+                            # policyC[tidx][constrained]=cash[constrained]
+                            # policyA1[tidx] =cash-policyC[tidx]
+                            # EV=np.ones(NA)
+                            # linear_interp.interp_2d_vec(agrid,pgrid,V1[t1idx],policyA1[tidx],policyp[tidx][0]*np.ones(NA),EV)
+                            # V[tidx]=co.log(policyC[tidx],q_grid[iq,i,iw])+EV/(1+δ)
+                            
+                            uppere(agrid,cashe,cem[idx],vem[idx]/(1+δ),cash,policyC[tidx],V[tidx],*(q_grid[iq,i,iw],))
+                            policyA1[tidx] =cash-policyC[tidx]
+                            
+                            #if (policy) & (i==2):tax[1,1]=3
+                            
+    
                      
      
-@njit
+@njit(parallel=True)
 def expectation(t,NA,NP,nw,nq,V,V1,σ,γc,pr,c1,policyC):                
         #Get variables useful for next iteration t-1
-        for i_n in prange(NA):
-            for i_m in range(NP):
-                for i_w in range(nw):
+        for ia in prange(NA):
+            for ip in range(NP):
+                for iw in range(nw):
                     for iq in range(nq):
                     
-                        idx=(t+1,slice(None),i_n,i_m,i_w,iq)
+                        idx=(t+1,slice(None),ia,ip,iw,iq)
                         lc=np.max(V[idx])/σ#local normalizing variable
-                        V1[i_n,i_m,i_w,iq] = σ*np.euler_gamma+σ*(lc+np.log(np.sum(np.exp(V[idx]/σ-lc)))  )
-                        pr[idx]=np.exp(V[idx]/σ-(V1[i_n,i_m,i_w,iq]-σ*np.euler_gamma)/σ)
-                        c1[i_n,i_m,i_w,iq] = np.sum(pr[idx]*policyC[t+1,:,i_n,i_m,i_w,iq])
+                        V1[ia,ip,iw,iq] = σ*np.euler_gamma+σ*(lc+np.log(np.sum(np.exp(V[idx]/σ-lc)))  )
+                        pr[idx]=np.exp(V[idx]/σ-(V1[ia,ip,iw,iq]-σ*np.euler_gamma)/σ)
+                        c1[ia,ip,iw,iq] = np.sum(pr[idx]*policyC[idx])
  

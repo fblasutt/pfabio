@@ -174,8 +174,8 @@ plt.show()                                #Show the graph
 
 #Consumption under participation and not participation
 fig, ax = plt.subplots(figsize=(11, 8))   #Initialize figure and size
-ax.plot(p.agrid[:],ModB['c'][p.R-2,1,:,0,0], label="Cons if FLP=1") 
-ax.plot(p.agrid[:],ModB['c'][p.R-2,0,:,0,0], label="Cons if FLP=0") 
+ax.plot(p.agrid[:],ModB['V'][0,1,:,0,0,0], label="Cons if FLP=1") 
+ax.plot(p.agrid[:],ModB['V'][0,1,:,0,0,0], label="Cons if FLP=0") 
 ax.grid()
 ax.set_xlabel('Assets')                   #Label of x axis
 ax.set_ylabel('Consumption')              #Label of y axis
@@ -183,8 +183,8 @@ plt.legend()                              #Plot the legend
 plt.show()     
 
 fig, ax = plt.subplots(figsize=(11, 8))   #Initialize figure and size
-ax.plot(p.agrid[:],ModB['A'][p.R-2,1,:,0,0], label="Cons if FLP=1") 
-ax.plot(p.agrid[:],ModB['A'][p.R-2,0,:,0,0], label="Cons if FLP=0") 
+ax.plot(p.agrid[:],ModB['c'][0,3,:,0,9], label="Cons if FLP=1") 
+ax.plot(p.agrid[:],ModB['c'][0,2,:,0,9], label="Cons if FLP=0") 
 ax.grid()
 ax.set_xlabel('Assets')                   #Label of x axis
 ax.set_ylabel('Consumption')              #Label of y axis

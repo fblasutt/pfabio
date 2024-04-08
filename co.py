@@ -16,13 +16,14 @@ class setup():
         self.T = 56          # Number of time periods 
         self.R = 36           # Retirement period 
         self.r = 0.03        # Interest rate 
-        self.δ =  -0.00155062#0.00983949    # Discount rate 
+        self.δ =  0.01041525#0.00983949    # Discount rate 
         self.β =  0.0 # Utility weight on leisure 
         self.ζ = 0.0 #time cost of children under age 11
         self.γc = 1.0      # risk pameter on consumption!!!Check in upperenvelop if not 1 
         self.γh = 1.0    # risk pameter on labour 
         self.scale=1000 
 
+        
         #https://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256
         #exchange rate 1.9569471624266144
         self.E_bar_now = 27740.65230618203/self.scale  # Average earnings 
@@ -30,15 +31,15 @@ class setup():
             
         # Levels of WLS. From GSOEP hrs/week = (10/ 20 / 38.5 ) 
         self.wls=np.array([0.0,9.36, 21.17, 36.31])/36.31#np.array([0.0,10.0,20.0,38.5])/38.5 
-        self.wls_point = np.array([0.0,0.2,1.0,1.0]) #smallest position on 
+        self.wls_point = np.array([0.0,0.0,1.0,1.0]) #smallest position on 
          
         self.nwls=len(self.wls) 
         
-       
-        self.q =np.array([0.0,  0.58504071* 0.43126951,  0.58504071* 0.345127694, 0.58504071])  #Fixed cost of pticipation - mean
+         
+        self.q =np.array([0.0,0.35730499*(-0.33149012),0.35730499*( 0.17445595),0.35730499])  #Fixed cost of pticipation - mean
 
-        self.σq =  0.10806  #Fixed cost of pticipation -sd 
-        self.ρq = 0.06973125#0.00195224
+        self.σq = 1.43579454  #Fixed cost of pticipation -sd 
+        self.ρq =0.0690892#0.00195224
         self.nq = 4
         
 
@@ -46,9 +47,10 @@ class setup():
         self.q_mini =0.0#0.21689193*0.42137996 #0.18283181*0.30219591 
         self.ρ =350/self.scale      # Dollar value of points 
         self.ϵ=0.000000001 
-        self.σ=0.0005#0.00428793          #Size of taste shock 
+        self.σ=0.025#0.00428793          #Size of taste shock 
         self.Pmax = 1 #threshold for pension points reform
         self.add_points=1.5 #point multiplicator during reform
+        self.points_base=1.0
         #self.apoints=np.array([0.0,0.0,1.0,1.0])
         
                        
@@ -144,7 +146,7 @@ class setup():
         # Assets 
         self.NA = 15
         self.amin=0.0
-        self.amax=1000000/self.scale 
+        self.amax=1300000/self.scale 
         self.agrid=nonlinspace(self.amin,self.amax,self.NA,1.4)#np.linspace(self.amin,self.amax,self.NA)#np.linspace(0.0,250000,self.NA)# 
          
          
@@ -281,8 +283,9 @@ def after_tax_income(y1g,y2g,y_mean,fraction,τ,no_retired = True):
                                  (rel_income-1.46)*0.42
                                           
                                  )
-        
-    nety = y1g + y2g - tax - payroll_tax_1 - payroll_tax_2 if no_retired else  y1g + y2g - tax
+    nety = y1g*(1-τ) + y2g#nety = y1g*(1-τ) + y2g if no_retired else  y1g + y2g 
+
+#nety = y1g*(1-τ) + y2g*(1-τ) - tax - payroll_tax_1 - payroll_tax_2 if no_retired else  y1g + y2g - tax
     
     return nety
 
@@ -290,6 +293,11 @@ def hours(params,data,beg,end):
     
     D=data['h'][beg:end,:]
     return np.mean(D==1)*9.36+np.mean(D==2)*21.17+np.mean(D==3)*36.31
+
+def hours_pr(params,data,beg,end):
+    
+    D=data['wls_pr'][beg:end,:]
+    return D[:,:,1]*9.36+D[:,:,2]*21.17+D[:,:,3]*36.31
 
 def addaco_dist(sd_z,mu,npts): 
    
@@ -306,10 +314,10 @@ def addaco_dist(sd_z,mu,npts):
  
     return X, Pi 
              
+             
  
 @njit
-def log(c):
-    return np.log(max(c,0.00000001))
+def log(c,q):
+    return np.log(np.maximum(c,0.00000000001))-q
  
-   
-                      
+
