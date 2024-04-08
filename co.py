@@ -16,7 +16,7 @@ class setup():
         self.T = 56          # Number of time periods 
         self.R = 36           # Retirement period 
         self.r = 0.03        # Interest rate 
-        self.δ =  0.01041525#0.00983949    # Discount rate 
+        self.δ =  0.00707556#0.00983949    # Discount rate 
         self.β =  0.0 # Utility weight on leisure 
         self.ζ = 0.0 #time cost of children under age 11
         self.γc = 1.0      # risk pameter on consumption!!!Check in upperenvelop if not 1 
@@ -31,23 +31,23 @@ class setup():
             
         # Levels of WLS. From GSOEP hrs/week = (10/ 20 / 38.5 ) 
         self.wls=np.array([0.0,9.36, 21.17, 36.31])/36.31#np.array([0.0,10.0,20.0,38.5])/38.5 
-        self.wls_point = np.array([0.0,0.0,1.0,1.0]) #smallest position on 
+        self.wls_point = np.array([0.0,0.31,1.0,1.0]) #smallest position on 
          
         self.nwls=len(self.wls) 
         
          
-        self.q =np.array([0.0,0.35730499*(-0.33149012),0.35730499*( 0.17445595),0.35730499])  #Fixed cost of pticipation - mean
+        self.q =np.array([0.0,0.25433414*(-1.02561396),0.25433414*(-0.31614448),0.25433414])  #Fixed cost of pticipation - mean
 
-        self.σq = 1.43579454  #Fixed cost of pticipation -sd 
-        self.ρq =0.0690892#0.00195224
-        self.nq = 4
+        self.σq = 0.89790193  #Fixed cost of pticipation -sd 
+        self.ρq =0.10910688#0.00195224
+        self.nq = 2
         
 
         
         self.q_mini =0.0#0.21689193*0.42137996 #0.18283181*0.30219591 
         self.ρ =350/self.scale      # Dollar value of points 
         self.ϵ=0.000000001 
-        self.σ=0.025#0.00428793          #Size of taste shock 
+        self.σ=0.0005#0.00428793          #Size of taste shock 
         self.Pmax = 1 #threshold for pension points reform
         self.add_points=1.5 #point multiplicator during reform
         self.points_base=1.0
@@ -144,9 +144,9 @@ class setup():
         # 2. GENERATE GRID 
          
         # Assets 
-        self.NA = 15
+        self.NA = 50
         self.amin=0.0
-        self.amax=1300000/self.scale 
+        self.amax=1600000/self.scale 
         self.agrid=nonlinspace(self.amin,self.amax,self.NA,1.4)#np.linspace(self.amin,self.amax,self.NA)#np.linspace(0.0,250000,self.NA)# 
          
          
@@ -160,7 +160,7 @@ class setup():
             self.startA[i]=assets[index]/self.scale 
          
         # Pension points 
-        self.NP =5
+        self.NP =9
         self.startPd = np.array([2.509712,2.732802,3.061959,2.951443,3.380279,3.498868,3.528733,4.050392,4.264604,4.733748])
         
         self.startP=np.zeros(self.N) 

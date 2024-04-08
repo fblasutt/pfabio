@@ -44,7 +44,7 @@ def solveEulerEquation(p,model='baseline'):
     return {'A':policyA1,'c':policyC,'V':V,'V1':V1,'p':policyp,'pr':pr,'model':reform,'holes':holes}
 
 #@profile
-#@njit(parallel=True)
+@njit(parallel=True)
 def solveEulerEquation1(policyA1, policyC, policyp,V,V1,pmutil,pr,holes,reform,
                         r,δ,γc,R,τt,β,q,amin,wls,nwls,
                         w,agrid,y_N,γh,T,NA,nw,σ,
