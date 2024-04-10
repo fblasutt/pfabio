@@ -37,19 +37,11 @@ def q(pt):
     p.q_grid_π=np.zeros((p.nq,10))
     p.q_gridt,_=co.addaco_dist(p.σq,0.0,p.nq)
 
-    for il in range(p.nwls):
+    for il in range(1,p.nwls):
         for iw in range(10):
-            for iq in range(p.nq):p.q_grid[iq,il,iw] += p.q[il]
-            if il<1: 
+            for iq in range(p.nq):
                 
-                mean = p.σq/.5376561*p.ρq*(np.log(p.wv[iw])-2.15279653495785)
-                sd = (1-p.ρq**2)**0.5*p.σq
-                
-                q_gridt,π = co.addaco_dist(sd,mean,p.nq) 
-                p.q_grid_π[:,iw] =  π[0]
-                for iq in range(p.nq):
-                
-                    p.q_grid[iq,il,iw] += p.q_gridt[iq]+(4-iw)*p.ρq#q_gridt[iq]
+                p.q_grid[iq,il,iw]= p.q[il]-p.q_gridt[iq]+(4-iw)*p.ρq
    
 
     
@@ -106,17 +98,14 @@ np.random.seed(10)
 
 #Define initial point (xc) and boundaries (xl,xu)
 
-xc=np.array([0.25533064, -0.31392112, -1.02346523,  0.00703288,  0.89773237,0.10900183])
-#[ 0.25533064, -0.31392112, -1.02346523,  0.00703288,  0.89773237,0.10900183]
-#Standard [ 0.78043915,  0.34285434,  0.43152457, -0.01306844,  0.14606007, 0.09493752] 
-#0.70346983,  0.3407925 ,  0.41975165, -0.00874288,  0.12873236,       0.07858496
-xl=np.array([0.05,-0.8,-1.4,-0.07,0.0001,0.0])
-xu=np.array([2.5 ,0.9,0.9,0.04,3.8,0.32])
+xc=np.array([ 0.26082492, -0.2497164 ,  0.205583  ,  0.00530467,  0.46582024, 0.10328193])
+xl=np.array([0.001,-2.2,-1.8,-0.07,0.0001,0.0])
+xu=np.array([2.5 ,1.9,1.9,0.04,3.8,0.32])
 
 # [ 0.40706012  0.03525281 -0.51941101  0.00186123  1.60048109  0.03695673] first tentative σ=0.0005
 # 0.37349381, -0.01739811, -0.6       ,  0.00287586,  1.59080139, 0.03220926] current
 #Optimization below
-res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-5, maxfun=1000, bounds=(xl,xu),
+res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-5, maxfun=400, bounds=(xl,xu),
                 npt=len(xc)+5,scaling_within_bounds=True, 
                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},

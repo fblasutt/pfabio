@@ -37,6 +37,7 @@ p = co.setup()
 #Baseline
 ModB = sol.solveEulerEquation(p,model='baseline')
 SB= sim.simNoUncer_interp(p,ModB,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
+adjust=np.ones(SB['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 
 #Taxes
 increase=1.01
@@ -47,9 +48,14 @@ pτ = co.setup();pτ.τ=p.τ-0.01#1-(1-p.τ)*increase
 Modτ = sol.solveEulerEquation(pτ,model='baseline')
 Sτ= sim.simNoUncer_interp(pτ,Modτ,Tstart=date,Astart=SB['A'][date,:],Pstart=SB['p'][date,:])
 
+
+point_equivalent=1.0+(np.sum(Sτ['wh'][:p.R ,:]*adjust[:p.R,:])*0.01)/(np.sum(p.ρ*(Sτ['p'][p.R: ,:]-p.startP)*adjust[p.R:,:]))
+
+
 #Pension
-pρ = co.setup();pρ.points_base=1.145
-#pρ = co.setup();pρ.w=pρ.w*increase
+#pρ = co.setup();pρ.Pmax=10000.145;pρ.ρ=.3675#pρ.points_base=1.098;
+pρ = co.setup();pρ.Pmax=10000.145;pρ.points_base=point_equivalent#pρ.points_base=1.051
+
 Modρ = sol.solveEulerEquation(pρ,model='baseline')
 Sρ= sim.simNoUncer_interp(pρ,Modρ,Tstart=date,Astart=SB['A'][date,:],Pstart=SB['p'][date,:])
 
@@ -58,7 +64,7 @@ Sρ= sim.simNoUncer_interp(pρ,Modρ,Tstart=date,Astart=SB['A'][date,:],Pstart=S
 ##############################################"
 
 
-
+expe_b=p.ρ *SB['p'][p.R: ,:]
 expe_τ=pτ.ρ*Sτ['p'][pτ.R:,:]
 expe_ρ=pρ.ρ*Sρ['p'][pρ.R:,:]
 
@@ -67,14 +73,15 @@ expe_ρ=pρ.ρ*Sρ['p'][pρ.R:,:]
 #aaa1=(0.01*pτ.τ[:p.R,None]*SB['wh'][:p.R,:]*adjust[:p.R,:]).sum()
 #aaa2=np.nansum(0.0108*p.ρ*SB['p'][p.R:,:]*adjust[p.R:,:])
 
+tax_b=p.τ[:p.R  ,None]*SB['wh'][:p.R ,:]
 tax_τ=pτ.τ[:pτ.R,None]*Sτ['wh'][:pτ.R,:]
 tax_ρ=pρ.τ[:pρ.R,None]*Sρ['wh'][:pρ.R,:]
 
 #adjusted deficits
-adjust=np.ones(SB['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 
-deficit_τ=(np.nansum(expe_τ*adjust[p.R:,:])  -np.nansum(tax_τ*adjust[:p.R,:]))
-deficit_ρ=(np.nansum(expe_ρ*adjust[p.R:,:])  -np.nansum(tax_ρ*adjust[:p.R,:]))
+
+deficit_τ=(np.sum(expe_τ*adjust[p.R:,:])  -np.sum(tax_τ*adjust[:p.R,:]))
+deficit_ρ=(np.sum(expe_ρ*adjust[p.R:,:])  -np.sum(tax_ρ*adjust[:p.R,:]))
 
 ##############################################"
 ##############################################"
@@ -84,6 +91,11 @@ deficit_ρ=(np.nansum(expe_ρ*adjust[p.R:,:])  -np.nansum(tax_ρ*adjust[:p.R,:])
 ϵτ=(co.hours(p,Sτ,date,p.R)/co.hours(p,SB,date,p.R)-1)*100
 ϵρ=(co.hours(p,Sρ,date,p.R)/co.hours(p,SB,date,p.R)-1)*100
 
+ϵτ1=(np.log((co.hours(p,Sτ,date,p.R)))-np.log((co.hours(p,SB,date,p.R))))/np.log((1-p.τ[0]+.01)/(1-p.τ[0]))
+ϵρ1=(np.log((co.hours(p,Sρ,date,p.R)))-np.log((co.hours(p,SB,date,p.R))))/np.log((1-p.τ[0]+.01)/(1-p.τ[0]))
+
+
+plt.plot(SB['c'].mean(axis=1))
 #(np.log((co.hours(p,Sτ,date,p.R)))-np.log((co.hours(p,SB,date,p.R))))/np.log((1-p.τ[0]+.01)/(1-p.τ[0]))
 #(np.log((Sτ['h'][:p.R]>0).mean())-np.log((SB['h'][:p.R]>0).mean()))/np.log((1-p.τ[0]+.01)/(1-p.τ[0]))
 
