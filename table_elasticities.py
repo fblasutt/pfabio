@@ -44,12 +44,12 @@ increase=1.01
 date=0
 #Wages 1% hihgher than baseline in t=3 only + baseline
 #pτ = co.setup();pτ.w=pτ.w*increase
-pτ = co.setup();pτ.τ=p.τ-0.01#1-(1-p.τ)*increase
+pτ = co.setup();pτ.τ=1-(1-p.τ)*increase
 Modτ = sol.solveEulerEquation(pτ,model='baseline')
 Sτ= sim.simNoUncer_interp(pτ,Modτ,Tstart=date,Astart=SB['A'][date,:],Pstart=SB['p'][date,:])
 
 
-point_equivalent=1.0+(np.sum(Sτ['wh'][:p.R ,:]*adjust[:p.R,:])*0.01)/(np.sum(p.ρ*(Sτ['p'][p.R: ,:]-p.startP)*adjust[p.R:,:]))
+point_equivalent=1.0+(np.sum(SB['wh'][:p.R ,:]*adjust[:p.R,:])*0.01)/(np.sum(p.ρ*(SB['p'][p.R: ,:])*adjust[p.R:,:])-p.startP.sum())
 
 
 #Pension
@@ -91,13 +91,13 @@ deficit_ρ=(np.sum(expe_ρ*adjust[p.R:,:])  -np.sum(tax_ρ*adjust[:p.R,:]))
 ϵτ=(co.hours(p,Sτ,date,p.R)/co.hours(p,SB,date,p.R)-1)*100
 ϵρ=(co.hours(p,Sρ,date,p.R)/co.hours(p,SB,date,p.R)-1)*100
 
-ϵτ1=(np.log((co.hours(p,Sτ,date,p.R)))-np.log((co.hours(p,SB,date,p.R))))/np.log((1-p.τ[0]+.01)/(1-p.τ[0]))
-ϵρ1=(np.log((co.hours(p,Sρ,date,p.R)))-np.log((co.hours(p,SB,date,p.R))))/np.log((1-p.τ[0]+.01)/(1-p.τ[0]))
+ϵτ1=(np.log((co.hours(p,Sτ,date,p.R)))-np.log((co.hours(p,SB,date,p.R))))/np.log((1-pτ.tax)/(1-p.tax))
+ϵρ1=(np.log((co.hours(p,Sρ,date,p.R)))-np.log((co.hours(p,SB,date,p.R))))/np.log((1-pτ.tax)/(1-p.tax))
 
 
 plt.plot(SB['c'].mean(axis=1))
-#(np.log((co.hours(p,Sτ,date,p.R)))-np.log((co.hours(p,SB,date,p.R))))/np.log((1-p.τ[0]+.01)/(1-p.τ[0]))
-#(np.log((Sτ['h'][:p.R]>0).mean())-np.log((SB['h'][:p.R]>0).mean()))/np.log((1-p.τ[0]+.01)/(1-p.τ[0]))
+#(np.log((co.hours(p,Sτ,date,p.R)))-np.log((co.hours(p,SB,date,p.R))))/np.log((1-pτ.τ[0])/(1-p.τ[0]))
+#(np.log((Sτ['h'][:p.R]>0).mean())-np.log((SB['h'][:p.R]>0).mean()))/np.log((1-pτ.τ[0])/(1-p.τ[0]))
 
 # from sklearn.linear_model import LinearRegression
 # y=np.log(co.hours_pr(p,SB,date,p.R).flatten())

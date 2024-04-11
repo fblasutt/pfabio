@@ -12,21 +12,21 @@ class setup():
      
         # Size of gridpoints:
         self.nw=10     #groups by economic status
-        self.nq =2     #fixed points, preference for working
+        self.nq =5    #fixed points, preference for working
         self.NA = 150  #assets gridpoints
-        self.NP =13    #pension points gridpoints
+        self.NP =33    #pension points gridpoints
         self.nwls = 4  #hours choice
         
         # First estimated parameters
-        self.δ =  0.01161109#0.00983949    # Discount rate
-        self.q =np.array([0.0,0.15657207*(-0.54616342),0.15657207*(-0.86208164),0.15657207])  #Fixed cost of pticipation - mean
-        self.σq = 0.89844138  #Fixed cost of pticipation -sd 
-        self.ρq =0.08989044#0.00195224
+        self.δ =  0.01616545#0.00983949    # Discount rate
+        self.q =np.array([0.0,0.39215417*(0.4549387),0.39215417*(0.35289862),0.39215417])  #Fixed cost of pticipation - mean
+        self.σq = 0.13307952  #Fixed cost of pticipation -sd 
+        self.ρq =0.0#0.00195224
         
         # Economic Environment: set pameters 
         self.T = 56         # Number of time periods 
         self.R = 36         # Retirement period 
-        self.r = 0.03       # Interest rate 
+        self.r = 0.03      # Interest rate 
         self.σ=0.001        #Size of taste shock 
                 
         #Income
@@ -79,6 +79,7 @@ class setup():
          
         # Payroll taxes: https://www.nber.org/papers/w10525 
         self.τ = np.array([0.195 for t in range(self.T)])
+        self.tax = 0.0 #tax useful only for computing elasticities
       
         
         #Disutility from working
@@ -104,8 +105,8 @@ class setup():
                         
      
         # Assets  grid   
-        self.amin=-160000/self.scale*0
-        self.amax=2500000/self.scale 
+        self.amin=-160000/self.scale
+        self.amax=1000000/self.scale 
         self.agrid=nonlinspace(self.amin,self.amax,self.NA,1.0)
         
         #Pension points grid
@@ -160,7 +161,7 @@ class setup():
 
 # 114696(-> 114696/1.95583/27740.65=2.1139) 0.51
 @njit
-def after_tax_income(y1g,y2g,y_mean,fraction,τ,no_retired = True):
+def after_tax_income(etax,y1g,y2g,y_mean,fraction,τ,no_retired = True):
     
     y1c = min(y1g*fraction,2*y_mean)
     y2c = min(y2g,         2*y_mean)
@@ -211,16 +212,17 @@ def after_tax_income(y1g,y2g,y_mean,fraction,τ,no_retired = True):
                                  (rel_income-2.1139)*0.51
                                           
                                  )
-    nety = y1g*(1-τ) + y2g if no_retired else y1g + y2g #nety = y1g*(1-τ) + y2g if no_retired else  y1g + y2g 
+   
 
-    nety = y1g + y2g - tax - payroll_tax_1 - payroll_tax_2 if no_retired else  y1g + y2g - tax
+    nety = y1g*(1-etax) + y2g - tax - payroll_tax_1 - payroll_tax_2 if no_retired else  y1g + y2g - tax
     
-    return nety
+    return nety, etax*y1g
 
 @njit(parallel=True)
-def compute_atax_income_points(T,R,nwls,nw,NP,τ,add_points,points_base,wls,w,E_bar_now,Pmax,wls_point,y_N,pgrid,ρ):
+def compute_atax_income_points(etax,T,R,nwls,nw,NP,τ,add_points,points_base,wls,w,E_bar_now,Pmax,wls_point,y_N,pgrid,ρ):
 
     income = np.zeros((T,nwls,nw,NP))
+    income2 = np.zeros((T,nwls,nw,NP))
     point =  np.zeros((T,nwls,nw,2))#last dimension if for policy-no policy
     
     for t in prange(T):
@@ -243,12 +245,12 @@ def compute_atax_income_points(T,R,nwls,nw,NP,τ,add_points,points_base,wls,w,E_
                     
                     if (t+1<=R): 
                         
-                        income[t,i,iw,ip]  = after_tax_income(w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax) 
+                        income[t,i,iw,ip], income2[t,i,iw,ip]  = after_tax_income(etax,w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax) 
                     else:            
                         
-                        income[t,i,iw,ip]  = after_tax_income(ρ*pgrid[ip]     ,y_N[t,iw],E_bar_now,wls_point[i],tax,False)
+                        income[t,i,iw,ip], income2[t,i,iw,ip]  = after_tax_income(etax,ρ*pgrid[ip]     ,y_N[t,iw],E_bar_now,wls_point[i],tax,False)
 
-    return income,point         
+    return income,point, income2  
                
 def hours(params,data,beg,end):
     

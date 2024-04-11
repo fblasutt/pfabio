@@ -20,14 +20,14 @@ def solveEulerEquation(p,model='baseline'):
     EV=np.zeros((p.T,p.NA, p.NP,p.nw,p.nq))
     
     #Precompute after-tax income and points for a given decision
-    income, points = co.compute_atax_income_points(p.T,p.R,p.nwls,p.nw,p.NP,p.τ,\
+    p.income, p.points, p.income2 = co.compute_atax_income_points(p.tax,p.T,p.R,p.nwls,p.nw,p.NP,p.τ,\
                                                           p.add_points,p.points_base,p.wls,p.w,\
                                                           p.E_bar_now,p.Pmax,p.wls_point,p.y_N,p.pgrid,p.ρ)
     
     #Call the routing to solve the model
     solveEulerEquation1(policyA1, policyC, policyp,V,EV,pmutil,pr,reform,
                         p.r,p.δ,p.R,p.τ,p.q,p.amin,p.wls,p.nwls,
-                        np.array(p.w),income,points,p.agrid,p.y_N,p.T,p.NA,p.nw,p.σ,
+                        np.array(p.w),p.income,p.points,p.agrid,p.y_N,p.T,p.NA,p.nw,p.σ,
                         p.NP,p.pgrid,p.ρ,p.E_bar_now,
                         p.Pmax,p.add_points,p.nq,p.wls_point,p.q_grid,p.points_base)
                         
