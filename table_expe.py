@@ -62,7 +62,7 @@ SPN= sim.simNoUncer_interp(pPN,ModPN,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p']
 ########################################
 
 
-adjustb=np.ones(SB['c'].shape)/((1+p.δ)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
+adjustb=np.ones(SB['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 t=8
 EVP    =np.mean(((np.cumsum((adjustb*SP['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])
 EVτ    =np.mean(((np.cumsum((adjustb*Sτ['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])
@@ -108,7 +108,7 @@ tax_PN=p.τ[8:pPN.R,None]*SPN['wh'][8:pPN.R,:]
 #tax_m=pm.τ[8:pm.R,None]*Sm['wh'][8:pm.R,:]
 
 #adjusted deficits
-adjust=np.ones(SP['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
+adjust=np.ones(SP['c'].shape)*((1-((1+p.r)**(np.cumsum(np.ones(p.T))-1.0)))/p.r)[:,None]#np.ones(SP['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 deficit_B=(np.nansum(expe_B*adjust[p.R:,:])  -np.nansum(tax_B*adjust[8:p.R,:]))
 deficit_P=(np.nansum(expe_P*adjust[p.R:,:])  -np.nansum(tax_P*adjust[8:p.R,:]))
 deficit_τ=(np.nansum(expe_τ*adjust[p.R:,:])  -np.nansum(tax_τ*adjust[8:p.R,:]))
@@ -177,13 +177,20 @@ with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_expe.tex'
 ####################################
 
 #1) effect of the reform on employment
+eff_h=co.hours(p,SP,8,12)-co.hours(p,SB,8,12)
+
+#2) share into mini-jobs
+sh_mini = np.nanmean(SB['h'][7,:]==1)
+
+#3) share part-tme
+sh_part = np.nanmean(SB['h'][7,:]==2)
+
+#4) share full
+sh_full = np.nanmean(SB['h'][7,:]==3)
+
+#5) effect on employment
 eff_empl=np.nanmean(p.wls[SP['h'][8:12,:]]>0)-np.nanmean(p.wls[SB['h'][8:12,:]]>0)
 
-#2) employment at baseline
-employment_rate=np.nanmean(SB['h'][8:12,:]>0)
-
-#3) fulltime employment
-work_fulltime=np.nanmean(SB['h'][8:12,:]==1)
 
 #Table with parameters    
 table=r'\begin{table}[htbp]'+\
@@ -194,12 +201,11 @@ table=r'\begin{table}[htbp]'+\
        r" Parameter & Value & \multicolumn{3}{c}{Target statistics}  \\\cline{3-5} "+\
        r" &  &  Name & Data & Model  \\"+\
        r'\midrule   '+\
-       r' Discount factor ($\beta$)      &'+p42(p.δ)+'\%& Effect of reform on hours   & 2.20 &'+p42(eff_empl)+'\\\\'+\
-       r' Cost of working - mini ($q_1$)   &'+p42(p.q[1])+'& Share mini-jobs                  & 0.26 &'+p42(employment_rate)+'\\\\'+\
-       r' Cost of working - part ($q_2$)   &'+p42(p.q[2])+'& Share part-time             & 0.20 &'+p42(work_fulltime)+'\\\\'+\
-       r' Cost of working - part ($q_3$)      &'+p42(p.q[3])+'\%& Share full time   & 0.20 &'+p42(eff_empl)+'\\\\'+\
-       r' Fixed effect - variance ($\sigma^2_q$)   &'+p42(p.σq)+'\%& Effect of reform on employment   & 0.07&'+p42(employment_rate)+'\\\\'+\
-       r' Fixed effect - correlation ($\rho_q$)   &'+p42(p.ρq)+'& Average earnings             & 7883 &'+p42(work_fulltime)+'\\\\'+\
+       r' Discount factor ($\beta$)      &'+p50(1/(1+p.δ))+'& Effect of reform on hours   & 2.32 &'+p42(eff_h)+'\\\\'+\
+       r' Cost of working - mini ($q_{10}$)   &'+p50(p.q[1])+'& Share mini-jobs           & 0.26 &'+p42(sh_mini)+'\\\\'+\
+       r' Cost of working - part ($q_{20}$)   &'+p50(p.q[2])+'& Share part-time           & 0.20 &'+p42(sh_part)+'\\\\'+\
+       r' Cost of working - full ($q_{38.5}$)      &'+p50(p.q[3])+'& Share full time      & 0.20 &'+p42(sh_full)+'\\\\'+\
+       r' Fixed effect - standard deviation ($\sigma_q$)   &'+p50(p.σq)+'& Effect of reform on employment   & 0.06&'+p42(eff_empl)+'\\\\'+\
        r'  \bottomrule'+\
       """\end{tabular}"""+\
       r'\end{table}'
@@ -213,9 +219,32 @@ with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_params.te
 #Compute nontargeted moments
 ##############################
 
-#MPE out of pension wealth
-Sw= sim.simNoUncer_interp(p,ModB,Astart=p.startA+100/p.scale,Pstart=np.ones(p.N)*p.startP)
-MPE=((np.nanmean(p.wls[Sw['h'][1:3,:]]*Sw['wh'][1:3,:])-np.nanmean(p.wls[SB['h'][1:3,:]]*SB['wh'][1:3,:]))*p.scale)
+#MPE out of pension wealth, using tretroactive credits
+SB_retro= sim.simNoUncer_interp(p,ModB,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['pb3'][8,:])
+
+change_earn  =((np.nanmean((SB_retro['wh'][8:12,:]*adjust[8:12,:]).sum(axis=0)))-\
+                np.nanmean((SB['wh'][8:12,:]      *adjust[8:12,:]).sum(axis=0)))
+    
+change_pweal = np.mean((p.ρ*SB_retro['p'][p.R:,:]*adjust[p.R,:]).sum(axis=0))-\
+               np.mean((p.ρ*SB['p'][p.R:,:]*adjust[p.R:,:]).sum(axis=0))
+               
+change_pweal = np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjust[p.R,:]).sum(axis=0))
+
+
+#Below annuitization like in Golosov (2024), assuming that agents sommth consumption
+change_pweal_s = (12-8)*(p.r/(1+p.r)*(1-(p.r/(1+p.r))**(p.T-9.5+1))**-1)*np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjust[p.R,:]).sum(axis=0))
+
+#Below model-consistent annuitization, where wealth is allocated according to consumption path. How to get it,
+#use the intertemporal budget constraint and take out of summation c0 (future consumtion is replaced by ct/c0).
+#Then manage the intertemporal BC to have c0=stuff: use it to get annuity value of future pension wealth. then
+#sum the implied consumtion for periods 8 to 12.
+ct_over_c0_discounted=np.mean(SB['c'],axis=1)/np.mean(SB['c'][0])*adjust[:,0]
+c0=np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjust[p.R,:]).sum(axis=0))/ct_over_c0_discounted.sum()
+change_pweal_d = c0*(np.mean(SB['c'],axis=1)/np.mean(SB['c'][0]))[8:12].sum()
+
+#Finally, the marginal propensity to earn
+MPE = change_earn/(change_pweal_s)
+
 
 #Effect of pension reform on:
     
@@ -229,7 +258,7 @@ eff_earn=(np.nanmean(p.wls[SP['h'][8:12,:]]*SP['wh'][8:12,:])-np.nanmean(p.wls[S
 eff_emp=np.nanmean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.nanmean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3)
 
 #3) marginal work
-eff_marg=np.nanmean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.nanmean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1)
+eff_marg=np.nanmean(SP['h'][8:12,:]>1)-np.nanmean(SB['h'][8:12,:]>1)#np.nanmean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.nanmean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1)
 
 ############################################
 #Table with parameters
@@ -243,8 +272,13 @@ table=r'\begin{table}[htbp]'+\
        r'\midrule   '+\
        r' Pension points   & 0.11 &'+p42(eff_points)+'\\\\'+\
        r' Work full time    & 0.03 &'+p42(eff_emp)+'\\\\'+\
-       r' Marginal work    & -0.08 &'+p42(eff_marg)+'\\\\'+\
+       r' Regular employment    & -0.07 &'+p42(eff_marg)+'\\\\'+\
+       r'\toprule   '+\
+       r" Effect of retroactive credits on &   Data & Model  \\"+\
+       r'\midrule   '+\
+       r' Marginal propensity to earn (MPE)      & -0.51\text{ to }-0.12 &'+p42(MPE)+'\\\\'+\
        r'  \bottomrule'+\
+       r'\multicolumn{3}{l}{ \textsc{Notes:} MPE is computed using annuitization---see \cite{golosov2024}.}'+\
       """\end{tabular}"""+\
       r'\end{table}'
       

@@ -74,7 +74,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,EV,pmutil,pr,reform,
             for iw in range(nw): 
                 for iq in range(nq): 
                     for i in range(nwls):                           
-                        if ((t+1<=R) | ((t+1>R) & (i==0))):
+                        if ((t<R) | ((t>=R) & (i==0))):
                             
                             #Use the euler equation + BC to find optimal consumtpion
                             #ce for (endogenous) grid of assets ae
@@ -104,7 +104,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,EV,pmutil,pr,reform,
             for iw in range(nw):
                 for iq in range(nq):
                     for i in range(nwls):
-                        if ((t+1<=R) | ((t+1>R) & (i==0))):
+                        if ((t<R) | ((t>=R) & (i==0))):
                             
     
                             tidx=(t,i,slice(None),ip,iw,iq);idx=(i,slice(None),ip,iw,iq);idw = (t,i,iw,ip)

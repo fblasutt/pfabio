@@ -8,27 +8,33 @@ from consav import linear_interp
 
 def simNoUncer_interp(p, model, Tstart=0, Astart=0.0, Pstart=0.0, Vstart= -1.0*np.ones((2,2,2,2,2)),cadjust=1.0):
  
- 
-    #p.q_sim=[qe.random.draw(np.cumsum(p.q_grid_π[:,iw]),p.N) for iw in range(10)]
-
-    # np.random.seed(3) 
-    # p.Πq = np.ones((p.nq,10))/2
-    
-    # for iw in range(10): 
-    #     if iw<5:#if just to get symmetry
-    #         p.Πq[0,iw] = 1/2 - (5-iw)*p.ρq
-    #         p.Πq[1,iw] = 1/2 + (5-iw)*p.ρq
-    #     else:
-    #         p.Πq[0,iw] = 1/2 - (5-1-iw)*p.ρq
-    #         p.Πq[1,iw] = 1/2 + (5-1-iw)*p.ρq
+    np.random.seed(2) 
+    p.q_sim = np.zeros(p.N,dtype=np.int32)        
+    means = np.linspace(-p.ρq ,p.ρq ,p.nw)
+    for iw in range(10):
+       
+        iswage=(p.tw==iw)
+        iswagelen=np.sum(iswage)
         
-    # p.q_sim = np.zeros((p.N),dtype=np.int32)+1
-    # #p.q_sim[np.random.rand(p.N)<np.cumsum(p.Πq,axis=0)[1][p.tw]]=1
-    # p.q_sim[np.random.rand(p.N)<np.cumsum(p.Πq,axis=0)[0][p.tw]]=0
+        p.q_sim[iswage]=np.array(np.random.uniform(0.0+means[iw],p.nq+means[iw],size=iswagelen),dtype=np.int32)
+        #p.q_sim[iswage]=np.random.randint(0.0,p.nq-1,size=iswagelen)
     
     
+    # p.q_sim=np.random.randint(0.0,p.nq-1,size=p.N)
+    # p.q_sim = np.zeros(p.N,dtype=np.int32)  
+    # j=0 
+    # for i in range(p.N): 
+    #     p.q_sim[i] = np.random.randint(0.0,p.nq-1) 
+    #       #j = j+1 if j<p.nq-1 else 0 
+     
+    # #p.q_sim = np.zeros(p.N,dtype=np.int32)  
+    # j=0 
+    # for i in range(p.N): 
+    #     p.q_sim[i] = j 
+    #     j = j+1 if j<p.nq-1 else 0        
 
-        
+    # print(np.corrcoef(p.q_sim,p.tw))
+    # print(p.q_sim.mean())
     
     #Call the simulator
     epath,ppath,cpath,apath,hpath,pepath,pepath2,pepath3,vpath,evpath,wpath,w_pr_path,v_pr_path,eataxpath=\

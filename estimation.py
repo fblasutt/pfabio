@@ -41,7 +41,7 @@ def q(pt):
         for iw in range(10):
             for iq in range(p.nq):
                 
-                p.q_grid[iq,il,iw]= p.q[il]-p.q_gridt[iq]+(4-iw)*p.ρq
+                p.q_grid[iq,il,iw]= p.q[il]-p.q_gridt[iq]
    
 
     
@@ -73,8 +73,8 @@ def q(pt):
     eff_full=np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3)
     eff_nomarg=np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1)
     eff_points=np.mean(np.diff(SP['p'][8:12,:],axis=0))-np.mean(np.diff(SB['p'][8:12,:],axis=0))
-    eff_h=(np.mean(SP['h'][8:12,:]==1)*9.36+np.mean(SP['h'][8:12,:]==2)*21.17+np.mean(SP['h'][8:12,:]==3)*36.31)-\
-          (np.mean(SB['h'][8:12,:]==1)*9.36+np.mean(SB['h'][8:12,:]==2)*21.17+np.mean(SB['h'][8:12,:]==3)*36.31)
+
+    eff_h = co.hours(p,SP,8,12)-co.hours(p,SB,8,12)
     eff_earn=np.nanmean(np.diff(SP['p'][8:12,:],axis=0))-np.nanmean(np.diff(SB['p'][8:12,:],axis=0))-np.mean(SP['pb'][8:12,:])
     
     pension_points=np.nanmean(np.diff(SB['p'][7:9,:],axis=0))
@@ -98,9 +98,10 @@ np.random.seed(10)
 
 #Define initial point (xc) and boundaries (xl,xu)
 
-xc=np.array([0.39215417, 0.35289862, 0.4549387 , 0.01616545, 0.13307952])
+xc=np.array([0.44020001, 0.31594294, 0.45040867, 0.0164736 , 0.10473575])#no corr
+#xc=np.array([0.42833579, 0.2030553 , 0.35394353, 0.0122311 , 0.1905356 ])#corr 0.7
 xl=np.array([0.001,-2.2,-1.8,-0.07,0.0001])
-xu=np.array([2.5 ,1.9,1.9,0.04,3.8])
+xu=np.array([2.5 ,1.9,1.9,0.09,3.8])
 
 # [ 0.40706012  0.03525281 -0.51941101  0.00186123  1.60048109  0.03695673] first tentative σ=0.0005
 # 0.37349381, -0.01739811, -0.6       ,  0.00287586,  1.59080139, 0.03220926] current

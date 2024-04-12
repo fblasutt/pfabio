@@ -12,20 +12,20 @@ class setup():
      
         # Size of gridpoints:
         self.nw=10     #groups by economic status
-        self.nq =5    #fixed points, preference for working
+        self.nq = 4    #fixed points, preference for working
         self.NA = 150  #assets gridpoints
         self.NP =33    #pension points gridpoints
         self.nwls = 4  #hours choice
         
         # First estimated parameters
-        self.δ =  0.01616545#0.00983949    # Discount rate
-        self.q =np.array([0.0,0.39215417*(0.4549387),0.39215417*(0.35289862),0.39215417])  #Fixed cost of pticipation - mean
-        self.σq = 0.13307952  #Fixed cost of pticipation -sd 
+        self.δ =  0.0164736#0.00983949    # Discount rate
+        self.q =np.array([0.0,0.44020001*(0.45040867),0.44020001*( 0.31594294),0.44020001])  #Fixed cost of pticipation - mean
+        self.σq = 0.10473575   #Fixed cost of pticipation -sd 
         self.ρq =0.0#0.00195224
         
         # Economic Environment: set pameters 
-        self.T = 56         # Number of time periods 
-        self.R = 36         # Retirement period 
+        self.T = 55         # Number of time periods 
+        self.R = 35         # Retirement period 
         self.r = 0.03      # Interest rate 
         self.σ=0.001        #Size of taste shock 
                 
@@ -33,11 +33,11 @@ class setup():
         self.scale=1000 #Show everything in 1000 euros
             
         # Hours choice
-        self.wls=np.array([0.0,9.36, 21.17, 36.31])/36.31 #From GSOEP hrs/week = (10/ 20 / 38.5 ) 
+        self.wls=np.array([0.0,10.0, 20.0, 38.5])/38.5 #From GSOEP hrs/week = (10/ 20 / 38.5 ) 
           
         #Pension
         self.E_bar_now = 27740.65230618203/self.scale  # Average earnings: ttps://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256, exchange rate 1.9569471624266144
-        self.ρ =350/self.scale      #Dollar value of points 
+        self.ρ =348/self.scale      #Dollar value of points 
         self.Pmax = 1               #Threshold for pension points reform
         self.add_points=1.5         #point multiplicator during reform
         self.points_base=1.0        #standard points if not reform
@@ -58,7 +58,7 @@ class setup():
         for t in range(self.T):  
             for i in range(self.nwls):  
         
-                self.w[t,i,:]=np.exp(self.wM[t,i]+self.wv)/self.scale/13.96*36.31
+                self.w[t,i,:]=np.exp(self.wM[t,i]+self.wv)/self.scale/13.96*38.5
                 if i==1: #miniwages are floored at 325*12 euros a year
                     self.w[t,i,:]=np.minimum(324*12/self.scale/self.wls[i],self.w[t,i,:])
                     
@@ -91,7 +91,7 @@ class setup():
             for iw in range(10):
                 for iq in range(self.nq):
                     
-                    self.q_grid[iq,il,iw]= self.q[il]-self.q_gridt[iq]+(4-iw)*self.ρq
+                    self.q_grid[iq,il,iw]= self.q[il]-self.q_gridt[iq]#+(4-iw)*self.ρq
                 # if il<1: 
                     
                 #     mean = self.σq/.5376561*self.ρq*(np.log(self.wv[iw])-2.15279653495785)
@@ -103,7 +103,7 @@ class setup():
                     
                 #         self.q_grid[iq,il,iw] += self.q_gridt[iq]+(4-iw)*self.ρq#q_gridt[iq]
                         
-     
+            
         # Assets  grid   
         self.amin=-160000/self.scale
         self.amax=1000000/self.scale 
@@ -142,18 +142,25 @@ class setup():
         self.ts=np.random.rand(self.T,self.N) 
         
         #Distribution of labor preferences fixed effects
-        self.q_sim = np.zeros(self.N,dtype=np.int32) 
-        j=0
-        for i in range(self.N):
-            self.q_sim[i] = j
-            j = j+1 if j<self.nq-1 else 0
+        # self.q_sim = np.zeros(self.N,dtype=np.int32)        
+        # means = np.linspace(-self.ρq ,self.ρq ,self.nw)
+        # for iw in range(10):
+           
+        #     iswage=(self.tw==iw)
+        #     iswagelen=np.sum(iswage)
+            
+        #     self.q_sim[iswage]=np.array(np.random.uniform(0.0+means[iw],self.nq-1+means[iw],size=iswagelen),dtype=np.int32)
         
-     
+        # self.q_sim = np.zeros(self.N,dtype=np.int32)  
+        # j=0 
+        # for i in range(self.N): 
+        #     self.q_sim[i] = j 
+        #     j = j+1 if j<self.nq-1 else 0      
         
 #taxes: based on page 72 in https://www.fabian-kindermann.de/docs/progressive_pensions.pdf
 #                           https://www.fabian-kindermann.de/docs/women_redistribution pg 20
 # http://www.parmentier.de/steuer/index.php?site=einkommensteuersatz
-# euro/de: 1.95583
+# euro/de: 1.95583? Year 2000
 
 # 13500(->13500/1.95583/27740.65=0.2488) 0.229
 
@@ -255,12 +262,12 @@ def compute_atax_income_points(etax,T,R,nwls,nw,NP,τ,add_points,points_base,wls
 def hours(params,data,beg,end):
     
     D=data['h'][beg:end,:]
-    return np.mean(D==1)*9.36+np.mean(D==2)*21.17+np.mean(D==3)*36.31
+    return np.mean(D==1)*10.0+np.mean(D==2)*20.0+np.mean(D==3)*38.5
 
 def hours_pr(params,data,beg,end):
     
     D=data['wls_pr'][beg:end,:]
-    return D[:,:,1]*9.36+D[:,:,2]*21.17+D[:,:,3]*36.31
+    return D[:,:,1]*10.0+D[:,:,2]*20.0+D[:,:,3]*38.5
 
 def addaco_dist(sd_z,mu,npts): 
    
