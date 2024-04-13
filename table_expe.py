@@ -257,7 +257,7 @@ eff_earn=(np.nanmean(p.wls[SP['h'][8:12,:]]*SP['wh'][8:12,:])-np.nanmean(p.wls[S
 #3) earnings
 eff_emp=np.nanmean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.nanmean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3)
 
-#3) marginal work
+#4) marginal work
 eff_marg=np.nanmean(SP['h'][8:12,:]>1)-np.nanmean(SB['h'][8:12,:]>1)#np.nanmean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.nanmean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1)
 
 ############################################
@@ -272,7 +272,7 @@ table=r'\begin{table}[htbp]'+\
        r'\midrule   '+\
        r' Pension points   & 0.11 &'+p42(eff_points)+'\\\\'+\
        r' Work full time    & 0.03 &'+p42(eff_emp)+'\\\\'+\
-       r' Regular employment    & -0.07 &'+p42(eff_marg)+'\\\\'+\
+       r' Regular employment    & 0.07 &'+p42(eff_marg)+'\\\\'+\
        r'\toprule   '+\
        r" Effect of retroactive credits on &   Data & Model  \\"+\
        r'\midrule   '+\

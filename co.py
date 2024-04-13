@@ -79,7 +79,8 @@ class setup():
          
         # Payroll taxes: https://www.nber.org/papers/w10525 
         self.τ = np.array([0.195 for t in range(self.T)])
-        self.tax = 0.0 #tax useful only for computing elasticities
+        self.tax = np.array([0.0 for t in range(self.T)])
+       
       
         
         #Disutility from working
@@ -91,18 +92,7 @@ class setup():
             for iw in range(10):
                 for iq in range(self.nq):
                     
-                    self.q_grid[iq,il,iw]= self.q[il]-self.q_gridt[iq]#+(4-iw)*self.ρq
-                # if il<1: 
-                    
-                #     mean = self.σq/.5376561*self.ρq*(np.log(self.wv[iw])-2.15279653495785)
-                #     sd = (1-self.ρq**2)**0.5*self.σq
-                    
-                #     q_gridt,π = addaco_dist(sd,mean,self.nq) 
-                #     self.q_grid_π[:,iw] =  π[0]
-                #     for iq in range(self.nq):
-                    
-                #         self.q_grid[iq,il,iw] += self.q_gridt[iq]+(4-iw)*self.ρq#q_gridt[iq]
-                        
+                    self.q_grid[iq,il,iw]= self.q[il]-self.q_gridt[iq]
             
         # Assets  grid   
         self.amin=-160000/self.scale
@@ -168,13 +158,13 @@ class setup():
 
 # 114696(-> 114696/1.95583/27740.65=2.1139) 0.51
 @njit
-def after_tax_income(etax,y1g,y2g,y_mean,fraction,τ,no_retired = True):
+def after_tax_income(y1g,y2g,y_mean,fraction,τ,no_retired = True):
     
     y1c = min(y1g*fraction,2*y_mean)
     y2c = min(y2g,         2*y_mean)
     
     payroll_tax_1 = τ*y1c
-    payroll_tax_2 =  0.195*y2c if τ>0 else 0.0
+    payroll_tax_2 = τ*y2c
     
     #Compute taxable income
     y1 = y1g -  payroll_tax_1 if no_retired else y1g
@@ -221,15 +211,16 @@ def after_tax_income(etax,y1g,y2g,y_mean,fraction,τ,no_retired = True):
                                  )
    
 
-    nety = y1g*(1-etax) + y2g - tax - payroll_tax_1 - payroll_tax_2 if no_retired else  y1g + y2g - tax
+    total_taxes = tax + payroll_tax_1 + payroll_tax_2 if no_retired else tax
     
-    return nety, etax*y1g
+    return y1g + y2g - total_taxes, total_taxes
 
-@njit(parallel=True)
+#@njit(parallel=True)
 def compute_atax_income_points(etax,T,R,nwls,nw,NP,τ,add_points,points_base,wls,w,E_bar_now,Pmax,wls_point,y_N,pgrid,ρ):
 
     income = np.zeros((T,nwls,nw,NP))
-    income2 = np.zeros((T,nwls,nw,NP))
+    total_taxes = np.zeros((T,nwls,nw,NP))
+    total_taxes_mod = np.zeros((T,nwls,nw,NP))
     point =  np.zeros((T,nwls,nw,2))#last dimension if for policy-no policy
     
     for t in prange(T):
@@ -252,12 +243,16 @@ def compute_atax_income_points(etax,T,R,nwls,nw,NP,τ,add_points,points_base,wls
                     
                     if (t+1<=R): 
                         
-                        income[t,i,iw,ip], income2[t,i,iw,ip]  = after_tax_income(etax,w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax) 
+                        income[t,i,iw,ip], total_taxes[t,i,iw,ip]  = after_tax_income(w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax)
+                        
+                        if etax[t]<0:#case where we are computing elasticities
+                            _, total_taxes_mod[t,i,iw,ip]  = after_tax_income(w[t,i,iw]*wls[i]*(1-etax[t]),y_N[t,iw],E_bar_now,wls_point[i],tax)
+                                                
                     else:            
                         
-                        income[t,i,iw,ip], income2[t,i,iw,ip]  = after_tax_income(etax,ρ*pgrid[ip]     ,y_N[t,iw],E_bar_now,wls_point[i],tax,False)
+                        income[t,i,iw,ip], total_taxes[t,i,iw,ip]  = after_tax_income(ρ*pgrid[ip]     ,y_N[t,iw],E_bar_now,wls_point[i],tax,False)
 
-    return income,point, income2  
+    return income,point, total_taxes, total_taxes_mod
                
 def hours(params,data,beg,end):
     

@@ -7,6 +7,17 @@
 # Preamble
 ######################################
 
+
+########################
+#ISSUES!!!
+# Discounting matters! When estimating, you get similar hrs response.
+#translater into elasticity, you need to discount future income. This
+#matters a lot for the results...
+# Back of the envelop calculations given insanely high elasticity:
+# (p.ρ*0.26*0.5*adjust[p.R:,0]).sum()*1000*(1+p.r)**8 for income increase per year
+############################
+
+
 # clear workspace and console
 try:
     from IPython import get_ipython
@@ -33,28 +44,42 @@ p = co.setup()
 # solve the model
 ########################################
 
+increase=0.01
 
-#Baseline
-ModB = sol.solveEulerEquation(p,model='baseline')
+beg=8
+end=p.R
+#Baseline######################################################################
+
+p.tax[:] = -increase;ModB = sol.solveEulerEquation(p,model='baseline')
 SB= sim.simNoUncer_interp(p,ModB,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
 adjust=np.ones(SB['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 
-#Taxes
-increase=1.01
-date=0
-#Wages 1% hihgher than baseline in t=3 only + baseline
-#pτ = co.setup();pτ.w=pτ.w*increase
-pτ = co.setup();pτ.τ=1-(1-p.τ)*increase
+#compute increase in net income if all wages go up by 1%, keeping behavior constant
+net_income_increase_before_ret = np.sum((SB['wh'][beg:end ,:]*(1.0+increase)-SB['taxes_mod'][beg:end ,:])*adjust[beg:end,:]) 
+net_income_before_ret =          np.sum((SB['wh'][beg:end ,:]               -SB['taxes'][beg:end ,:])*adjust[beg:end,:]) 
+
+
+add_points_temp =  (1-p.τ[0])*p.ρ*(SB['wh'][beg:end ,:]*(SB['h'][beg:end ,:]>0)/p.E_bar_now)
+
+net_income_after_ret = (add_points_temp.sum(axis=0)*adjust[p.R:,:]).sum()
+
+
+#net_income_after_ret = (1-p.τ[0])*np.sum(p.ρ*(SB['p'][p.R: ,:]-p.startP)*adjust[p.R:,:])
+
+#compute the increase in points necessary to have the same increase in net income
+#note that we account for the increase in points due to higher wages
+share=(end-beg)/p.R
+point_equivalent = (net_income_increase_before_ret+(1.0+increase)*net_income_after_ret-net_income_before_ret)/(net_income_after_ret)
+
+
+#Higher gross wages
+date=beg
+pτ = co.setup();pτ.w[beg:end,:,:]=p.w[beg:end,:,:]*(1.0+increase)
 Modτ = sol.solveEulerEquation(pτ,model='baseline')
 Sτ= sim.simNoUncer_interp(pτ,Modτ,Tstart=date,Astart=SB['A'][date,:],Pstart=SB['p'][date,:])
 
-
-point_equivalent=1.0+(np.sum(SB['wh'][:p.R ,:]*adjust[:p.R,:])*0.01)/(np.sum(p.ρ*(SB['p'][p.R: ,:])*adjust[p.R:,:])-p.startP.sum())
-
-
-#Pension
-#pρ = co.setup();pρ.Pmax=10000.145;pρ.ρ=.3675#pρ.points_base=1.098;
-pρ = co.setup();pρ.Pmax=10000.145;pρ.points_base=point_equivalent#pρ.points_base=1.051
+#Higher pension points
+pρ = co.setup();pρ.Pmax=10000.145;pρ.points_base=point_equivalent
 
 Modρ = sol.solveEulerEquation(pρ,model='baseline')
 Sρ= sim.simNoUncer_interp(pρ,Modρ,Tstart=date,Astart=SB['A'][date,:],Pstart=SB['p'][date,:])
@@ -63,39 +88,14 @@ Sρ= sim.simNoUncer_interp(pρ,Modρ,Tstart=date,Astart=SB['A'][date,:],Pstart=S
 ##############################################"
 ##############################################"
 
-
-expe_b=p.ρ *SB['p'][p.R: ,:]
-expe_τ=pτ.ρ*Sτ['p'][pτ.R:,:]
-expe_ρ=pρ.ρ*Sρ['p'][pρ.R:,:]
-
-#taxes
-
-#aaa1=(0.01*pτ.τ[:p.R,None]*SB['wh'][:p.R,:]*adjust[:p.R,:]).sum()
-#aaa2=np.nansum(0.0108*p.ρ*SB['p'][p.R:,:]*adjust[p.R:,:])
-
-tax_b=p.τ[:p.R  ,None]*SB['wh'][:p.R ,:]
-tax_τ=pτ.τ[:pτ.R,None]*Sτ['wh'][:pτ.R,:]
-tax_ρ=pρ.τ[:pρ.R,None]*Sρ['wh'][:pρ.R,:]
-
-#adjusted deficits
-
-
-deficit_τ=(np.sum(expe_τ*adjust[p.R:,:])  -np.sum(tax_τ*adjust[:p.R,:]))
-deficit_ρ=(np.sum(expe_ρ*adjust[p.R:,:])  -np.sum(tax_ρ*adjust[:p.R,:]))
-
-##############################################"
-##############################################"
-##############################################"
-
 #Elasticities
-ϵτ=(co.hours(p,Sτ,date,p.R)/co.hours(p,SB,date,p.R)-1)*100
-ϵρ=(co.hours(p,Sρ,date,p.R)/co.hours(p,SB,date,p.R)-1)*100
+
+ϵτ=(co.hours(p,Sτ,beg,end)/co.hours(p,SB,beg,end)-1)*100
+ϵρ=(co.hours(p,Sρ,beg,end)/co.hours(p,SB,beg,end)-1)*100
 
 ϵτ1=(np.log((co.hours(p,Sτ,date,p.R)))-np.log((co.hours(p,SB,date,p.R))))/np.log((1-pτ.tax)/(1-p.tax))
 ϵρ1=(np.log((co.hours(p,Sρ,date,p.R)))-np.log((co.hours(p,SB,date,p.R))))/np.log((1-pτ.tax)/(1-p.tax))
 
-
-plt.plot(SB['c'].mean(axis=1))
 #(np.log((co.hours(p,Sτ,date,p.R)))-np.log((co.hours(p,SB,date,p.R))))/np.log((1-pτ.τ[0])/(1-p.τ[0]))
 #(np.log((Sτ['h'][:p.R]>0).mean())-np.log((SB['h'][:p.R]>0).mean()))/np.log((1-pτ.τ[0])/(1-p.τ[0]))
 

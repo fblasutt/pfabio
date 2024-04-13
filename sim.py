@@ -37,15 +37,15 @@ def simNoUncer_interp(p, model, Tstart=0, Astart=0.0, Pstart=0.0, Vstart= -1.0*n
     # print(p.q_sim.mean())
     
     #Call the simulator
-    epath,ppath,cpath,apath,hpath,pepath,pepath2,pepath3,vpath,evpath,wpath,w_pr_path,v_pr_path,eataxpath=\
+    epath,ppath,cpath,apath,hpath,pepath,pepath2,pepath3,vpath,evpath,wpath,w_pr_path,v_pr_path,eataxpath,eataxpath_mod=\
         fast_simulate(Tstart,Astart,Pstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,p.Pmax,p.add_points,p.tw,p.ts,p.wls,p.nwls,
-                      p.δ,p.q_grid,p.σ,p.income2,
+                      p.δ,p.q_grid,p.σ,p.taxes,p.taxes_mod,
                       model['A'],model['c'],model['p'],model['pr'],model['V'],model['V1'],model['model'],cadjust,p.wls_point,p.q_sim,p.points_base,p.R,p.r,p.y_N,p.τ)
     
-    return {'wh':epath,'p':ppath,'c':cpath,'A':apath,'h':hpath,'pb':pepath, 'pb2':pepath2,'pb3':pepath3, 'v':vpath,'ev':evpath,'w':wpath,'wls_pr':w_pr_path,'v_pr':v_pr_path,'nete':eataxpath}
+    return {'wh':epath,'p':ppath,'c':cpath,'A':apath,'h':hpath,'pb':pepath, 'pb2':pepath2,'pb3':pepath3, 'v':vpath,'ev':evpath,'w':wpath,'wls_pr':w_pr_path,'v_pr':v_pr_path,'taxes':eataxpath,'taxes_mod':eataxpath_mod}
     
 @njit(parallel=True)
-def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,Pmax,add_points,tw,ts,wls,nwls,δ,q,σ,income,
+def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,Pmax,add_points,tw,ts,wls,nwls,δ,q,σ,taxes,taxes_mod,
                   policyA1,policyC,policyP,pr,V,V1,reform,cadjust,wls_point,q_sim,points_base,R,r,y_N,τ):
 
     # Arguments for output
@@ -56,6 +56,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,P
     pepath3 = np.zeros((T, N))           #additional caregiver credits
     epath = np.zeros((T, N))            # earnings path
     eataxpath = np.zeros((T, N))        #after tax earnings
+    eataxpath_mod = np.zeros((T, N))        #after tax earnings
     wpath = np.nan+ np.zeros((T, N))           # wage path
     vpath = np.nan+ np.zeros((T, N))           # utility
     evpath = np.nan+ np.zeros((T, N))           # expected utility
@@ -119,7 +120,8 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,P
             
             wpath[t, n] = w[t,i,tw[n]]
             epath[t, n] = wpath[t, n]*wls[hpath[t, n]]#*wls_point[i]
-            eataxpath[t, n] = income[t,i,tw[n],0]
+            eataxpath[t, n] = taxes[t,i,tw[n],0] 
+            eataxpath_mod[t, n] = taxes_mod[t,i,tw[n],0] 
             evpath[t, n] = linear_interp.interp_2d(agrid,pgrid,V1[t,:,:,tw[n],iq],apath[t,n],ppath[t,n])#+σ*np.euler_gamma-σ*np.log(prs[i])            
             vpath[t, n] = np.log(cpath[t, n]*cadjust)-q[iq,hpath[t, n],tw[n]]+σ*np.euler_gamma-σ*np.log(w_pr_path[t,n,i])
             
@@ -130,4 +132,4 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,P
             if t<T-1:pepath3[t+1, n]= pepath3[t, n] + np.maximum(np.minimum(mp3 *wls[i]*w[t,i,tw[n]]/E_bar_now,Pmax),wls[i]*w[t,i,tw[n]]/E_bar_now)*(wls_point[i])
             #if t<T-1:cpath[t, n] = apath[t, n]*(1+r)+co.after_tax_income(epath[t, n],y_N[t,tw[n]],E_bar_now,wls_point[i],τ[t],False)-apath[t+1, n]   
      
-    return epath,ppath,cpath,apath,hpath,pepath,pepath2,pepath3,vpath,evpath,wpath, w_pr_path, v_pr_path, eataxpath
+    return epath,ppath,cpath,apath,hpath,pepath,pepath2,pepath3,vpath,evpath,wpath, w_pr_path, v_pr_path, eataxpath, eataxpath_mod

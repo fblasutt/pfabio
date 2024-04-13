@@ -20,7 +20,7 @@ def solveEulerEquation(p,model='baseline'):
     EV=np.zeros((p.T,p.NA, p.NP,p.nw,p.nq))
     
     #Precompute after-tax income and points for a given decision
-    p.income, p.points, p.income2 = co.compute_atax_income_points(p.tax,p.T,p.R,p.nwls,p.nw,p.NP,p.τ,\
+    p.income, p.points, p.taxes, p.taxes_mod = co.compute_atax_income_points(p.tax,p.T,p.R,p.nwls,p.nw,p.NP,p.τ,\
                                                           p.add_points,p.points_base,p.wls,p.w,\
                                                           p.E_bar_now,p.Pmax,p.wls_point,p.y_N,p.pgrid,p.ρ)
     
