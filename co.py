@@ -80,6 +80,7 @@ class setup():
         # Payroll taxes: https://www.nber.org/papers/w10525 
         self.τ = np.array([0.195 for t in range(self.T)])
         self.tax = np.array([0.0 for t in range(self.T)])
+        self.tbase = np.array([1.0 for t in range(self.T)])#tax base 
        
       
         
@@ -158,17 +159,17 @@ class setup():
 
 # 114696(-> 114696/1.95583/27740.65=2.1139) 0.51
 @njit
-def after_tax_income(y1g,y2g,y_mean,fraction,τ,no_retired = True):
+def after_tax_income(tbase,y1g,y2g,y_mean,fraction,τ,no_retired = True):
     
-    y1c = min(y1g*fraction,2*y_mean)
+    y1c = min(y1g*fraction*tbase,2*y_mean)
     y2c = min(y2g,         2*y_mean)
     
     payroll_tax_1 = τ*y1c
     payroll_tax_2 = τ*y2c
     
     #Compute taxable income
-    y1 = y1g -  payroll_tax_1 if no_retired else y1g
-    y2 = y2g -  payroll_tax_2 if no_retired else y2g
+    y1 = y1g*tbase -  payroll_tax_1 if no_retired else y1g
+    y2 = y2g       -  payroll_tax_2 if no_retired else y2g
     
     #If mini-job, then taxable income for woman is 0
     if fraction<1: y1 = 0.0
@@ -216,7 +217,7 @@ def after_tax_income(y1g,y2g,y_mean,fraction,τ,no_retired = True):
     return y1g + y2g - total_taxes, total_taxes
 
 #@njit(parallel=True)
-def compute_atax_income_points(etax,T,R,nwls,nw,NP,τ,add_points,points_base,wls,w,E_bar_now,Pmax,wls_point,y_N,pgrid,ρ):
+def compute_atax_income_points(etax,tbase,T,R,nwls,nw,NP,τ,add_points,points_base,wls,w,E_bar_now,Pmax,wls_point,y_N,pgrid,ρ):
 
     income = np.zeros((T,nwls,nw,NP))
     total_taxes = np.zeros((T,nwls,nw,NP))
@@ -243,14 +244,14 @@ def compute_atax_income_points(etax,T,R,nwls,nw,NP,τ,add_points,points_base,wls
                     
                     if (t+1<=R): 
                         
-                        income[t,i,iw,ip], total_taxes[t,i,iw,ip]  = after_tax_income(w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax)
+                        income[t,i,iw,ip], total_taxes[t,i,iw,ip]  = after_tax_income(tbase[t],w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax)
                         
                         if not np.allclose(etax[t],0.0):#case where we are computing elasticities
-                            _, total_taxes_mod[t,i,iw,ip]  = after_tax_income(w[t,i,iw]*wls[i]*(1-etax[t]),y_N[t,iw],E_bar_now,wls_point[i],tax)
+                            _, total_taxes_mod[t,i,iw,ip]  = after_tax_income(tbase[t],w[t,i,iw]*wls[i]*(1-etax[t]),y_N[t,iw],E_bar_now,wls_point[i],tax)
                                                 
                     else:            
                         
-                        income[t,i,iw,ip], total_taxes[t,i,iw,ip]  = after_tax_income(ρ*pgrid[ip]     ,y_N[t,iw],E_bar_now,wls_point[i],tax,False)
+                        income[t,i,iw,ip], total_taxes[t,i,iw,ip]  = after_tax_income(1.0,ρ*pgrid[ip]     ,y_N[t,iw],E_bar_now,wls_point[i],tax,False)
 
     return income,point, total_taxes, total_taxes_mod
                

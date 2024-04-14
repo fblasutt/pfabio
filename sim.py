@@ -120,7 +120,7 @@ def fast_simulate(Tstart,Astart,Pstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,P
             
             wpath[t, n] = w[t,i,tw[n]]
             epath[t, n] = wpath[t, n]*wls[hpath[t, n]]#*wls_point[i]
-            eataxpath[t, n] = taxes[t,i,tw[n],0] 
+            eataxpath[t, n] = taxes[t,i,tw[n],0] if t<R else np.interp(ppath[t, n],pgrid,taxes[t,0,tw[n],:])
             eataxpath_mod[t, n] = taxes_mod[t,i,tw[n],0] 
             evpath[t, n] = linear_interp.interp_2d(agrid,pgrid,V1[t,:,:,tw[n],iq],apath[t,n],ppath[t,n])#+σ*np.euler_gamma-σ*np.log(prs[i])            
             vpath[t, n] = np.log(cpath[t, n]*cadjust)-q[iq,hpath[t, n],tw[n]]+σ*np.euler_gamma-σ*np.log(w_pr_path[t,n,i])
