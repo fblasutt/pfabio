@@ -15,6 +15,8 @@
 #matters a lot for the results...
 # Back of the envelop calculations given insanely high elasticity:
 # (p.ρ*0.26*0.5*adjust[p.R:,0]).sum()*1000*(1+p.r)**8 for income increase per year
+#too many women reduce WLS in actual experiment: when you take out threshold you
+#get insane response. Earnings should be in line with data!
 ############################
 
 

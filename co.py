@@ -245,7 +245,7 @@ def compute_atax_income_points(etax,T,R,nwls,nw,NP,τ,add_points,points_base,wls
                         
                         income[t,i,iw,ip], total_taxes[t,i,iw,ip]  = after_tax_income(w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax)
                         
-                        if etax[t]<0:#case where we are computing elasticities
+                        if not np.allclose(etax[t],0.0):#case where we are computing elasticities
                             _, total_taxes_mod[t,i,iw,ip]  = after_tax_income(w[t,i,iw]*wls[i]*(1-etax[t]),y_N[t,iw],E_bar_now,wls_point[i],tax)
                                                 
                     else:            
