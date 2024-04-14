@@ -62,7 +62,7 @@ SPN= sim.simNoUncer_interp(pPN,ModPN,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p']
 ########################################
 
 
-adjustb=np.ones(SB['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
+adjustb=np.ones(SB['c'].shape)/((1+p.δ)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 t=8
 EVP    =np.mean(((np.cumsum((adjustb*SP['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])
 EVτ    =np.mean(((np.cumsum((adjustb*Sτ['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])
@@ -108,7 +108,7 @@ tax_PN=p.τ[8:pPN.R,None]*SPN['wh'][8:pPN.R,:]
 #tax_m=pm.τ[8:pm.R,None]*Sm['wh'][8:pm.R,:]
 
 #adjusted deficits
-adjust=np.ones(SP['c'].shape)*((1-((1+p.r)**(np.cumsum(np.ones(p.T))-1.0)))/p.r)[:,None]#np.ones(SP['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
+adjust=np.ones(SP['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 deficit_B=(np.nansum(expe_B*adjust[p.R:,:])  -np.nansum(tax_B*adjust[8:p.R,:]))
 deficit_P=(np.nansum(expe_P*adjust[p.R:,:])  -np.nansum(tax_P*adjust[8:p.R,:]))
 deficit_τ=(np.nansum(expe_τ*adjust[p.R:,:])  -np.nansum(tax_τ*adjust[8:p.R,:]))
@@ -219,32 +219,44 @@ with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_params.te
 #Compute nontargeted moments
 ##############################
 
+def share(r,δ,T,k,per):
+    #Model-based annuitization to compute MPE: https://michael-graber.github.io/pdf/Golosov-Graber-Mogstad-Novgorodsky-2023.pdf pg 38
+    share = np.array([ ((1+r)/(1+δ))**(t+1)*(δ/(1+δ))*(1-(1/(1+δ))**(T-k))**-1  for t in range(per)])
+    
+    return share
+
+adjustr = adjust*(1+p.r)**8
+
 #MPE out of pension wealth, using tretroactive credits
 SB_retro= sim.simNoUncer_interp(p,ModB,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['pb3'][8,:])
 
-change_earn  =((np.nanmean((SB_retro['wh'][8:12,:]*adjust[8:12,:]).sum(axis=0)))-\
-                np.nanmean((SB['wh'][8:12,:]      *adjust[8:12,:]).sum(axis=0)))
+change_earn  =((np.nanmean((SB_retro['wh'][8:12,:]*adjustr[8:12,:]).sum(axis=0)))-\
+                np.nanmean((SB['wh'][8:12,:]      *adjustr[8:12,:]).sum(axis=0)))
     
-change_pweal = np.mean((p.ρ*SB_retro['p'][p.R:,:]*adjust[p.R,:]).sum(axis=0))-\
-               np.mean((p.ρ*SB['p'][p.R:,:]*adjust[p.R:,:]).sum(axis=0))
+change_pweal = np.mean((p.ρ*SB_retro['p'][p.R:,:]*adjustr[p.R,:]).sum(axis=0))-\
+               np.mean((p.ρ*SB['p'][p.R:,:]*adjustr[p.R:,:]).sum(axis=0))
                
-change_pweal = np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjust[p.R,:]).sum(axis=0))
+change_pweal = np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjustr[p.R,:]).sum(axis=0))
 
 
 #Below annuitization like in Golosov (2024), assuming that agents sommth consumption
-change_pweal_s = (12-8)*(p.r/(1+p.r)*(1-(p.r/(1+p.r))**(p.T-9.5+1))**-1)*np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjust[p.R,:]).sum(axis=0))
+change_pweal_s = (12-8)*((p.r/(1+p.r))*(1-(1/(1+p.r))**(p.T-8))**-1)*np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjustr[p.R:,:]).sum(axis=0))
+
+
+#Below annuitization like in Golosov (2024), NOT assuming that agents sommth consumption if PIH where r could be different than δ
+change_pweal_s2 = share(p.r,p.δ,p.T,8,12-8).sum()*np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjustr[p.R:,:]).sum(axis=0))
 
 #Below model-consistent annuitization, where wealth is allocated according to consumption path. How to get it,
 #use the intertemporal budget constraint and take out of summation c0 (future consumtion is replaced by ct/c0).
 #Then manage the intertemporal BC to have c0=stuff: use it to get annuity value of future pension wealth. then
-#sum the implied consumtion for periods 8 to 12.
-ct_over_c0_discounted=np.mean(SB['c'],axis=1)/np.mean(SB['c'][0])*adjust[:,0]
-c0=np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjust[p.R,:]).sum(axis=0))/ct_over_c0_discounted.sum()
-change_pweal_d = c0*(np.mean(SB['c'],axis=1)/np.mean(SB['c'][0]))[8:12].sum()
+#sum the implied consumtion for periods 8 to 12. This can be checked against change_pweal_s2
+ct_over_c0_discounted=np.mean(SB['c'][8:,:],axis=1)/np.mean(SB['c'][8,:])*adjustr[8:,0]
+c0=np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjustr[p.R:,:]).sum(axis=0))/ct_over_c0_discounted.sum()
+
+change_pweal_d = c0*((np.mean(SB['c'][8:,:],axis=1)/np.mean(SB['c'][8,:]))[:4]).sum()
 
 #Finally, the marginal propensity to earn
-MPE = change_earn/(change_pweal_s)
-
+MPE = change_earn/(change_pweal_d)
 
 #Effect of pension reform on:
     
@@ -257,7 +269,7 @@ eff_earn=(np.nanmean(p.wls[SP['h'][8:12,:]]*SP['wh'][8:12,:])-np.nanmean(p.wls[S
 #3) earnings
 eff_emp=np.nanmean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.nanmean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3)
 
-#4) marginal work
+#3) marginal work
 eff_marg=np.nanmean(SP['h'][8:12,:]>1)-np.nanmean(SB['h'][8:12,:]>1)#np.nanmean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.nanmean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1)
 
 ############################################
@@ -272,13 +284,13 @@ table=r'\begin{table}[htbp]'+\
        r'\midrule   '+\
        r' Pension points   & 0.11 &'+p42(eff_points)+'\\\\'+\
        r' Work full time    & 0.03 &'+p42(eff_emp)+'\\\\'+\
-       r' Regular employment    & 0.07 &'+p42(eff_marg)+'\\\\'+\
+       r' Regular employment    & -0.07 &'+p42(eff_marg)+'\\\\'+\
        r'\toprule   '+\
        r" Effect of retroactive credits on &   Data & Model  \\"+\
        r'\midrule   '+\
        r' Marginal propensity to earn (MPE)      & -0.51\text{ to }-0.12 &'+p42(MPE)+'\\\\'+\
        r'  \bottomrule'+\
-       r'\multicolumn{3}{l}{ \textsc{Notes:} MPE is computed using annuitization---see \cite{golosov2024}.}'+\
+       r'\multicolumn{3}{l}{}'+\
       """\end{tabular}"""+\
       r'\end{table}'
       
@@ -286,3 +298,4 @@ table=r'\begin{table}[htbp]'+\
 with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_nontargetd.tex', 'w') as f:
     f.write(table)
     f.close()
+    
