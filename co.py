@@ -21,7 +21,7 @@ class setup():
         self.δ =  0.0164736#0.00983949    # Discount rate
         self.q =np.array([0.0,0.44020001*(0.45040867),0.44020001*( 0.31594294),0.44020001])  #Fixed cost of pticipation - mean
         self.σq = 0.10473575   #Fixed cost of pticipation -sd 
-        self.ρq =0.0#0.00195224
+        self.ρq =-0.4#0.00195224
         
         # Economic Environment: set pameters 
         self.T = 55         # Number of time periods 

@@ -14,7 +14,7 @@ import pybobyqa
 from scipy.optimize import dual_annealing,differential_evolution
 import scipy
 import dfols
-
+import TikTak
 #Actual Program
 
     
@@ -89,6 +89,7 @@ def q(pt):
     #return ((shpo-0.1956)/0.1956)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
     #return ((sh_h-13.96)/13.96)**2+((sh_noem-0.36)/0.36)**2+((0.256-sh_min)/0.256)**2+((eff_h-3.565)/3.565)**2+((0.099-eff_e)/0.099)**2
     return [((sh1-.1984)/.1984),((shpo-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.317)/ 2.317),((eff_e-.064)/.064)]
+    #return [((sh1-.1984)/.1984)**2+((shpo-.1986)/.1986)**2+((sh_min-.256)/.256)**2+((eff_h- 2.317)/ 2.317)**2+((eff_e-.064)/.064)**2][0]
     #return ((sh_min-.256)/.256)**2+((shpo-.1986)/.1986)**2+((sh1-.1984)/.1984)**2+((eff_e-0.099)/0.099)**2+((eff_full-0.045)/0.045)**2+((eff_nomarg+0.115)/0.115)**2#        
             
             
@@ -100,24 +101,26 @@ np.random.seed(10)
 
 xc=np.array([0.44020001, 0.31594294, 0.45040867, 0.0164736 , 0.10473575])#no corr
 #xc=np.array([0.42833579, 0.2030553 , 0.35394353, 0.0122311 , 0.1905356 ])#corr 0.7
-xl=np.array([0.001,-2.2,-1.8,-0.07,0.0001])
-xu=np.array([2.5 ,1.9,1.9,0.09,3.8])
+xl=[0.1, 0.1,0.1,-0.03,0.0001]
+xu=[1.0 ,0.9,0.9,0.04 ,0.8]
 
 # [ 0.40706012  0.03525281 -0.51941101  0.00186123  1.60048109  0.03695673] first tentative σ=0.0005
 # 0.37349381, -0.01739811, -0.6       ,  0.00287586,  1.59080139, 0.03220926] current
 #Optimization below
-res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-5, maxfun=400, bounds=(xl,xu),
-                npt=len(xc)+5,scaling_within_bounds=True, 
-                user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
-                              'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
-                objfun_has_noise=False)
+# res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-5, maxfun=400, bounds=(xl,xu),
+#                 npt=len(xc)+5,scaling_within_bounds=True, 
+#                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
+#                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
+#                 objfun_has_noise=False)
 #q([0.20127328, 1.41087164, 0.00589961, 0.25583906])
 #res = scipy.optimize.minimize(q,xc,bounds=list(zip(list(xl), list(xu))),method='Nelder-Mead',tol=1e-5)
 #res = differential_evolution(q,bounds=list(zip(list(xl), list(xu))),disp=True,mutation=(0.1, 0.5),recombination=0.8) 
  
+#res = scipy.optimize.dual_annealing(q,bounds=list(zip(xl,xu)))
 
 #The point is [0.09800833, 0.50142732, 0.00124261 ], the moments are 0.6376375, 0.3382125, 0.09378124999999998
   
+
 
 # resu=res.x.copy()
 # print(resu)
@@ -125,5 +128,5 @@ res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-5, maxfun=400, bounds=(xl,xu),
 
 
     
-    
+sample, first_step, second_step = TikTak.TikTak(q,xl,xu,13,0.01,skip_first_step=False)
     

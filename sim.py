@@ -16,7 +16,7 @@ def simNoUncer_interp(p, model, Tstart=0, Astart=0.0, Pstart=0.0, Vstart= -1.0*n
         iswage=(p.tw==iw)
         iswagelen=np.sum(iswage)
         
-        p.q_sim[iswage]=np.array(np.random.uniform(0.0+means[iw],p.nq+means[iw],size=iswagelen),dtype=np.int32)
+        p.q_sim[iswage]=np.minimum(np.maximum(np.array(np.random.uniform(0.0+means[iw],p.nq+means[iw],size=iswagelen),dtype=np.int32),0),p.nq-1)
         #p.q_sim[iswage]=np.random.randint(0.0,p.nq-1,size=iswagelen)
     
     
