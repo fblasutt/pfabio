@@ -5,28 +5,33 @@ from consav.grids import nonlinspace # grids
 from scipy.stats import norm  
 from numba import njit,prange 
 import quantecon as qe
+from scipy.integrate import quad
+from scipy.stats import gamma
 
 class setup(): 
      
     def __init__(self): 
      
         # Size of gridpoints:
-        self.nw=10     #groups by economic status
-        self.nq = 4    #fixed points, preference for working
-        self.NA = 150  #assets gridpoints
-        self.NP =33    #pension points gridpoints
+        self.nq = 3    #fixed points, preference for working
+        self.NA = 20  #assets gridpoints
+        self.NP =7    #pension points gridpoints
         self.nwls = 4  #hours choice
         
         # First estimated parameters
-        self.δ =  0.0164736#0.00983949    # Discount rate
-        self.q =np.array([0.0,0.44020001*(0.45040867),0.44020001*( 0.31594294),0.44020001])  #Fixed cost of pticipation - mean
-        self.σq = 0.10473575   #Fixed cost of pticipation -sd 
-        self.ρq =-0.4#0.00195224
+        self.δ =  0.01505204 #0.00983949    # Discount rate
+            
+        self.q =np.array([0.0,0.20933763,0.12180904,1.0])  #Fixed cost of pticipation - mean
+        self.σq =0.25623355   #Fixed cost of pticipation -sd 
+        self.ρq =0.0#-0.4#0.00195224
+   
+        self.qshape = 0.76992266
+        self.qscale = 1.74844589
         
         # Economic Environment: set pameters 
         self.T = 55         # Number of time periods 
         self.R = 35         # Retirement period 
-        self.r = 0.03      # Interest rate 
+        self.r = 0.02      # Interest rate 
         self.σ=0.001        #Size of taste shock 
                 
         #Income
@@ -34,6 +39,10 @@ class setup():
             
         # Hours choice
         self.wls=np.array([0.0,10.0, 20.0, 38.5])/38.5 #From GSOEP hrs/week = (10/ 20 / 38.5 ) 
+        
+        # income of men and women: sd of income shocks in t=0 and after that
+        self.σzw=0.084*0.5;self.σ0zw= 0.4583;self.σzm=0.114*0.5;self.σ0zm=0.43
+        self.nzw=3;self.nzm=3;self.nw = self.nzw*self.nzm
           
         #Pension
         self.E_bar_now = 27740.65230618203/self.scale  # Average earnings: ttps://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256, exchange rate 1.9569471624266144
@@ -43,39 +52,46 @@ class setup():
         self.points_base=1.0        #standard points if not reform
         self.wls_point = np.array([0.0,0.0,1.0,1.0])      #share of income relevant for pension contributions 
        
-            
+        ##############
         # Income 
+        ###############
+        
+        # uncertainty
+        self.grid_zw,self.Π_zw, self.Π_zw0 =addaco_nonst(self.T,self.σzw,self.σ0zw,self.nzw)
+        self.grid_zm,self.Π_zm, self.Π_zm0 =addaco_nonst(self.T,self.σzm,self.σ0zm,self.nzm)
+        
 
-        self.wM=np.zeros((self.T,self.nwls))#trend in women's earnings
-        for t in range(self.T): self.wM[t,:]=-0.1806434+.0297458*t -.0005628 *t**2
-                
+        self.Π=[np.kron(self.Π_zw[t],self.Π_zm[t]) for t in range(self.T-1)] # couples trans matrix    
+        self.Π0=np.kron(self.Π_zw0[0],self.Π_zm0[0])
         
-        self.wv=np.array([ 7.631935, 8.090471, 8.286575 ,
-                          8.44488, 8.580534 , 8.709507,
-                          8.827328, 8.96867, 9.145868, 9.563336]) #w's income groups initial income
+
+        # for iw in range(5): 
+        #     for jw in range(5): 
+        #         for im in range(5): 
+        #             for jm in range(5): 
+                 
+        #                   j=jm*5+jw 
+        #                   i=im*5+iw 
+        #                   #par.Πl[t][j,i]=par.Πlw[t][jw,iw] if ((jw==jm)) else 0.0 
+        #                   self.Π0[j,i]=self.Π_zw0[0][jw,iw] if ((jw==jm)) else 0.0 
         
-        self.w=np.zeros((self.T,self.nwls,self.nw))#final grid for w's income
-        for t in range(self.T):  
-            for i in range(self.nwls):  
+
         
-                self.w[t,i,:]=np.exp(self.wM[t,i]+self.wv)/self.scale/13.96*38.5
-                if i==1: #miniwages are floored at 325*12 euros a year
-                    self.w[t,i,:]=np.minimum(324*12/self.scale/self.wls[i],self.w[t,i,:])
-                    
-                    
-        self.wv_men=np.array([16735.71,16920.84,19447.71,
-                              18881.82,22105.11,18759.2,
-                              19781.31,21205.22,24253.39,26751.28]) #m's income groups initial income
-        
-        self.wv_men=np.array([16735.71,16920.84,19447.71,18881.82,22105.11,18759.2,19781.31,21205.22,24253.39,26751.28]) 
-        self.y_N=np.zeros((self.T,self.nw))   
-        for t in range(self.R):  
-            for i in range(self.nw):  
-                self.y_N[t,i]=(-2930.40118+501.4029*(t)-11.82488*(t)**2+self.wv_men[i])/self.scale
-                   
-        for t in range(self.R,self.T):  #income at retirement for men
-            self.y_N[t,:]=self.y_N[self.R-1,:]*0.45
-                  
+        self.w=np.zeros((self.T,self.nwls,self.nw))#final grid for w's income        
+        for t in range(self.T)  :
+            for iz in range(self.nw):    
+                for i in range(self.nwls):
+                    self.w[t,i,iz]=np.exp(8.25+.0297458*t -.0005628 *t**2 + self.grid_zw[t][iz//self.nzm])/self.scale/13.96*38.5
+                    if i==1:#miniwages are floored at 325*12 euros a year 
+                        self.w[t,i,iz]=np.minimum(324*12/self.scale/self.wls[i],self.w[t,i,iz])
+                        
+        self.y_N=np.zeros((self.T,self.nw))#final grid for w's income        
+        for t in range(self.T)  :
+            for iz in range(self.nw):    
+                if t<self.R: self.y_N[t,iz]=np.exp(8.75+.0297458*t -.0005628 *t**2 + self.grid_zm[t][iz%self.nzm])/self.scale/13.96*38.5
+                else:        self.y_N[t,iz]=self.y_N[self.R-1,iz]*0.45
+  
+     
          
         # Payroll taxes: https://www.nber.org/papers/w10525 
         self.τ = np.array([0.195 for t in range(self.T)])
@@ -85,18 +101,20 @@ class setup():
       
         
         #Disutility from working
-        self.q_grid=np.zeros((self.nq,self.nwls,10))
-        self.q_grid_π=np.zeros((self.nq,10))
-        self.q_gridt,_=addaco_dist(self.σq,0.0,self.nq)
+        self.q_grid=np.zeros((self.nq,self.nwls,self.nw))
+        # self.q_grid_π=np.zeros((self.nq,self.nw))
+        # self.q_gridt,_=addaco_dist(self.σq,0.0,self.nq)
+        
+        self.q_gridt = dist_gamma(self.qshape,self.qscale,self.nq)
 
         for il in range(1,self.nwls):
-            for iw in range(10):
+            for iw in range(self.nw):
                 for iq in range(self.nq):
                     
-                    self.q_grid[iq,il,iw]= self.q[il]-self.q_gridt[iq]
+                    self.q_grid[iq,il,iw]= self.q[il]*self.q_gridt[iq]
             
         # Assets  grid   
-        self.amin=-160000/self.scale
+        self.amin=0.0/self.scale
         self.amax=1000000/self.scale 
         self.agrid=nonlinspace(self.amin,self.amax,self.NA,1.0)
         
@@ -125,29 +143,16 @@ class setup():
             index=int(i/self.N*10) 
             self.startP[i]=self.startPd[index]+3.0
                     
-        #Distribution of types
-        self.Π = np.ones((10,10))/10.0
-        self.tw=np.sort(qe.MarkovChain(self.Π).simulate(self.N))# Type here 
+        #Distribution of types in first period and shocks to be used
+        self.tw=np.sort(qe.MarkovChain(self.Π0.T).simulate(self.N,init=self.nw//2))# Type here 
+        self.shock_z=np.random.random_sample((self.N,self.T))
         
         #Distribution of taste shocks
         self.ts=np.random.rand(self.T,self.N) 
         
-        #Distribution of labor preferences fixed effects
-        # self.q_sim = np.zeros(self.N,dtype=np.int32)        
-        # means = np.linspace(-self.ρq ,self.ρq ,self.nw)
-        # for iw in range(10):
-           
-        #     iswage=(self.tw==iw)
-        #     iswagelen=np.sum(iswage)
-            
-        #     self.q_sim[iswage]=np.array(np.random.uniform(0.0+means[iw],self.nq-1+means[iw],size=iswagelen),dtype=np.int32)
+        #Fixed effect
         
-        # self.q_sim = np.zeros(self.N,dtype=np.int32)  
-        # j=0 
-        # for i in range(self.N): 
-        #     self.q_sim[i] = j 
-        #     j = j+1 if j<self.nq-1 else 0      
-        
+
 #taxes: based on page 72 in https://www.fabian-kindermann.de/docs/progressive_pensions.pdf
 #                           https://www.fabian-kindermann.de/docs/women_redistribution pg 20
 # http://www.parmentier.de/steuer/index.php?site=einkommensteuersatz
@@ -283,11 +288,187 @@ def addaco_dist(sd_z,mu,npts):
              
 @njit
 def log(c,q):
-    return np.log(np.maximum(c,0.00000000001))-q
+    return np.log(np.maximum(c,0.00000000001))-q#(np.maximum(c,0.00000000001))**(1-2)/(1-2)-q#
 
 
 @njit
 def points(mp,earnings,E_bar_now,Pmax,wls_point):
     return np.minimum(np.maximum(np.minimum(mp*earnings/E_bar_now,Pmax),earnings/E_bar_now),2)*wls_point
+
+
+###########################
+# Uncertainty below       #
+###########################
  
+def sd_rw(T,sigma_persistent,sigma_init):
+    
+    if isinstance(sigma_persistent,np.ndarray):
+        return np.sqrt([sigma_init**2 + t*sigma_persistent[t]**2 for t in range(T)])
+    else:
+        return np.sqrt(sigma_init**2 + np.arange(0,T)*(sigma_persistent**2))
+    
+def sd_rw_trans(T,sigma_persistent,sigma_init,sigma_transitory):
+    return sd_rw(T, sigma_persistent, sigma_init)
+
+    
+    
+def normcdf_tr(z,nsd=5):
+        
+        z = np.minimum(z, nsd*np.ones_like(z))
+        z = np.maximum(z,-nsd*np.ones_like(z))
+            
+        pup = norm.cdf(nsd,0.0,1.0)
+        pdown = norm.cdf(-nsd,0.0,1.0)
+        const = pup - pdown
+        
+        return (norm.cdf(z,0.0,1.0)-pdown)/const
+    
+    
+def normcdf_ppf(z): return norm.ppf(z,0.0,1.0)       
+        
+
+def addaco_nonst(T=40,sigma_persistent=0.05,sigma_init=0.2,npts=50):
+  
+    # start with creating list of points
+    sd_z = sd_rw(T,sigma_persistent,sigma_init)
+    sd_z0 = np.array([np.sqrt(sd_z[t]**2-sigma_init**2) for t in range(T)])
+        
+    Pi = list();Pi0 = list();X = list();Int=list()
+
+
+    #Probabilities per period
+    Pr=normcdf_ppf((np.cumsum(np.ones(npts+1))-1)/npts)
+    
+    #Create interval limits
+    for t in range(0,T):Int = Int + [Pr*sd_z[t]]
+        
+    
+    #Create gridpoints
+    for t in range(T):
+        line=np.zeros(npts)
+        for i in range(npts):
+            line[i]= sd_z[t]*npts*(norm.pdf(Int[t][i]  /sd_z[t],0.0,1.0)-\
+                                   norm.pdf(Int[t][i+1]/sd_z[t],0.0,1.0))
+            
+        X = X + [line]
+
+    def integrand(x,e,e1,sd,sds):
+        return np.exp(-(x**2)/(2*sd**2))*(norm.cdf((e1-x)/sds,0.0,1.0)-\
+                                          norm.cdf((e- x)/sds,0.0,1.0))
+            
+            
+    #Fill probabilities
+    for t in range(1,T):
+        Pi_here = np.zeros([npts,npts]);Pi_here0 = np.zeros([npts,npts])
+        for i in range(npts):
+            for jj in range(npts):
+                
+                Pi_here[i,jj]=npts/np.sqrt(2*np.pi*sd_z[t-1]**2)\
+                    *quad(integrand,Int[t-1][i],Int[t-1][i+1],
+                     args=(Int[t][jj],Int[t][jj+1],sd_z[t],sigma_persistent))[0]
+                
+                Pi_here0[i,jj]= norm.cdf(Int[t][jj+1],0.0,sigma_init)-\
+                                   norm.cdf(Int[t][jj],0.0,sigma_init)
+                                   
+            #Adjust probabilities to get exactly 1: the integral is an approximation
+            Pi_here[i,:]=Pi_here[i,:]/np.sum(Pi_here[i,:])
+            Pi_here0[i,:]=Pi_here0[i,:]/np.sum(Pi_here0[i,:])
+                
+        Pi = Pi + [Pi_here.T]
+        Pi0 = Pi0 + [Pi_here0.T]
+        
+    return X, Pi, Pi0   
+
+def rouw_nonst_one(sd0,sd1,npts):
+   
+    # this generates one-period Rouwenhorst transition matrix
+    assert(npts>=2)
+    pi0 = 0.5*(1+(sd0/sd1))
+    Pi = np.array([[pi0,1-pi0],[1-pi0,pi0]])
+    assert(pi0<1)
+    assert(pi0>0)
+    for n in range(3,npts+1):
+        A = np.zeros([n,n])
+        A[0:(n-1),0:(n-1)] = Pi
+        B = np.zeros([n,n])
+        B[0:(n-1),1:n] = Pi
+        C = np.zeros([n,n])
+        C[1:n,1:n] = Pi
+        D = np.zeros([n,n])
+        D[1:n,0:(n-1)] = Pi
+        Pi = pi0*A + (1-pi0)*B + pi0*C + (1-pi0)*D
+        Pi[1:n-1] = 0.5*Pi[1:n-1]
+        
+        assert(np.all(np.abs(np.sum(Pi,axis=1)-1)<1e-5 ))
+    
+    return Pi
+
+
+def rouw_nonst(T=40,sigma_persistent=0.05,sigma_init=0.2,npts=10):
+   
+    sd_z = sd_rw(T,sigma_persistent,sigma_init)
+    sd_z0 = np.array([np.sqrt(sd_z[t]**2-sigma_init**2) for t in range(T)])
+       
+    Pi = list();Pi0 = list();X = list()
+
+    for t in range(0,T):
+        nsd = np.sqrt(npts-1)
+        X = X + [np.linspace(-nsd*sd_z[t],nsd*sd_z[t],num=npts)]
+        
+        if t >= 1: Pi = Pi +   [rouw_nonst_one(sd_z[t-1],sd_z[t] ,npts).T]
+        if t >= 1: Pi0 = Pi0 + [rouw_nonst_one(sd_z0[t-1],sd_z[t-1],npts).T]
+       
+    return X, Pi, Pi0      
+        
+ 
+
+
+@njit(fastmath=True)
+def mc_simulate(statein,Piin,shocks):
+    """This simulates transition one period ahead for a Markov chain
+    
+    Args: 
+        Statein: scalar giving the initial state
+        Piin: transition matrix n*n [post,initial]
+        shocks: scalar in [0,1]
+    
+    """ 
+    return  np.sum(np.cumsum(Piin[:,statein])<shocks)
+
+
+
+
+
+def dist_gamma(k,theta,npts):
+    """
+    Discretize the gamma function into npts points. Idea: first divide
+    X space into npts+1 points. Between each point there should be the same 
+    probability
+    
+
+    Parameters
+    ----------
+    k : TYPE: real
+        DESCRIPTION: shape parameter of gamma distribution
+    theta : TYPE: real
+        DESCRIPTION:  scale parameter of gamma distribution
+    npts : TYPE; int
+        DESCRIPTION: number of points gamma function should be discretized
+
+    Returns
+    -------
+    discr : TYPE np.array, one dimension of length npts
+        DESCRIPTION.
+
+    """
+    
+    #percent point function, equal spacing for percentiles
+    zvals = gamma.ppf(np.linspace(0.0, 1.0, npts+1), k,scale=theta)
+    
+    #expected value between two consecutive zvals (note the rescaling)
+    discr = np.array([gamma.expect(lambda x:x,args=(k,),scale=theta,lb=zvals[i],ub=zvals[i+1])/
+                      gamma.expect(lambda x:1,args=(k,),scale=theta,lb=zvals[i],ub=zvals[i+1])for i in range(npts)])
+    
+    return discr
+
 

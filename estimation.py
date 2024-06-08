@@ -18,6 +18,22 @@ import TikTak
 #Actual Program
 
     
+#Initialize seed
+np.random.seed(10)
+
+
+#Define initial point (xc) and boundaries (xl,xu)
+
+# [1.01608098 0.12180904 0.20933763 0.76992266 1.74844589]
+
+
+
+xc=np.array([-0.01499362,  0.10404925,  0.16425647,  0.76265618,  2.62749509])
+#xc=np.array([-0.0111094,	0.502404,	0.609482,	0.284096,	4.49415])#no corr
+#xc=np.array([0.42833579, 0.2030553 , 0.35394353, 0.0122311 , 0.1905356 ])#corr 0.7
+xl=np.array([-0.05, 0.01,0.01,0.01,0.1])
+xu=np.array([0.03 ,1.5,1.5   ,1.6 ,6.5])
+
 
 #Function to minimize
 def q(pt):
@@ -26,22 +42,25 @@ def q(pt):
     p = co.setup()
     
     #..and update them
-    p.q =np.array([0.0,pt[2]*pt[0],pt[1]*pt[0],pt[0]])  #Fixed cost of pticipation - mean
+    p.q =np.array([0.0,pt[2],pt[1],1.0])   #Fixed cost of pticipation - mean
     
-    p.δ=pt[3]
+    p.qshape=pt[3]
     
-    p.σq =pt[4] #Fixed cost of pticipation -sd 
-   
+    p.qscale =pt[4] #Fixed cost of pticipation -sd 
+    p.δ=pt[0]
     
-    p.q_grid=np.zeros((p.nq,p.nwls,10))
-    p.q_grid_π=np.zeros((p.nq,10))
-    p.q_gridt,_=co.addaco_dist(p.σq,0.0,p.nq)
+    #Disutility from working
+    p.q_grid=np.zeros((p.nq,p.nwls,p.nw))
+    # p.q_grid_π=np.zeros((p.nq,p.nw))
+    # p.q_gridt,_=addaco_dist(p.σq,0.0,p.nq)
+    
+    p.q_gridt = co.dist_gamma(p.qshape,p.qscale,p.nq)
 
     for il in range(1,p.nwls):
-        for iw in range(10):
+        for iw in range(p.nw):
             for iq in range(p.nq):
                 
-                p.q_grid[iq,il,iw]= p.q[il]-p.q_gridt[iq]
+                p.q_grid[iq,il,iw]= p.q_gridt[iq]*p.q[il]
    
 
     
@@ -53,16 +72,16 @@ def q(pt):
   
 
     #Baseline
-    SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
+    SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.ones(p.N)*p.startP,izstart=p.tw)
 
     #Pension reform
-    SP= sim.simNoUncer_interp(p,ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['pb3'][8,:])
+    SP= sim.simNoUncer_interp(p,ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['pb3'][8,:],izstart=SB['iz'][8,:])
    
    
     
     #
-    shpo=np.mean(SB['h'][7,:]==2)
-    sh1=np.mean(SB['h'][7,:]>=3)
+    sh_part=np.mean(SB['h'][7,:]==2)
+    sh_full=np.mean(SB['h'][7,:]>=3)
     sh_min=np.mean(SB['h'][7,:]==1)
     sh_noem=np.mean(SB['h'][7,:]==0)
     sh_h=co.hours(p,SB,7,8)
@@ -79,54 +98,57 @@ def q(pt):
     
     pension_points=np.nanmean(np.diff(SB['p'][7:9,:],axis=0))
     #Print the point
-    print("The point is {}, the moments are {}, {}, {}, {} , {},  {}, {}, {}, {}, {}".format(pt,sh1,shpo,sh_min,eff_h,eff_e,eff_full,eff_nomarg,eff_earn,eff_points,s_hl))   
+    print("The point is {}, the moments are shfull {}, sh_part {}, sh_min {}, eff_h {} , eff_e {}, eff_full  {}, eff_marg {}, eff_nomarg {}, eff_points {}, s_hl {}".format(pt,sh_full,sh_part,sh_min,eff_h,eff_e,eff_full,eff_nomarg,eff_earn,eff_points,s_hl))   
 
     #0.015*10+0.045*38.5+(0.099-0.045)*20 = 2.9625
     #(0.015+0.02)/2*10+(0.045+0.016)/2*38.5+((0.099+0.029)/2-(0.045+0.016)/2)*20 = 2.01925
     
     
-    #return ((shpo-0.65)/0.65)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
-    #return ((shpo-0.1956)/0.1956)**2+((sh1-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
+    #return ((sh_part-0.65)/0.65)**2+((sh_full-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
+    #return ((sh_part-0.1956)/0.1956)**2+((sh_full-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
     #return ((sh_h-13.96)/13.96)**2+((sh_noem-0.36)/0.36)**2+((0.256-sh_min)/0.256)**2+((eff_h-3.565)/3.565)**2+((0.099-eff_e)/0.099)**2
-    return [((sh1-.1984)/.1984),((shpo-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.317)/ 2.317),((eff_e-.064)/.064)]
-    #return [((sh1-.1984)/.1984)**2+((shpo-.1986)/.1986)**2+((sh_min-.256)/.256)**2+((eff_h- 2.317)/ 2.317)**2+((eff_e-.064)/.064)**2][0]
-    #return ((sh_min-.256)/.256)**2+((shpo-.1986)/.1986)**2+((sh1-.1984)/.1984)**2+((eff_e-0.099)/0.099)**2+((eff_full-0.045)/0.045)**2+((eff_nomarg+0.115)/0.115)**2#        
+    print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.317)/ 2.317)**2,((eff_e-.064)/.064)**2]).sum())
+    return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.317)/ 2.317),((eff_e-.064)/.064)]
+    #return [((sh_full-.1984)/.1984)**2+((sh_part-.1986)/.1986)**2+((sh_min-.256)/.256)**2+((eff_h- 2.317)/ 2.317)**2+((eff_e-.064)/.064)**2][0]
+    #return ((sh_min-.256)/.256)**2+((sh_part-.1986)/.1986)**2+((sh_full-.1984)/.1984)**2+((eff_e-0.099)/0.099)**2+((eff_full-0.045)/0.045)**2+((eff_nomarg+0.115)/0.115)**2#        
             
             
-#Initialize seed
-np.random.seed(10)
 
-
-#Define initial point (xc) and boundaries (xl,xu)
-
-xc=np.array([0.44020001, 0.31594294, 0.45040867, 0.0164736 , 0.10473575])#no corr
-#xc=np.array([0.42833579, 0.2030553 , 0.35394353, 0.0122311 , 0.1905356 ])#corr 0.7
-xl=[0.1, 0.1,0.1,-0.03,0.0001]
-xu=[1.0 ,0.9,0.9,0.04 ,0.8]
 
 # [ 0.40706012  0.03525281 -0.51941101  0.00186123  1.60048109  0.03695673] first tentative σ=0.0005
 # 0.37349381, -0.01739811, -0.6       ,  0.00287586,  1.59080139, 0.03220926] current
 #Optimization below
-# res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-5, maxfun=400, bounds=(xl,xu),
-#                 npt=len(xc)+5,scaling_within_bounds=True, 
-#                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
-#                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
-#                 objfun_has_noise=False)
-#q([0.20127328, 1.41087164, 0.00589961, 0.25583906])
-#res = scipy.optimize.minimize(q,xc,bounds=list(zip(list(xl), list(xu))),method='Nelder-Mead',tol=1e-5)
-#res = differential_evolution(q,bounds=list(zip(list(xl), list(xu))),disp=True,mutation=(0.1, 0.5),recombination=0.8) 
- 
-#res = scipy.optimize.dual_annealing(q,bounds=list(zip(xl,xu)))
-
-#The point is [0.09800833, 0.50142732, 0.00124261 ], the moments are 0.6376375, 0.3382125, 0.09378124999999998
-  
 
 
-# resu=res.x.copy()
-# print(resu)
-  
+import numpy as np
 
 
+if __name__ == '__main__':
     
-sample, first_step, second_step = TikTak.TikTak(q,xl,xu,13,0.01,skip_first_step=False)
+
+    computation_options = { "num_workers" : 10,        # use four processes in parallel
+                            "working_dir" : "working" # where to save results in progress (in case interrupted)
+                            }
     
+    global_search_options = { "num_points" : 12}  # number of points in global pre-test
+    
+    local_search_options = {  "algorithm"    : "dfols", # local search algorithm
+                                                          # can be either BOBYQA from NLOPT or NelderMead from scipy
+                              "num_restarts" : 80,      # how many local searches to do
+                              "shrink_after" : 50,       # after the first [shrink_after] restarts we begin searching
+                                                          # near the best point we have found so far
+                              "xtol_rel"     : 1e-6,     # relative tolerance on x
+                              "ftol_rel"     : 1e-6     # relative tolerance on f
+                            }
+    
+    opt = TikTak.TTOptimizer(computation_options, global_search_options, local_search_options, skip_global=False)
+    x,fx = opt.minimize(q,xl,xu)
+    print(f'The minimizer is {x}')
+    print(f'The objective value at the min is {fx}')
+    
+    
+    # res=dfols.solve(q, xc, rhobeg = 0.1, rhoend=1e-6, maxfun=100, bounds=(xl,xu),
+    #                 npt=len(xc)+5,scaling_within_bounds=True, 
+    #                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
+    #                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
+    #                 objfun_has_noise=False)

@@ -40,14 +40,6 @@ ModP= sol.solveEulerEquation(p,model='pension reform')
 #Baseline
 ModB = sol.solveEulerEquation(p,model='baseline')
 
-#Wages 1% hihgher than baseline in t=3 only 
-pWt = co.setup();pWt.w[3,:]=1.01*pWt.w[3,:]
-ModWt = sol.solveEulerEquation(pWt,model='baseline')
-
-#Lowe in t=3 only to mimin a 1% increase in net wages 
-pτt = co.setup();pτt.τ[3]=1.01*p.τ[3]-0.01#1-(1-p.τ[3])*1.01
-Modτt = sol.solveEulerEquation(pτt,model='baseline')
-
 
 #Compute the Frisch 
 #pΩ
@@ -57,32 +49,11 @@ Modτt = sol.solveEulerEquation(pτt,model='baseline')
 ########################################
 
 #Baseline
-SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
+SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.ones(p.N)*p.startP,izstart=p.tw)
 
 #Pension reform
-SP= sim.simNoUncer_interp(p,ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['pb3'][8,:])
+SP= sim.simNoUncer_interp(p,ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['pb3'][8,:],izstart=SB['iz'][8,:])
 
-#Wages 1% higher than baseline in t=3 only 
-SWt= sim.simNoUncer_interp(pWt,ModWt,Tstart=7,Astart=SB['A'][7,:],Pstart=SB['p'][7,:])
-
-# Lower taxes in t=3 only 
-Sτt= sim.simNoUncer_interp(pτt,Modτt,Tstart=7,Astart=SB['A'][7,:],Pstart=SB['p'][7,:])
-
-
-
-# ########################################
-# # compute key elasticities
-# ########################################
-
-
-#Frisch elasticity: %change id(t)n h for an expected 1% increase in wage w in t=3
-ϵf_Wt=(np.mean(SWt['h'][4,:])/np.mean(SB['h'][4,:])-1)*100
-ϵf_Wti=np.mean(SWt['h'][4,:][SB['h'][4,:]>0.0]/SB['h'][3,:][SB['h'][4,:]>0.0])
-print("The Simulated Frisch Elasticity (using change in w) is {}, intensive margin is {}".format(ϵf_Wt,ϵf_Wti))
-
-ϵf_τt=(np.mean(Sτt['h'][4,:])/np.mean(SB['h'][4,:])-1)*100
-ϵf_τti=np.mean(Sτt['h'][4,:][SB['h'][4,:]>0.0]/SB['h'][3,:][SB['h'][4,:]>0.0])
-print("The Simulated Frisch Elasticity (using change in w) is {}, intensive margin is {}".format(ϵf_τt,ϵf_τti))
 
 
 # ########################################
@@ -151,8 +122,8 @@ plt.show()
 
 #Graph the value of participating or not in the labor market 2 periods before retirement
 fig, ax = plt.subplots(figsize=(11, 8))   #Initialize figure and size
-ax.plot(p.agrid,ModB['V'][p.R-29,0,:,0,0], label="Value of FLP=0") 
-ax.plot(p.agrid,ModB['V'][p.R-29,1,:,0,0], label="Value of FLP=1") 
+ax.plot(p.agrid,ModB['V'][p.R-29,1,:,0,0,0], label="Value of FLP=0") 
+ax.plot(p.agrid,ModB['V'][p.R-29,0,:,0,0,0], label="Value of FLP=1") 
 #ax.plot(p.agrid,ModB['V'][p.R-2,2,:,0,0], label="Value of FLP=0") 
 #ax.plot(p.agrid,ModB['V'][p.R-2,1,:,0,0], label="Value of FLP=1") 
 ax.grid()
@@ -183,8 +154,8 @@ plt.legend()                              #Plot the legend
 plt.show()     
 
 fig, ax = plt.subplots(figsize=(11, 8))   #Initialize figure and size
-ax.plot(p.agrid[:],ModB['c'][0,3,:,0,9], label="Cons if FLP=1") 
-ax.plot(p.agrid[:],ModB['c'][0,2,:,0,9], label="Cons if FLP=0") 
+ax.plot(p.agrid[:],ModB['c'][52,0,:,1,8,1], label="Cons if FLP=1") 
+ax.plot(p.agrid[:],ModB['c'][52,0,:,1,8,1], label="Cons if FLP=0") 
 ax.grid()
 ax.set_xlabel('Assets')                   #Label of x axis
 ax.set_ylabel('Consumption')              #Label of y axis

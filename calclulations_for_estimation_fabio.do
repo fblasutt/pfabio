@@ -71,20 +71,52 @@ gen     lambda=normalden(gm)/(1-normal(gm))
 reg log_wage age age_2 i.syear i.numberofchildren i.education lambda if sex==2 & sample==1
 
 *Produce hidden productivity
-predict ln_ly_ha, xb
-gen shock=rnormal(0.0, e(rmse))
+bysort pid (syear): gen d_log_wage=log_wage-log_wage[_n-1] if syear==syear[_n-1]+1
+reg d_log_wage i.age i.syear i.numberofchildren i.education if sex==2 & age>=23 & age<65 
 
-gen log_wage_corrected=log_wage
-replace log_wage_corrected=ln_ly_ha+shock if employed==0
+
+*Get residuals and predition
+predict y_m if e(sample)==1, resid
+
+
+gen u_0=y_m
+bys pid: gen  u_p2= y_m[_n+2] if syear==syear[_n+2]-2 
+bys pid: gen  u_p1= y_m[_n+1] if syear==syear[_n+1]-1  
+bys pid: gen  u_1= y_m[_n-1] if syear==syear[_n-1]+1  
+bys pid: gen  u_2= y_m[_n-2] if syear==syear[_n-2]+2 
+bys pid: gen  u_3= y_m[_n-3] if syear==syear[_n-3]+3  
+bys pid: gen  u_4= y_m[_n-4] if syear==syear[_n-4]+4  
+bys pid: gen  u_5= y_m[_n-5] if syear==syear[_n-5]+5 
+
+gen expect=u_2*(u_0+u_1+u_2+u_3+u_4)  
+
+sum expect
+
+g var_pers=r(mean)
+
+egen wvar=sd(log_wage) if sex==2,by(age)
+replace wvar=wvar^2
+binscatter wvar age if age>=30 & age<=60 
+
+nlsur (wvar={sigma02}+(age-30)*var_pers)  if age>=30 & age<=35 & var_pers!=.
+gen sigma02=_b[/sigma02]
+
+
+
+
 
 *Men's earnings
 gen earnings_p=pglabgro_p*12*adjust
 replace earnings_p=0 if pglabgro_p==0
+
+gen log_earnings_p=log(earnings_p)
 reg earnings_p age age_2 i.syear 
 
+
+/*
 ********************************************************************************
 keep if syear>=1995 & syear<=2002  & treated==1 & sex==2
-
+/*
 *Create categories
 pctile pct = log_wage_corrected [weight=phrf], nq(10) genp(percent) 
 list pct in 1/10

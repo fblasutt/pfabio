@@ -1,107 +1,230 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Apr 16 08:41:19 2024
-
-@author: 32489
-"""
-
-
 import numpy as np
+import multiprocessing
+import os
 import scipy
-import pickle
 import dfols
+import nlopt
+import time
+from datetime import datetime
+from functools import partial
+import pickle 
 
-def TikTak(f,xl,xu,N,share,skip_first_step=False):
-    
-    """
-    f : function to be minimized, should return a float number and shold have a list as input
-    xl: list, lower bound of parameters to consider
-    pl: list, uppe bound of parameters to consider
-    N:  if N=x, we will draw 2**N sobol points
-    share: share of the 2**N best sobol points to consider for the 2nd step of TikTak
-    
-    
-    
-    """
-    
-    # Set the seed
-    
-    
-    #Generate sobol sequence
-    NP=len(xl)
-    sampler = scipy.stats.qmc.Sobol(d=NP, scramble=False)
-    sample_notscaled = sampler.random_base2(m=N)
-    sample= scipy.stats.qmc.scale(sample_notscaled, xl,xu)
-    
-    
-    if skip_first_step:
-        
-        #load the file for later
-        with open('first_step.pkl', 'rb') as file: first_step=pickle.load(file) 
-        
-    else:
-        
-        #Evaluate all the sobol points and store point + fit in array first_step
-        first_step_params = np.zeros((2**N,NP))
-        first_step_fit    = np.zeros(2**N)
-        
-        
-        for i in range(2**N):
+class TTOptimizer:
+    """"Optimizer for the TikTak algorithm."""
+
+    def __init__(self,computation_options, global_search_options, local_search_options, skip_global=False):
+        self.computation_options   = computation_options
+        self.global_search_options = global_search_options
+        self.local_search_options = local_search_options
+        self.SRF = os.path.join(computation_options["working_dir"],"searchResults.dat")
+        self.skip_global = skip_global
+
+        if self.local_search_options['algorithm'].lower() == 'bobyqa':
+            self.minimizer = BOBYQA
+        elif self.local_search_options['algorithm'].lower() == 'neldermead':
+            self.minimizer = NelderMead
+        elif self.local_search_options['algorithm'].lower() == 'dfols':
+            self.minimizer = DFOLS
+                
+        else:
+            raise RunTimeError("local search algorithm not recognized")
+
+
+    def minimize(self,f,lower_bounds,upper_bounds,args=()):
+        self.f =partial(f,*args)
+        self.lower_bounds = lower_bounds
+        self.upper_bounds = upper_bounds
+        self.initial_step = 0.1*(upper_bounds-lower_bounds)
+        self.nparam = len(lower_bounds)
+        self.second_step_x=list()
+        self.second_step_y=list()
+
+        with open(self.SRF,"a") as srf:
+            srf.write('----------------------------------' + '\n')
+            srf.write('Begin logging optimization results' + '\n')
+            srf.write(str(datetime.now()) + '\n')
+            srf.write('----------------------------------' + '\n')
             
-            first_step_params[i] = sample[i]
-            first_step_fit[i]   =  (np.array(f(first_step_params[i]))**2).sum()
+
+        self.mppool = multiprocessing.Pool(processes=self.computation_options["num_workers"])
+        self.xstarts = list(self.GlobalSearch())
+        best = self.LocalSearch()
+        # print the last value of best
+        print(f'best value {best[1]}')
+        print(f'best point {best[0]}')
         
-        #sort the two arrays and store them in list "first_step", then pickle the file
-        order=np.argsort(first_step_fit)   
-        first_step = [first_step_fit[order],first_step_params[order]]
-        
-        #store the file for later
-        with open('first_step.pkl', 'wb+') as file: pickle.dump(first_step,file) 
-    
-    
-    #determine how many points to consider for minimization step
-    N2 = int(share*2**N)
-    
-    second_step_params = np.zeros((N2,NP))
-    second_step_fit    = np.zeros(N2)+1e10
-    
-    best = first_step[1][0]
-    
-    for i in range(N2):
-        
-        #get the point to consider
-        θ = min(max(0.1,(i/N2)**0.5),0.995)
-        point = (1-θ)*first_step[1][i]+θ*best
+        #store the results
+        order=np.argsort(self.second_step_y)
+        with open('second_step.pkl', 'wb+') as file: pickle.dump([np.array(self.second_step_x)[order],np.array(self.second_step_y)[order]],file) 
+            
+        return best
+
+    def GlobalSearch(self):
+
+        if self.skip_global:
+            
+            #load the results
+            with open('first_step.pkl', 'rb') as file:  
+                xstarts=pickle.load(file)[1]
+                       
+        else:
+            
+            nsobol = self.global_search_options["num_points"]
+                    
+            #Generate sobol sequence  
+            sampler = scipy.stats.qmc.Sobol(d=self.nparam, scramble=False) 
+            sample_notscaled = sampler.random_base2(m=nsobol) 
+            xstarts= scipy.stats.qmc.scale(sample_notscaled, self.lower_bounds,self.upper_bounds) 
        
-        #store the point
-        second_step_params[i]=point+0.0
+            
+            # --- evaluate f on many points ----
+            y = np.sum(np.array(self.mppool.map(self.f,xstarts))**2,axis=1)
+            #xstarts[1,1,1,1]=4
+            # sort the results
+            I = np.argsort(y)
+            xstarts = xstarts[I]
+            y = y[I]
+    
+            #store the results
+            with open('first_step.pkl', 'wb+') as file: pickle.dump([y,xstarts],file) 
         
-        #evalueate the point
-        #res = scipy.optimize.minimize(f,point,bounds=list(zip(list(xl), list(xu))),method='Nelder-Mead',tol=1e-5)
-        
-        #Optimization below
-        res=dfols.solve(f, point, rhobeg = 0.3, rhoend=1e-5, maxfun=200, bounds=(np.array(xl),np.array(xu)),
-                        npt=len(point)+5,scaling_within_bounds=True, 
-                        user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
-                                      'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
-                        objfun_has_noise=False)
-        
-        second_step_fit[i]=(np.array(res.f)**2).sum()
-        second_step_params[i]=res.x
-        
-        #find the best point so far
-        order=np.argsort(second_step_fit)
-        second_step = [second_step_fit[order],second_step_params[order]]
-        best = second_step[1][0]
-        
+        # take the best Imax
+        xstarts = xstarts[:self.local_search_options["num_restarts"]]
 
-    return sample,first_step,second_step
+        return xstarts
 
 
-# def rastrigin(x):
-#     return np.sum(x*x - 10*np.cos(2*np.pi*x)) + 10*np.size(x)  
+    def LocalSearch(self):
+        """Function to manage the local searches.  Each local start is given to a consumer process that
+        does the search.
 
-# lower_bounds = np.repeat(-5.12,2)  # lower bounds on each dimension
-# upper_bounds = np.repeat( 5.12,2)  # upper bounds on each dimension
+        Parameters
+        ~~~~~~~~~~~
+        taskq       queue to submit tasks
+        resultq     queue to receive results
+        xstarts     the points at which we start in order
+        best        best found so far (used if restarting after interuption )
+        StartAt     how far into xstarts do we start  (used if restarting after interuption )
+          """
 
-# sample, first_step, second_step = TikTak(rastrigin,lower_bounds,upper_bounds,13,0.01)
+
+        manager = multiprocessing.Manager()
+        self.resultsq = manager.Queue()
+
+        num_workers = self.computation_options["num_workers"]
+        self.num_jobs = len(self.xstarts)
+
+
+
+
+        self.best_so_far = (0.0, 1e10)
+
+
+        self.result_trackers = []
+        self.submit_counter = 0
+        for i in range(num_workers):
+            self.SubmitLocalResult()
+
+        # the submissions happen recursively through the callback
+        # here we wait until we have submitted all jobs
+        while self.submit_counter < self.num_jobs:
+            time.sleep(1)
+
+        # here we wait until all jobs are done.
+        [r.wait() for r in self.result_trackers]
+
+
+        return self.best_so_far
+
+
+    def SubmitLocalResult(self):
+        i = self.submit_counter
+        ishrink = self.local_search_options["shrink_after"]
+        N= self.local_search_options["num_restarts"]
+        newtask = self.xstarts.pop(0)
+        
+        
+        if i >= ishrink: # shrink towards best so far
+        
+            theta = min(max(0.1,(i/N)**0.5),0.995)
+            newtask = theta*self.best_so_far[0] + (1-theta)*newtask
+        print(i,newtask)
+        self.result_trackers.append(self.mppool.apply_async(localworker,
+                (self.minimizer,
+                (self.f,newtask,self.initial_step,self.lower_bounds,self.upper_bounds,self.local_search_options["xtol_rel"],self.local_search_options["ftol_rel"]),
+                self.resultsq),
+                callback = self.ProcessLocalResult,
+                error_callback = self.ErrorCallback ) )
+
+        self.submit_counter += 1
+
+
+    def ProcessLocalResult(self,result):
+
+        with open(self.SRF,"a") as srf:
+            srf.write(str(result[1]) + ' ' + str(result[0]) + '\n')
+
+        if result[1] < self.best_so_far[1] :
+            print( 'best so far %f' % result[1])
+            self.best_so_far = result
+
+        if len(self.xstarts) > 0:
+            self.SubmitLocalResult()
+            
+        self.second_step_x.append(result[0])  
+        self.second_step_y.append(result[1])  
+
+    def ErrorCallback(self,e):
+        print('Error found in local search:')
+        print(e)
+        if len(self.xstarts) > 0:
+            self.SubmitLocalResult()
+
+
+
+def localworker(f,x,resultsq):
+    answer = f(*x)
+    resultsq.put( answer )
+    return answer
+
+def DFOLS(f,x,initial_step,lower_bounds,upper_bounds,xtol_rel,ftol_rel):
+    
+    
+    res=dfols.solve(f,x, rhobeg = 0.1, rhoend=1e-8, maxfun=150, bounds=(np.array(lower_bounds),np.array(upper_bounds)), 
+                npt=len(x)+5,scaling_within_bounds=True,  
+                user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
+                              'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 
+                objfun_has_noise=False) 
+        
+   
+    return (res.x, res.f )
+
+def BOBYQA(f,x,initial_step,lower_bounds,upper_bounds,xtol_rel,ftol_rel):
+    opt = nlopt.opt(nlopt.LN_BOBYQA, len(x))
+    fwrapped = lambda x,grad: f(x)
+    opt.set_min_objective(fwrapped)
+    opt.set_xtol_rel(xtol_rel)
+    opt.set_ftol_rel(ftol_rel)
+
+    if not initial_step is None:
+        opt.set_initial_step(initial_step)
+
+    if not lower_bounds is None:
+        opt.set_lower_bounds(lower_bounds)
+
+    if not upper_bounds is None:
+        opt.set_upper_bounds(upper_bounds)
+
+    xopt = opt.optimize(x)
+    minf = opt.last_optimum_value()
+    return (xopt, minf)
+
+
+
+def NelderMead(f,x,initial_step,lower_bounds,upper_bounds,xtol_rel,ftol_rel):
+    """Note that NM doesn't impose bounds on optimization.
+    The arguments initial_step, lower_bounds, and upper_bounds are not used.
+    """
+    res =  scipy.optimize.minimize(f, x, method='nelder-mead',
+            options={'maxiter':100,'fatol': ftol_rel, 'xatol': xtol_rel, 'disp': False})
+    return (res.x, res.fun)

@@ -51,7 +51,7 @@ end=12
 #Baseline######################################################################
 
 p.tax[:] = increase;ModB = sol.solveEulerEquation(p,model='baseline')
-SB= sim.simNoUncer_interp(p,ModB,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
+SB= sim.simNoUncer_interp(p,ModB,Astart=p.startA,Pstart=np.ones(p.N)*p.startP,izstart=p.tw)
 adjust=np.ones(SB['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 
 
@@ -62,7 +62,7 @@ adjust=np.ones(SB['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 pρ = co.setup();pρ.Pmax=10000.145;pρ.add_points=1.5#point_equivalent
 date=beg
 Modρ = sol.solveEulerEquation(pρ,model='pension reform')
-Sρ= sim.simNoUncer_interp(pρ,Modρ,Tstart=date,Astart=SB['A'][date,:],Pstart=SB['p'][date,:])
+Sρ= sim.simNoUncer_interp(pρ,Modρ,Tstart=date,Astart=SB['A'][date,:],Pstart=SB['p'][date,:],izstart=SB['iz'][date,:])
 
 ##############################################"
 ##############################################"
@@ -74,7 +74,8 @@ net_income_after_ret = (add_points_temp.sum(axis=0)*adjust[p.R:,:]).sum()
 
 
 #substract actual taxes to normal taxes if women earned zero to get net women's income
-net_income_before_ret=np.sum((SB['wh'][beg:end ,:]*(SB['h'][beg:end ,:]>1)-(SB['taxes'][beg:end,:]-SB['taxes_mod'][beg:end,:])*(SB['h'][beg:end ,:]>1))*adjust[beg:end,:]) 
+net_income_before_ret=np.sum((SB['wh'][beg:end ,:]*(SB['h'][beg:end ,:]>1)\
+                            -(SB['taxes'][beg:end,:]-SB['taxes_mod'][beg:end,:])*(SB['h'][beg:end ,:]>1))*adjust[beg:end,:]) 
 income_before=net_income_before_ret+net_income_after_ret*0 
 income_after= net_income_before_ret+net_income_after_ret*0.5 
  

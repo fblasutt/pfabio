@@ -49,11 +49,11 @@ p = co.setup()
 increase=0.01
 
 beg=8
-end=p.R
+end=12#p.R
 #Baseline######################################################################
 
 p.tax[:] = -increase;ModB = sol.solveEulerEquation(p,model='baseline')
-SB= sim.simNoUncer_interp(p,ModB,Astart=p.startA,Pstart=np.ones(p.N)*p.startP)
+SB= sim.simNoUncer_interp(p,ModB,Astart=p.startA,Pstart=np.ones(p.N)*p.startP,izstart=p.tw)
 adjust=np.ones(SB['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 
 #compute increase in net income if all wages go up by 1%, keeping behavior constant
@@ -78,13 +78,13 @@ point_equivalent = (net_income_increase_before_ret+(1.0+increase)*net_income_aft
 date=beg
 pτ = co.setup();pτ.w[beg:end,:,:]=p.w[beg:end,:,:]*(1.0+increase)
 Modτ = sol.solveEulerEquation(pτ,model='baseline')
-Sτ= sim.simNoUncer_interp(pτ,Modτ,Tstart=date,Astart=SB['A'][date,:],Pstart=SB['p'][date,:])
+Sτ= sim.simNoUncer_interp(pτ,Modτ,Tstart=date,Astart=SB['A'][date,:],Pstart=SB['p'][date,:],izstart=SB['iz'][date,:])
 
 #Higher pension points
 pρ = co.setup();pρ.Pmax=10000.145;pρ.points_base=point_equivalent
 
 Modρ = sol.solveEulerEquation(pρ,model='baseline')
-Sρ= sim.simNoUncer_interp(pρ,Modρ,Tstart=date,Astart=SB['A'][date,:],Pstart=SB['p'][date,:])
+Sρ= sim.simNoUncer_interp(pρ,Modρ,Tstart=date,Astart=SB['A'][date,:],Pstart=SB['p'][date,:],izstart=SB['iz'][date,:])
 
 ##############################################"
 ##############################################"

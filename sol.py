@@ -17,7 +17,7 @@ def solveEulerEquation(p,model='baseline'):
 
     #Initiate some variables
     policyA1,policyC,pr,V,policyp,pmutil= np.zeros((6,p.T,p.nwls,p.NA, p.NP,p.nw,p.nq))-1e8
-    EV=np.zeros((p.T,p.NA, p.NP,p.nw,p.nq))
+    EV,EVb=np.zeros((2,p.T,p.NA, p.NP,p.nw,p.nq))
     
     #Precompute after-tax income and points for a given decision
     p.income, p.points, p.taxes, p.taxes_mod = co.compute_atax_income_points(p.tax,p.tbase,p.T,p.R,p.nwls,p.nw,p.NP,p.τ,\
@@ -25,11 +25,11 @@ def solveEulerEquation(p,model='baseline'):
                                                           p.E_bar_now,p.Pmax,p.wls_point,p.y_N,p.pgrid,p.ρ)
     
     #Call the routing to solve the model
-    solveEulerEquation1(policyA1, policyC, policyp,V,EV,pmutil,pr,reform,
+    solveEulerEquation1(policyA1, policyC, policyp,V,EV,EVb,pmutil,pr,reform,
                         p.r,p.δ,p.R,p.τ,p.q,p.amin,p.wls,p.nwls,
                         np.array(p.w),p.income,p.points,p.agrid,p.y_N,p.T,p.NA,p.nw,p.σ,
                         p.NP,p.pgrid,p.ρ,p.E_bar_now,
-                        p.Pmax,p.add_points,p.nq,p.wls_point,p.q_grid,p.points_base)
+                        p.Pmax,p.add_points,p.nq,p.wls_point,p.q_grid,p.points_base,p.Π)
                         
 
     
@@ -37,15 +37,15 @@ def solveEulerEquation(p,model='baseline'):
 
 #@profile
 @njit(parallel=True)
-def solveEulerEquation1(policyA1, policyC, policyp,V,EV,pmutil,pr,reform,
+def solveEulerEquation1(policyA1, policyC, policyp,V,EV,EVb,pmutil,pr,reform,
                         r,δ,R,τt,q,amin,wls,nwls,
                         w,income,points,agrid,y_N,T,NA,nw,σ,
                         NP,pgrid,ρ,E_bar_now,
-                        Pmax,add_points,nq,wls_point,q_grid,points_base):
+                        Pmax,add_points,nq,wls_point,q_grid,points_base,Π):
     
     
     ce,pe,ae,ce_bc,pe_bc,ae_bc,aem,cem,vem=np.zeros((9,nwls,NA, NP, nw, nq))
-    Ec=np.zeros((NA, NP,nw,nq))
+    
 
     
     #Last period decisions below
@@ -55,17 +55,18 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,EV,pmutil,pr,reform,
                 for iq in range(nq): 
                     idx=(T-1,0,ia,ip,iw,iq);idw = (T-1,0,iw,ip)
                     
-                    policyA1[idx] = 0.0   # optimal savings
-                    policyC[idx] = agrid[ia]*(1+r) + income[idw]
+                    policyA1[idx] = (agrid[ia]*(1+r) + income[idw])*0.0/(1+0.0)   # optimal savings
+                    policyC[idx] = (agrid[ia]*(1+r) + income[idw])/(1+0.0)
                     policyp[idx] = pgrid[ip] # optimal consumption                                
-                    V[idx]=co.log(policyC[idx],q_grid[iq,0,iw]) 
+                    V[idx]=co.log(policyC[idx],q_grid[iq,0,iw])+0.0*co.log(policyA1[idx],q_grid[iq,0,iw])
    
     #Loop backward and solve the model by backward induction
     for t in range(T-2,-2,-1):
          
 
         #Integration (beginning of period expectation, before taste shocks are realized)
-        expectation(t,NA,NP,nw,nq,V,EV[t+1,...],σ,pr,Ec,policyC)    
+        E_mutil_c=np.zeros((NA, NP,nw,nq))
+        expectation(t,NA,NP,nw,nq,V,EV[t+1,...],EVb[t+1,...],σ,pr,E_mutil_c,policyC,Π[t])    
         if t==-1:break
         
         
@@ -82,7 +83,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,EV,pmutil,pr,reform,
                                   
                                 idx=(i,ia,ip,iw,iq);idw = (t,i,iw,ip);idp = (t,i,iw,reform) 
     
-                                ce[idx]=Ec[ia,ip,iw,iq]*(1+δ)/(1+r)#Euler equation                           
+                                ce[idx]=(E_mutil_c[ia,ip,iw,iq]*(1+r)/(1+δ))**-1/1#Euler equation                           
                                 pe[idx]=pgrid[ip]-points[idp] if (t+1<=R) else pgrid[ip]
                                 ae[idx]=(agrid[ia]-income[idw]+ce[idx])/(1+r)#BC
                             
@@ -114,16 +115,29 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,EV,pmutil,pr,reform,
                             
      
 @njit(parallel=True)
-def expectation(t,NA,NP,nw,nq,V,EV,σ,pr,Ec,policyC):                
-        #Get variables useful for next iteration t-1
-        for ia in prange(NA):
-            for ip in range(NP):
-                for iw in range(nw):
-                    for iq in range(nq):
-                    
-                        idx=(t+1,slice(None),ia,ip,iw,iq)
-                        lc=np.max(V[idx])/σ#local normalizing variable
-                        EV[ia,ip,iw,iq] = σ*np.euler_gamma+σ*(lc+np.log(np.sum(np.exp(V[idx]/σ-lc)))  )
-                        pr[idx]=np.exp(V[idx]/σ-(EV[ia,ip,iw,iq]-σ*np.euler_gamma)/σ)
-                        Ec[ia,ip,iw,iq] = np.sum(pr[idx]*policyC[idx])
+def expectation(t,NA,NP,nw,nq,V,EV,EVb,σ,pr,E_mutil_c,policyC,Πt):                
+    #Get variables useful for next iteration t-1
+    for ia in prange(NA):
+        for ip in range(NP):
+            for iw in range(nw):
+                for iq in range(nq):
+                
+                    # Expected value in t+1 - AFTER shock iw' is realized - before taste shock takes place
+                    idx=(t+1,slice(None),ia,ip,iw,iq)
+                    lc=np.max(V[idx])/σ#local normalizing variable
+                    EVb[ia,ip,iw,iq] = σ*np.euler_gamma+σ*(lc+np.log(np.sum(np.exp(V[idx]/σ-lc)))  )
+                    pr[idx]=np.exp(V[idx]/σ-(EVb[ia,ip,iw,iq]-σ*np.euler_gamma)/σ)
+ 
+
+    for ia in prange(NA):
+        for ip in range(NP):
+            for iw in range(nw):
+                for iq in range(nq):                        
+                    for iwp in range(nw):
+                        
+                        idxp=(t+1,slice(None),ia,ip,iwp,iq)
+                        #aaa[ia,ip,iw,iq] += Πt[iwp,iw]
+                        # Expected value and marg util from C in t+1 BEFORE shock iw' is realized, given iw is current shock
+                        E_mutil_c[ia,ip,iw,iq] += Πt[iwp,iw]*np.sum(pr[idxp]*policyC[idxp]**-1)
+                        EV[ia,ip,iw,iq]        += Πt[iwp,iw]*EVb[ia,ip,iwp,iq]
  
