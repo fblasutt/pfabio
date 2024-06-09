@@ -28,7 +28,7 @@ np.random.seed(10)
 
 
 
-xc=np.array([-0.01499362,  0.10404925,  0.16425647,  0.76265618,  2.62749509])
+xc=np.array([-0.0159223,	0.171045,	0.272123,	1.23347,	0.945352])
 #xc=np.array([-0.0111094,	0.502404,	0.609482,	0.284096,	4.49415])#no corr
 #xc=np.array([0.42833579, 0.2030553 , 0.35394353, 0.0122311 , 0.1905356 ])#corr 0.7
 xl=np.array([-0.05, 0.01,0.01,0.01,0.1])
@@ -38,6 +38,7 @@ xu=np.array([0.03 ,1.5,1.5   ,1.6 ,6.5])
 #Function to minimize
 def q(pt):
 
+    
     #Define main parameters
     p = co.setup()
     
@@ -126,29 +127,29 @@ import numpy as np
 if __name__ == '__main__':
     
 
-    computation_options = { "num_workers" : 10,        # use four processes in parallel
-                            "working_dir" : "working" # where to save results in progress (in case interrupted)
-                            }
+    # computation_options = { "num_workers" : 10,        # use four processes in parallel
+    #                         "working_dir" : "working" # where to save results in progress (in case interrupted)
+    #                         }
     
-    global_search_options = { "num_points" : 12}  # number of points in global pre-test
+    # global_search_options = { "num_points" : 12}  # number of points in global pre-test
     
-    local_search_options = {  "algorithm"    : "dfols", # local search algorithm
-                                                          # can be either BOBYQA from NLOPT or NelderMead from scipy
-                              "num_restarts" : 80,      # how many local searches to do
-                              "shrink_after" : 50,       # after the first [shrink_after] restarts we begin searching
-                                                          # near the best point we have found so far
-                              "xtol_rel"     : 1e-6,     # relative tolerance on x
-                              "ftol_rel"     : 1e-6     # relative tolerance on f
-                            }
+    # local_search_options = {  "algorithm"    : "dfols", # local search algorithm
+    #                                                       # can be either BOBYQA from NLOPT or NelderMead from scipy
+    #                           "num_restarts" : 80,      # how many local searches to do
+    #                           "shrink_after" : 50,       # after the first [shrink_after] restarts we begin searching
+    #                                                       # near the best point we have found so far
+    #                           "xtol_rel"     : 1e-6,     # relative tolerance on x
+    #                           "ftol_rel"     : 1e-6     # relative tolerance on f
+    #                         }
     
-    opt = TikTak.TTOptimizer(computation_options, global_search_options, local_search_options, skip_global=False)
-    x,fx = opt.minimize(q,xl,xu)
-    print(f'The minimizer is {x}')
-    print(f'The objective value at the min is {fx}')
+    # opt = TikTak.TTOptimizer(computation_options, global_search_options, local_search_options, skip_global=False)
+    # x,fx = opt.minimize(q,xl,xu)
+    # print(f'The minimizer is {x}')
+    # print(f'The objective value at the min is {fx}')
     
     
-    # res=dfols.solve(q, xc, rhobeg = 0.1, rhoend=1e-6, maxfun=100, bounds=(xl,xu),
-    #                 npt=len(xc)+5,scaling_within_bounds=True, 
-    #                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
-    #                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
-    #                 objfun_has_noise=False)
+    res=dfols.solve(q, xc, rhobeg = 0.1, rhoend=1e-6, maxfun=200, bounds=(xl,xu),
+                    npt=len(xc)+5,scaling_within_bounds=True, 
+                    user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
+                                  'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
+                    objfun_has_noise=False)

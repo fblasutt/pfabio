@@ -19,14 +19,14 @@ class setup():
         self.nwls = 4  #hours choice
         
         # First estimated parameters
-        self.δ =  0.01505204 #0.00983949    # Discount rate
+        self.δ =  -0.02013025 #0.00983949    # Discount rate
             
-        self.q =np.array([0.0,0.20933763,0.12180904,1.0])  #Fixed cost of pticipation - mean
+        self.q =np.array([0.0,0.26154566,0.16109117,1.0])  #Fixed cost of pticipation - mean
         self.σq =0.25623355   #Fixed cost of pticipation -sd 
         self.ρq =0.0#-0.4#0.00195224
    
-        self.qshape = 0.76992266
-        self.qscale = 1.74844589
+        self.qshape = 1.12801543
+        self.qscale = 1.19785781
         
         # Economic Environment: set pameters 
         self.T = 55         # Number of time periods 
@@ -41,7 +41,7 @@ class setup():
         self.wls=np.array([0.0,10.0, 20.0, 38.5])/38.5 #From GSOEP hrs/week = (10/ 20 / 38.5 ) 
         
         # income of men and women: sd of income shocks in t=0 and after that
-        self.σzw=0.084*0.5;self.σ0zw= 0.4583;self.σzm=0.114*0.5;self.σ0zm=0.43
+        self.σzw=0.084;self.σ0zw= 0.4583;self.σzm=0.114;self.σ0zm=0.43
         self.nzw=3;self.nzm=3;self.nw = self.nzw*self.nzm
           
         #Pension
@@ -112,6 +112,7 @@ class setup():
                 for iq in range(self.nq):
                     
                     self.q_grid[iq,il,iw]= self.q[il]*self.q_gridt[iq]
+                    
             
         # Assets  grid   
         self.amin=0.0/self.scale
