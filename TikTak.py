@@ -190,7 +190,7 @@ def localworker(f,x,resultsq):
 def DFOLS(f,x,initial_step,lower_bounds,upper_bounds,xtol_rel,ftol_rel):
     
     
-    res=dfols.solve(f,x, rhobeg = 0.1, rhoend=1e-8, maxfun=150, bounds=(np.array(lower_bounds),np.array(upper_bounds)), 
+    res=dfols.solve(f,x, rhobeg = 0.1, rhoend=1e-8, maxfun=200, bounds=(np.array(lower_bounds),np.array(upper_bounds)), 
                 npt=len(x)+5,scaling_within_bounds=True,  
                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 
