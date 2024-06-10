@@ -19,14 +19,14 @@ class setup():
         self.nwls = 4  #hours choice
         
         # First estimated parameters
-        self.δ =  -0.02013025 #0.00983949    # Discount rate
+        self.δ =  0.01 #0.00983949    # Discount rate
             
-        self.q =np.array([0.0,0.26154566,0.16109117,1.0])  #Fixed cost of pticipation - mean
+        self.q =np.array([0.0,0.16527134,0.09969482,1.0])  #Fixed cost of pticipation - mean
         self.σq =0.25623355   #Fixed cost of pticipation -sd 
         self.ρq =0.0#-0.4#0.00195224
    
-        self.qshape = 1.12801543
-        self.qscale = 1.19785781
+        self.qshape = 0.80355901
+        self.qscale = 1.73845578
         
         # Economic Environment: set pameters 
         self.T = 55         # Number of time periods 

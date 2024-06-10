@@ -28,11 +28,12 @@ np.random.seed(10)
 
 
 
-xc=np.array([ -0.02013025,	0.16109117,	0.26154566,	1.12801543,	1.19785781])
-#xc=np.array([-0.0111094,	0.502404,	0.609482,	0.284096,	4.49415])#no corr
-#xc=np.array([0.42833579, 0.2030553 , 0.35394353, 0.0122311 , 0.1905356 ])#corr 0.7
-xl=np.array([-0.05, 0.01,0.01,0.01,0.1])
-xu=np.array([0.03 ,0.5,0.0   ,1.6 ,7.5])
+xc=np.array([0.09900606, 0.15953799, 0.78209658, 1.86331691])#marginal is target
+
+#xc=np.array([0.15125272, 0.41818386, 0.97546089, 0.91376809])#full is target
+
+xl=np.array([0.01,0.01,0.1,0.1])
+xu=np.array([0.5,0.99   ,2.6 ,7.5])
 
 
 #Function to minimize
@@ -43,12 +44,12 @@ def q(pt):
     p = co.setup()
     
     #..and update them
-    p.q =np.array([0.0,pt[2],pt[1],1.0])   #Fixed cost of pticipation - mean
+    p.q =np.array([0.0,pt[1],pt[0],1.0])   #Fixed cost of pticipation - mean
     
-    p.qshape=pt[3]
+    p.qshape=pt[2]
     
-    p.qscale =pt[4] #Fixed cost of pticipation -sd 
-    p.δ=pt[0]
+    p.qscale =pt[3] #Fixed cost of pticipation -sd 
+    #p.δ=pt[0]
     
     #Disutility from working
     p.q_grid=np.zeros((p.nq,p.nwls,p.nw))
@@ -105,14 +106,12 @@ def q(pt):
     #(0.015+0.02)/2*10+(0.045+0.016)/2*38.5+((0.099+0.029)/2-(0.045+0.016)/2)*20 = 2.01925
     
     
-    #return ((sh_part-0.65)/0.65)**2+((sh_full-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
-    #return ((sh_part-0.1956)/0.1956)**2+((sh_full-0.1984)/0.1984)**2+((eff-0.1)/0.1)**2+((0.256-sh_min)/0.256)**2
-    #return ((sh_h-13.96)/13.96)**2+((sh_noem-0.36)/0.36)**2+((0.256-sh_min)/0.256)**2+((eff_h-3.565)/3.565)**2+((0.099-eff_e)/0.099)**2
-    print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.317)/ 2.317)**2,((eff_e-.064)/.064)**2,((eff_nomarg+.0705)/.0705)**2]).sum())
-    return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.317)/ 2.317),((eff_e-.064)/.064),((eff_nomarg+.0705)/.0705)]
-    #return [((sh_full-.1984)/.1984)**2+((sh_part-.1986)/.1986)**2+((sh_min-.256)/.256)**2+((eff_h- 2.317)/ 2.317)**2+((eff_e-.064)/.064)**2][0]
-    #return ((sh_min-.256)/.256)**2+((sh_part-.1986)/.1986)**2+((sh_full-.1984)/.1984)**2+((eff_e-0.099)/0.099)**2+((eff_full-0.045)/0.045)**2+((eff_nomarg+0.115)/0.115)**2#        
-            
+   
+    # print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.317)/ 2.317)**2,((eff_e-.064)/.064)**2,((eff_full+.0705)/.0705)**2]).sum())
+    # return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.317)/ 2.317),((eff_e-.064)/.064),((eff_full+.0705)/.0705)]
+        
+    print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.317)/ 2.317)**2,((eff_e-.064)/.064)**2]).sum())
+    return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.317)/ 2.317),((eff_e-.064)/.064)]          
             
 
 
@@ -131,7 +130,7 @@ if __name__ == '__main__':
                             "working_dir" : "working" # where to save results in progress (in case interrupted)
                             }
     
-    global_search_options = { "num_points" : 12}  # number of points in global pre-test
+    global_search_options = { "num_points" : 13}  # number of points in global pre-test
     
     local_search_options = {  "algorithm"    : "dfols", # local search algorithm
                                                           # can be either BOBYQA from NLOPT or NelderMead from scipy
@@ -148,7 +147,7 @@ if __name__ == '__main__':
     print(f'The objective value at the min is {fx}')
     
     
-    # res=dfols.solve(q, xc, rhobeg = 0.1, rhoend=1e-6, maxfun=200, bounds=(xl,xu),
+    # res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=300, bounds=(xl,xu),
     #                 npt=len(xc)+5,scaling_within_bounds=True, 
     #                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
     #                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
