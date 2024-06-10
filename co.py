@@ -33,6 +33,8 @@ class setup():
         self.R = 35         # Retirement period 
         self.r = 0.02      # Interest rate 
         self.σ=0.001        #Size of taste shock 
+        
+        self.α=1
                 
         #Income
         self.scale=1000 #Show everything in 1000 euros
@@ -288,8 +290,8 @@ def addaco_dist(sd_z,mu,npts):
              
              
 @njit
-def log(c,q):
-    return np.log(np.maximum(c,0.00000000001))-q#(np.maximum(c,0.00000000001))**(1-2)/(1-2)-q#
+def log(c,q,α):
+    return np.log(np.maximum(c,0.00000000001))-q if α==1 else (np.maximum(c,0.00000000001))**(1-α)/(1-α)-q
 
 
 @njit
