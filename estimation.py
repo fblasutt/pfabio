@@ -28,12 +28,12 @@ np.random.seed(10)
 
 
 
-xc=np.array([0.09900606, 0.15953799, 0.78209658, 1.86331691,1.01])#marginal is target
-
+xc=np.array([0.11872211, 0.16927736, 0.97837639, 1.95231839, 1.19802168])#marginal is target
+xc=np.array([0.07499378, 0.26566051, 0.19959565, 1.5399259,  1.02204846])
 #xc=np.array([0.15125272, 0.41818386, 0.97546089, 0.91376809])#full is target
 
-xl=np.array([0.01,0.01,0.1,0.1,0.7])
-xu=np.array([0.5,0.99   ,2.6 ,7.5,1.5])
+xl=np.array([0.01, 0.01, 0.1, 1.0, 0.4])
+xu=np.array([0.5 , 0.99, 1.99, 3.5, 1.5])
 
 
 #Function to minimize
@@ -46,9 +46,9 @@ def q(pt):
     #..and update them
     p.q =np.array([0.0,pt[1],pt[0],1.0])   #Fixed cost of pticipation - mean
     
-    p.qshape=pt[2]
+    p.qlow=pt[2]
     
-    p.qscale =pt[3] #Fixed cost of pticipation -sd 
+    p.qhigh =pt[3] #Fixed cost of pticipation -sd 
     p.α=pt[4]
     
     #Disutility from working
@@ -56,7 +56,7 @@ def q(pt):
     # p.q_grid_π=np.zeros((p.nq,p.nw))
     # p.q_gridt,_=addaco_dist(p.σq,0.0,p.nq)
     
-    p.q_gridt = co.dist_gamma(p.qshape,p.qscale,p.nq)
+    p.q_gridt = np.array([p.qlow,p.qlow*p.qhigh])#co.dist_gamma(p.qshape,p.qscale,p.nq)
 
     for il in range(1,p.nwls):
         for iw in range(p.nw):

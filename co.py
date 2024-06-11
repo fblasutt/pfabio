@@ -13,7 +13,7 @@ class setup():
     def __init__(self): 
      
         # Size of gridpoints:
-        self.nq = 3    #fixed points, preference for working
+        self.nq = 2    #fixed points, preference for working
         self.NA = 20  #assets gridpoints
         self.NP =7    #pension points gridpoints
         self.nwls = 4  #hours choice
@@ -21,12 +21,12 @@ class setup():
         # First estimated parameters
         self.δ =  0.01 #0.00983949    # Discount rate
             
-        self.q =np.array([0.0,0.16527134,0.09969482,1.0])  #Fixed cost of pticipation - mean
+        self.q =np.array([0.0,0.17819457,0.13577647,1.0])  #Fixed cost of pticipation - mean
         self.σq =0.25623355   #Fixed cost of pticipation -sd 
         self.ρq =0.0#-0.4#0.00195224
    
-        self.qshape = 0.80355901
-        self.qscale = 1.73845578
+        self.qlow = 1.12669274
+        self.qhigh = 1.93252152
         
         # Economic Environment: set pameters 
         self.T = 55         # Number of time periods 
@@ -34,7 +34,7 @@ class setup():
         self.r = 0.02      # Interest rate 
         self.σ=0.001        #Size of taste shock 
         
-        self.α=1
+        self.α=1.21537064
                 
         #Income
         self.scale=1000 #Show everything in 1000 euros
@@ -107,7 +107,7 @@ class setup():
         # self.q_grid_π=np.zeros((self.nq,self.nw))
         # self.q_gridt,_=addaco_dist(self.σq,0.0,self.nq)
         
-        self.q_gridt = dist_gamma(self.qshape,self.qscale,self.nq)
+        self.q_gridt = np.array([self.qlow,self.qlow*self.qhigh])#dist_gamma(self.qshape,self.qscale,self.nq)
 
         for il in range(1,self.nwls):
             for iw in range(self.nw):
@@ -119,7 +119,7 @@ class setup():
         # Assets  grid   
         self.amin=0.0/self.scale
         self.amax=1000000/self.scale 
-        self.agrid=nonlinspace(self.amin,self.amax,self.NA,1.0)
+        self.agrid=nonlinspace(self.amin,self.amax,self.NA,1.8)
         
         #Pension points grid
         self.pgrid=nonlinspace(5.509712,7.733748+self.R*2,self.NP,1.0)         
