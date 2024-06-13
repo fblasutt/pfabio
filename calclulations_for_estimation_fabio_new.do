@@ -3,6 +3,40 @@ clear all
 use "C:\Users\32489\Dropbox\occupation\soepdata\data_sample_selection", replace
 set seed 12345
 
+
+*Merge to get marital status
+merge 1:1 pid  syear using "C:\Users\32489\Dropbox\occupation\soepdata\pequiv.dta" , keepusing(d11104 d11105)
+keep if _merge==3
+
+gen married=.
+replace married=1 if d11104==1
+replace married=0 if d11104>1 & d11104<.
+
+sort pid syear
+gen divorced=.
+bysort pid: replace divorce=0 if married[_n-1]==1 & married==1 &  syear==syear[_n-1]+1  & numberofchildren==1
+bysort pid: replace divorce=1 if married[_n-1]==1 & married==0 &  syear==syear[_n-1]+1  & numberofchildren==1  
+
+sort pid syear
+gen remarried=.
+bysort pid: replace remarried=1 if married[_n-1]==0 & married==1 &  syear==syear[_n-1]+1    & numberofchildren==1
+bysort pid: replace remarried=0 if married[_n-1]==0 & married==0 &  syear==syear[_n-1]+1    & numberofchildren==1
+
+
+gen age2=age^2
+
+reg divorced age age2 if age>=30 & age<=65
+predict divorced_hat, xb
+
+
+reg remarried age age2 if age>=30 & age<=65
+predict remarried_hat, xb
+
+binscatter remarried remarried_hat age if age>=30 & age<=65
+binscatter divorced divorced_hat age if age>=30 & age<=65
+
+
+
 * Create new variable hours_group with the following categories:
 * == 1 if unemployed (pgemplst == 5 meaning not employed)
 * == 2 if 0 < agreed upon hours <= 10

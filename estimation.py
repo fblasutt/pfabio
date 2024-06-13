@@ -27,13 +27,15 @@ np.random.seed(10)
 # [1.01608098 0.12180904 0.20933763 0.76992266 1.74844589]
 
 
+# perfectly identified
+xc=np.array([0.19982245, 0.38350866, 0.2363179 , 0.56099277, 1.74864462])#r 0.04, delta 0.02
+xc=np.array([0.14529946, 0.42081934, 0.99172148, 0.43656438, 0.80467666])#r 0.04, delta 0.01
+xc=np.array([0.16950232, 0.28640178, 0.46205568, 0.73043218, 1.65330702])#r 0.03, delta 0.02
+xc=np.array([0.18656332, 0.33594766, 0.33601567, 0.63696179, 1.72893227])#r 0.03, delta 0.02
 
-xc=np.array([0.11872211, 0.16927736, 0.97837639, 1.95231839, 1.19802168])#marginal is target
-xc=np.array([0.07499378, 0.26566051, 0.19959565, 1.5399259,  1.02204846])
-#xc=np.array([0.15125272, 0.41818386, 0.97546089, 0.91376809])#full is target
 
-xl=np.array([0.01, 0.01, 0.1, 1.0, 0.4])
-xu=np.array([0.5 , 0.99, 1.99, 3.5, 1.5])
+xl=np.array([0.01, 0.01, 0.01, 0.0, 0.6])
+xu=np.array([0.5 , 0.99, 1.99, 1.0, 1.9])
 
 
 #Function to minimize
@@ -46,9 +48,9 @@ def q(pt):
     #..and update them
     p.q =np.array([0.0,pt[1],pt[0],1.0])   #Fixed cost of pticipation - mean
     
-    p.qlow=pt[2]
+    p.qmean=pt[2]
     
-    p.qhigh =pt[3] #Fixed cost of pticipation -sd 
+    p.qvar =pt[3] #Fixed cost of pticipation -sd 
     p.α=pt[4]
     
     #Disutility from working
@@ -56,7 +58,7 @@ def q(pt):
     # p.q_grid_π=np.zeros((p.nq,p.nw))
     # p.q_gridt,_=addaco_dist(p.σq,0.0,p.nq)
     
-    p.q_gridt = np.array([p.qlow,p.qlow*p.qhigh])#co.dist_gamma(p.qshape,p.qscale,p.nq)
+    p.q_gridt = np.linspace(p.qmean-p.qmean*p.qvar,p.qmean+p.qmean*p.qvar,p.nq)#co.dist_gamma(p.qshape,p.qscale,p.nq)
 
     for il in range(1,p.nwls):
         for iw in range(p.nw):
@@ -110,8 +112,8 @@ def q(pt):
     # print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.317)/ 2.317)**2,((eff_e-.064)/.064)**2,((eff_full+.0705)/.0705)**2]).sum())
     # return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.317)/ 2.317),((eff_e-.064)/.064),((eff_full+.0705)/.0705)]
         
-    print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.317)/ 2.317)**2,((eff_e-.064)/.064)**2]).sum())
-    return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.317)/ 2.317),((eff_e-.064)/.064)]          
+    print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.317)/ 2.317)**2,((eff_e-.064)/.064)**2,((eff_full-.03)/.03)**2]).sum())
+    return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.317)/ 2.317),((eff_e-.064)/.064),((eff_full-.03)/.03)]          
             
 
 
@@ -126,29 +128,30 @@ import numpy as np
 if __name__ == '__main__':
     
 
-    # computation_options = { "num_workers" : 30,        # use four processes in parallel
-    #                         "working_dir" : "working" # where to save results in progress (in case interrupted)
-    #                         }
+    computation_options = { "num_workers" : 8,        # use four processes in parallel
+                            "working_dir" : "working" # where to save results in progress (in case interrupted)
+                            }
     
-    # global_search_options = { "num_points" : 13}  # number of points in global pre-test
+    global_search_options = { "num_points" : 11}  # number of points in global pre-test
     
-    # local_search_options = {  "algorithm"    : "dfols", # local search algorithm
-    #                                                       # can be either BOBYQA from NLOPT or NelderMead from scipy
-    #                           "num_restarts" : 90,      # how many local searches to do
-    #                           "shrink_after" : 60,       # after the first [shrink_after] restarts we begin searching
-    #                                                       # near the best point we have found so far
-    #                           "xtol_rel"     : 1e-6,     # relative tolerance on x
-    #                           "ftol_rel"     : 1e-6     # relative tolerance on f
-    #                         }
+    local_search_options = {  "algorithm"    : "dfols", # local search algorithm
+                                                          # can be either BOBYQA from NLOPT or NelderMead from scipy
+                              "num_restarts" : 16,      # how many local searches to do
+                              "shrink_after" : 16,       # after the first [shrink_after] restarts we begin searching
+                                                          # near the best point we have found so far
+                              "xtol_rel"     : 1e-6,     # relative tolerance on x
+                              "ftol_rel"     : 1e-6     # relative tolerance on f
+                            }
     
-    # opt = TikTak.TTOptimizer(computation_options, global_search_options, local_search_options, skip_global=False)
-    # x,fx = opt.minimize(q,xl,xu)
-    # print(f'The minimizer is {x}')
-    # print(f'The objective value at the min is {fx}')
+    opt = TikTak.TTOptimizer(computation_options, global_search_options, local_search_options, skip_global=False
+                             )
+    x,fx = opt.minimize(q,xl,xu)
+    print(f'The minimizer is {x}')
+    print(f'The objective value at the min is {fx}')
     
     
-    res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=300, bounds=(xl,xu),
-                    npt=len(xc)+5,scaling_within_bounds=True, 
-                    user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
-                                  'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
-                    objfun_has_noise=False)
+    # res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=300, bounds=(xl,xu),
+    #                 npt=len(xc)+5,scaling_within_bounds=True, 
+    #                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
+    #                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
+    #                 objfun_has_noise=False)

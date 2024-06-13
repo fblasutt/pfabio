@@ -7,13 +7,14 @@ from numba import njit,prange
 import quantecon as qe
 from scipy.integrate import quad
 from scipy.stats import gamma
+import pandas as pd
 
 class setup(): 
      
     def __init__(self): 
      
         # Size of gridpoints:
-        self.nq = 2    #fixed points, preference for working
+        self.nq = 3    #fixed points, preference for working
         self.NA = 20  #assets gridpoints
         self.NP =7    #pension points gridpoints
         self.nwls = 4  #hours choice
@@ -21,21 +22,21 @@ class setup():
         # First estimated parameters
         self.δ =  0.01 #0.00983949    # Discount rate
             
-        self.q =np.array([0.0,0.17819457,0.13577647,1.0])  #Fixed cost of pticipation - mean
+        self.q =np.array([0.0, 0.28640178,0.16950232,1.0])  #Fixed cost of pticipation - mean
         self.σq =0.25623355   #Fixed cost of pticipation -sd 
         self.ρq =0.0#-0.4#0.00195224
    
-        self.qlow = 1.12669274
-        self.qhigh = 1.93252152
+        self.qmean =   0.46205568
+        self.qvar =  0.73043218
         
         # Economic Environment: set pameters 
         self.T = 55         # Number of time periods 
         self.R = 35         # Retirement period 
-        self.r = 0.02      # Interest rate 
+        self.r = 0.03      # Interest rate 
         self.σ=0.001        #Size of taste shock 
         
-        self.α=1.21537064
-                
+        self.α=1.65330702
+                    
         #Income
         self.scale=1000 #Show everything in 1000 euros
             
@@ -43,7 +44,7 @@ class setup():
         self.wls=np.array([0.0,10.0, 20.0, 38.5])/38.5 #From GSOEP hrs/week = (10/ 20 / 38.5 ) 
         
         # income of men and women: sd of income shocks in t=0 and after that
-        self.σzw=0.084;self.σ0zw= 0.4583;self.σzm=0.114;self.σ0zm=0.43
+        self.σzw=0.1171;self.σ0zw= 0.43924;self.σzm=0.100796;self.σ0zm=0.4452
         self.nzw=3;self.nzm=3;self.nw = self.nzw*self.nzm
           
         #Pension
@@ -54,13 +55,17 @@ class setup():
         self.points_base=1.0        #standard points if not reform
         self.wls_point = np.array([0.0,0.0,1.0,1.0])      #share of income relevant for pension contributions 
        
+        #External estimation
+        data=pd.read_csv('categories.csv')  
+        
+        self.Π0 = np.repeat(np.array([data['_frequency'],]),self.nw,axis=0).T
         ##############
         # Income 
         ###############
         
         # uncertainty
-        self.grid_zw,self.Π_zw, self.Π_zw0 =addaco_nonst(self.T,self.σzw,self.σ0zw,self.nzw)
-        self.grid_zm,self.Π_zm, self.Π_zm0 =addaco_nonst(self.T,self.σzm,self.σ0zm,self.nzm)
+        self.grid_zw,self.Π_zw, self.Π_zw0 =rouw_nonst(self.T,self.σzw,self.σ0zw,self.nzw)
+        self.grid_zm,self.Π_zm, self.Π_zm0 =rouw_nonst(self.T,self.σzm,self.σ0zm,self.nzm)
         
 
         self.Π=[np.kron(self.Π_zw[t],self.Π_zm[t]) for t in range(self.T-1)] # couples trans matrix    
@@ -75,7 +80,7 @@ class setup():
         #                   j=jm*5+jw 
         #                   i=im*5+iw 
         #                   #par.Πl[t][j,i]=par.Πlw[t][jw,iw] if ((jw==jm)) else 0.0 
-        #                   self.Π0[j,i]=self.Π_zw0[0][jw,iw] if ((jw==jm)) else 0.0 
+        #                   self.Π0[j,i]=self.Π_zw0[0][jw,iw] if ((jw==jm)) else 00 
         
 
         
@@ -83,14 +88,15 @@ class setup():
         for t in range(self.T)  :
             for iz in range(self.nw):    
                 for i in range(self.nwls):
-                    self.w[t,i,iz]=np.exp(8.25+.0297458*t -.0005628 *t**2 + self.grid_zw[t][iz//self.nzm])/self.scale/13.96*38.5
+                    self.w[t,i,iz]=np.exp(-.3300579+.0943017+0.10336214*(t+30) -0.00115570  *(t+30)**2 + self.grid_zw[t][iz//self.nzm])/self.scale*38.5*52
                     if i==1:#miniwages are floored at 325*12 euros a year 
                         self.w[t,i,iz]=np.minimum(324*12/self.scale/self.wls[i],self.w[t,i,iz])
-                        
+  
+
         self.y_N=np.zeros((self.T,self.nw))#final grid for w's income        
         for t in range(self.T)  :
             for iz in range(self.nw):    
-                if t<self.R: self.y_N[t,iz]=np.exp(8.75+.0297458*t -.0005628 *t**2 + self.grid_zm[t][iz%self.nzm])/self.scale/13.96*38.5
+                if t<self.R: self.y_N[t,iz]=np.exp(8.390582 +.0945329+0.07439798*(t+30) -0.00083151 *(t+30)**2 + self.grid_zm[t][iz%self.nzm])/self.scale
                 else:        self.y_N[t,iz]=self.y_N[self.R-1,iz]*0.45
   
      
@@ -100,14 +106,14 @@ class setup():
         self.tax = np.array([0.0 for t in range(self.T)])
         self.tbase = np.array([1.0 for t in range(self.T)])#tax base 
        
-      
+        
         
         #Disutility from working
         self.q_grid=np.zeros((self.nq,self.nwls,self.nw))
         # self.q_grid_π=np.zeros((self.nq,self.nw))
         # self.q_gridt,_=addaco_dist(self.σq,0.0,self.nq)
         
-        self.q_gridt = np.array([self.qlow,self.qlow*self.qhigh])#dist_gamma(self.qshape,self.qscale,self.nq)
+        self.q_gridt = np.linspace(self.qmean-self.qmean*self.qvar,self.qmean+self.qmean*self.qvar,self.nq)#dist_gamma(self.qshape,self.qscale,self.nq)
 
         for il in range(1,self.nwls):
             for iw in range(self.nw):
@@ -122,28 +128,27 @@ class setup():
         self.agrid=nonlinspace(self.amin,self.amax,self.NA,1.8)
         
         #Pension points grid
-        self.pgrid=nonlinspace(5.509712,7.733748+self.R*2,self.NP,1.0)         
+        self.pgrid=nonlinspace(5.0,11.0+self.R*2,self.NP,1.0)         
     
         #######################################################################
         #Simulations
         #######################################################################
         np.random.seed(2) 
          
-        self.N = 20000        # agents to simulate 
+        self.N = 10000        # agents to simulate 
         
         #Initial assets  
         self.startA=np.zeros(self.N)  
-        assets=np.array([5877.601,21127.74,10671.82,7991.483,21614.71,15574.05,15981.4,24145.36,34662.95,32189.31]) 
+        assets=np.array(data['_networth'])
         for i in range(self.N): 
-            index=int(i/self.N*10) 
+            index=int(i/self.N*9) 
             self.startA[i]=assets[index]/self.scale 
             
         #Initial pension points
-        self.startPd = np.array([2.509712,2.732802,3.061959,2.951443,3.380279,3.498868,3.528733,4.050392,4.264604,4.733748])
-        
+        self.startPd = np.array(data['_points'])
         self.startP=np.zeros(self.N) 
         for i in range(self.N): 
-            index=int(i/self.N*10) 
+            index=int(i/self.N*9) 
             self.startP[i]=self.startPd[index]+3.0
                     
         #Distribution of types in first period and shocks to be used
