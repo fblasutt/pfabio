@@ -15,19 +15,19 @@ class setup():
      
         # Size of gridpoints:
         self.nq = 3    #fixed points, preference for working
-        self.NA = 20  #assets gridpoints
-        self.NP =7    #pension points gridpoints
+        self.NA = 35  #assets gridpoints
+        self.NP = 11    #pension points gridpoints
         self.nwls = 4  #hours choice
         
         # First estimated parameters
-        self.δ =  0.01 #0.00983949    # Discount rate
+        self.δ =  0.02 #0.00983949    # Discount rate
             
-        self.q =np.array([0.0, 0.28640178,0.16950232,1.0])  #Fixed cost of pticipation - mean
+        self.q =np.array([0.0,0.33206964,0.15856754,1.0])  #Fixed cost of pticipation - mean
         self.σq =0.25623355   #Fixed cost of pticipation -sd 
         self.ρq =0.0#-0.4#0.00195224
    
-        self.qmean =   0.46205568
-        self.qvar =  0.73043218
+        self.qmean = 0.10493158
+        self.qvar = 0.64323186
         
         # Economic Environment: set pameters 
         self.T = 55         # Number of time periods 
@@ -35,7 +35,7 @@ class setup():
         self.r = 0.03      # Interest rate 
         self.σ=0.001        #Size of taste shock 
         
-        self.α=1.65330702
+        self.α= 1.5#1.20152824
                     
         #Income
         self.scale=1000 #Show everything in 1000 euros
@@ -135,7 +135,7 @@ class setup():
         #######################################################################
         np.random.seed(2) 
          
-        self.N = 10000        # agents to simulate 
+        self.N = 10000#40000        # agents to simulate 
         
         #Initial assets  
         self.startA=np.zeros(self.N)  
