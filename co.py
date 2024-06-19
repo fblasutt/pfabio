@@ -54,7 +54,11 @@ class setup():
         self.add_points=1.5         #point multiplicator during reform
         self.points_base=1.0        #standard points if not reform
         self.wls_point = np.array([0.0,0.0,1.0,1.0])      #share of income relevant for pension contributions 
-       
+        
+        self.age_ret = np.array([33,34,35,36,37,38,39,40],dtype=np.int32) #possible ages at retirement
+        self.points_mult = np.array([1-0.036*2,1-0.036*1,1.0,1+0.06,1+2*0.06,1+3*0.06,1+4*0.06,1+5*0.06]) # point multiplier for early / late retirement
+        #self.points_mult[-1]=1.0
+        
         #External estimation
         data=pd.read_csv('categories.csv')  
         
@@ -71,18 +75,6 @@ class setup():
         self.Π=[np.kron(self.Π_zw[t],self.Π_zm[t]) for t in range(self.T-1)] # couples trans matrix    
         self.Π0=np.kron(self.Π_zw0[0],self.Π_zm0[0])
         
-
-        # for iw in range(5): 
-        #     for jw in range(5): 
-        #         for im in range(5): 
-        #             for jm in range(5): 
-                 
-        #                   j=jm*5+jw 
-        #                   i=im*5+iw 
-        #                   #par.Πl[t][j,i]=par.Πlw[t][jw,iw] if ((jw==jm)) else 0.0 
-        #                   self.Π0[j,i]=self.Π_zw0[0][jw,iw] if ((jw==jm)) else 00 
-        
-
         
         self.w=np.zeros((self.T,self.nwls,self.nw))#final grid for w's income        
         for t in range(self.T)  :
@@ -232,39 +224,40 @@ def after_tax_income(tbase,y1g,y2g,y_mean,fraction,τ,no_retired = True):
 #@njit(parallel=True)
 def compute_atax_income_points(etax,tbase,T,R,nwls,nw,NP,τ,add_points,points_base,wls,w,E_bar_now,Pmax,wls_point,y_N,pgrid,ρ):
 
-    income = np.zeros((T,nwls,nw,NP))
-    total_taxes = np.zeros((T,nwls,nw,NP))
-    total_taxes_mod = np.zeros((T,nwls,nw,NP))
-    point =  np.zeros((T,nwls,nw,2))#last dimension if for policy-no policy
+    income = np.zeros((T,nwls,nw,NP,2))
+    total_taxes = np.zeros((T,nwls,nw,NP,2))
+    total_taxes_mod = np.zeros((T,nwls,nw,NP,2))
+    point =  np.zeros((T,nwls,nw,2,2))#last dimension if for policy-no policy
     
     for t in prange(T):
         for i in range(nwls):
             for iw in range(nw):
                 for ip in range(NP):
-                                          
-                    tax=τ[t]      if (i>1) else 0.0
-                    
-                    policy_timing=((t >=8) & (t <=11))
-                    
-                   
-                    #Multiplier of points based on points
-                    mp_policy=add_points if policy_timing else points_base
-                    mp_base  =points_base
-                    
-                    
-                    point[t,i,iw,0] = points(mp_base  ,wls[i]*w[t,i,iw],E_bar_now,Pmax,wls_point[i])
-                    point[t,i,iw,1] = points(mp_policy,wls[i]*w[t,i,iw],E_bar_now,Pmax,wls_point[i])
-                    
-                    if (t+1<=R): 
+                    for ret in range(2):
+                                              
+                        tax=τ[t]      if (i>1) else 0.0
                         
-                        income[t,i,iw,ip], total_taxes[t,i,iw,ip]  = after_tax_income(tbase[t],w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax)
+                        policy_timing=((t >=8) & (t <=11))
                         
-                        if not np.allclose(etax[t],0.0):#case where we are computing elasticities
-                            _, total_taxes_mod[t,i,iw,ip]  = after_tax_income(tbase[t],w[t,i,iw]*wls[i]*(1-etax[t]),y_N[t,iw],E_bar_now,wls_point[i],tax)
-                                                
-                    else:            
+                       
+                        #Multiplier of points based on points
+                        mp_policy=add_points if policy_timing else points_base
+                        mp_base  =points_base
                         
-                        income[t,i,iw,ip], total_taxes[t,i,iw,ip]  = after_tax_income(1.0,ρ*pgrid[ip]     ,y_N[t,iw],E_bar_now,wls_point[i],tax,False)
+                        
+                        point[t,i,iw,0,ret] = points(mp_base  ,wls[i]*w[t,i,iw],E_bar_now,Pmax,wls_point[i])
+                        point[t,i,iw,1,ret] = points(mp_policy,wls[i]*w[t,i,iw],E_bar_now,Pmax,wls_point[i])
+                        
+                        if (ret==0): 
+                            
+                            income[t,i,iw,ip,ret], total_taxes[t,i,iw,ip,ret]  = after_tax_income(tbase[t],w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax)
+                            
+                            if not np.allclose(etax[t],0.0):#case where we are computing elasticities
+                                _, total_taxes_mod[t,i,iw,ip,ret]  = after_tax_income(tbase[t],w[t,i,iw]*wls[i]*(1-etax[t]),y_N[t,iw],E_bar_now,wls_point[i],tax)
+                                                    
+                        else:            
+                            
+                            income[t,i,iw,ip,ret], total_taxes[t,i,iw,ip,ret]  = after_tax_income(1.0,ρ*pgrid[ip]     ,y_N[t,iw],E_bar_now,wls_point[i],tax,False)
 
     return income,point, total_taxes, total_taxes_mod
                

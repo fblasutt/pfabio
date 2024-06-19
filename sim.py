@@ -38,16 +38,16 @@ def simNoUncer_interp(p, model, Tstart=0, Astart=0.0, Pstart=0.0,izstart=0, Vsta
     # print(p.q_sim.mean())
     
     #Call the simulator
-    epath,ppath,cpath,apath,hpath,pepath,pepath2,pepath3,vpath,evpath,wpath,w_pr_path,v_pr_path,eataxpath,eataxpath_mod,iz=\
+    epath,ppath,cpath,apath,hpath,pepath,pepath2,pepath3,vpath,evpath,wpath,w_pr_path,v_pr_path,eataxpath,eataxpath_mod,iz,ir=\
         fast_simulate(Tstart,Astart,Pstart,izstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,p.Pmax,p.add_points,p.tw,p.ts,p.wls,p.nwls,
                       p.δ,p.q_grid,p.σ,p.taxes,p.taxes_mod,p.Π,p.shock_z,
-                      model['A'],model['c'],model['p'],model['pr'],model['V'],model['V1'],model['model'],cadjust,p.wls_point,p.q_sim,p.points_base,p.R,p.r,p.y_N,p.τ)
+                      model['A'],model['c'],model['p'],model['pr'],model['V'],model['V1'],model['model'],cadjust,p.wls_point,p.q_sim,p.points_base,p.R,p.r,p.y_N,p.τ,p.age_ret)
     
-    return {'wh':epath,'p':ppath,'c':cpath,'A':apath,'h':hpath,'pb':pepath, 'pb2':pepath2,'pb3':pepath3, 'v':vpath,'ev':evpath,'w':wpath,'wls_pr':w_pr_path,'v_pr':v_pr_path,'taxes':eataxpath,'taxes_mod':eataxpath_mod,'iz':iz}
+    return {'wh':epath,'p':ppath,'c':cpath,'A':apath,'h':hpath,'pb':pepath, 'pb2':pepath2,'pb3':pepath3, 'v':vpath,'ev':evpath,'w':wpath,'wls_pr':w_pr_path,'v_pr':v_pr_path,'taxes':eataxpath,'taxes_mod':eataxpath_mod,'iz':iz,'ir':ir}
     
 @njit(parallel=True)
 def fast_simulate(Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,Pmax,add_points,tw,ts,wls,nwls,δ,q,σ,taxes,taxes_mod,Π,shock_z,
-                  policyA1,policyC,policyP,pr,V,V1,reform,cadjust,wls_point,q_sim,points_base,R,r,y_N,τ):
+                  policyA1,policyC,policyP,pr,V,V1,reform,cadjust,wls_point,q_sim,points_base,R,r,y_N,τ,age_ret):
 
     # Arguments for output
     cpath = np.nan+ np.zeros((T, N))           # consumption
@@ -66,6 +66,7 @@ def fast_simulate(Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agrid,pgrid,w,E_b
     w_pr_path = np.zeros((T,N, nwls))
     v_pr_path = np.zeros((T,N, nwls))
     iz =np.zeros((T, N),dtype=np.int32) 
+    ir =np.zeros((T, N),dtype=np.int32) 
     
     # Modified initial conditions
     Ti=Tstart
@@ -96,7 +97,7 @@ def fast_simulate(Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agrid,pgrid,w,E_b
             #i=0
             
             for i in range(nwls):              
-                v_pr_path[t,n,i]=linear_interp.interp_2d(agrid,pgrid,V[t,i,:,:,iz[t,n],iq],apath[t,n],ppath[t,n])
+                v_pr_path[t,n,i]=linear_interp.interp_2d(agrid,pgrid,V[t,i,:,:,iz[t,n],iq,ir[t,n]],apath[t,n],ppath[t,n])
                 
             lc=np.max(v_pr_path[t,n])/σ#local normalizing variable
             Vmax = σ*np.euler_gamma+σ*(lc+np.log(np.sum(np.exp(v_pr_path[t,n]/σ-lc)))  )
@@ -112,29 +113,36 @@ def fast_simulate(Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agrid,pgrid,w,E_b
                  i=pp
                  if ts[t,n]<np.sum(w_pr_path[t,n,:i+1]):break
                  
-            A1p=policyA1[t,i, :,:,iz[t,n],iq]
-            Pp=policyP[t,i, :,:,iz[t,n],iq]
-            Cp=policyC[t,i, :,:,iz[t,n],iq]
+            
+            A1p=policyA1[t,i, :,:,iz[t,n],iq,ir[t,n]]
+            Pp=policyP[t,i, :,:,iz[t,n],iq,ir[t,n]]
+            Cp=policyC[t,i, :,:,iz[t,n],iq,ir[t,n]]
 
             
-
+            
+             
             cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])
-            hpath[t, n] = i#linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])
+            hpath[t, n] = i #linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])
             pepath[t, n] = np.maximum(np.minimum(mp2*wls[i]*w[t,i,iz[t,n]]/E_bar_now,Pmax),wls[i]*w[t,i,iz[t,n]]/E_bar_now)*(wls_point[i])-wls[i]*w[t,i,iz[t,n]]/E_bar_now*(wls_point[i])
             pepath2[t, n]= np.maximum(np.minimum(mp *wls[i]*w[t,i,iz[t,n]]/E_bar_now,Pmax),wls[i]*w[t,i,iz[t,n]]/E_bar_now)*(wls_point[i])-wls[i]*w[t,i,iz[t,n]]/E_bar_now*(wls_point[i])
             
             wpath[t, n] = w[t,i,iz[t,n]]
             epath[t, n] = wpath[t, n]*wls[hpath[t, n]]#*wls_point[i]
-            eataxpath[t, n] = taxes[t,i,iz[t,n],0] if t<R else np.interp(ppath[t, n],pgrid,taxes[t,0,iz[t,n],:])
-            eataxpath_mod[t, n] = taxes_mod[t,i,iz[t,n],0] 
-            evpath[t, n] = linear_interp.interp_2d(agrid,pgrid,V1[t,:,:,iz[t,n],iq],apath[t,n],ppath[t,n])#+σ*np.euler_gamma-σ*np.log(prs[i])            
+            eataxpath[t, n] = taxes[t,i,iz[t,n],0,ir[t,n]] if t<R else np.interp(ppath[t, n],pgrid,taxes[t,0,iz[t,n],:,ir[t,n]])
+            eataxpath_mod[t, n] = taxes_mod[t,i,iz[t,n],0,ir[t,n]] 
+            evpath[t, n] = linear_interp.interp_2d(agrid,pgrid,V1[t,:,:,iz[t,n],iq,ir[t,n]],apath[t,n],ppath[t,n])#+σ*np.euler_gamma-σ*np.log(prs[i])            
             vpath[t, n] = np.log(cpath[t, n]*cadjust)-q[iq,hpath[t, n],iz[t,n]]+σ*np.euler_gamma-σ*np.log(w_pr_path[t,n,i])
             
             
-            
+            #if i==4:i[1,1]=3
             if t<T-1:apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])
             if t<T-1:ppath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,Pp,apath[t,n],ppath[t,n])
             if t<T-1:pepath3[t+1, n]= pepath3[t, n] + np.maximum(np.minimum(mp3 *wls[i]*w[t,i,iz[t,n]]/E_bar_now,Pmax),wls[i]*w[t,i,iz[t,n]]/E_bar_now)*(wls_point[i])
             #if t<T-1:cpath[t, n] = apath[t, n]*(1+r)+co.after_tax_income(epath[t, n],y_N[t,iz[t,n]],E_bar_now,wls_point[i],τ[t],False)-apath[t+1, n]   
-     
-    return epath,ppath,cpath,apath,hpath,pepath,pepath2,pepath3,vpath,evpath,wpath, w_pr_path, v_pr_path, eataxpath, eataxpath_mod,iz
+           
+            
+        
+            if ((i==0) & (ir[t,n] ==0) & (age_ret[-1]>=t>=age_ret[0])): ir[t,n] = 1
+            if t<T-1: ir[t+1,n] = 1 if ir[t,n] == 1 else 0
+            
+    return epath,ppath,cpath,apath,hpath,pepath,pepath2,pepath3,vpath,evpath,wpath, w_pr_path, v_pr_path, eataxpath, eataxpath_mod,iz,ir

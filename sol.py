@@ -16,9 +16,9 @@ def solveEulerEquation(p,model='baseline'):
     
 
     #Initiate some variables
-    policyA1,pr,V,policyp,pmutil= np.zeros((5,p.T,p.nwls,p.NA, p.NP,p.nw,p.nq))-1e8 
-    policyC =  np.zeros((p.T,p.nwls,p.NA, p.NP,p.nw,p.nq))+1e-10
-    EV,EVb=np.zeros((2,p.T,p.NA, p.NP,p.nw,p.nq))
+    policyA1,pr,V,policyp,pmutil= np.zeros((5,p.T,p.nwls,p.NA, p.NP,p.nw,p.nq,2))-1e8 
+    policyC =  np.zeros((p.T,p.nwls,p.NA, p.NP,p.nw,p.nq,2))+1e-10
+    EV,EVb=np.zeros((2,p.T,p.NA, p.NP,p.nw,p.nq,2))
     
     #Precompute after-tax income and points for a given decision
     p.income, p.points, p.taxes, p.taxes_mod = co.compute_atax_income_points(p.tax,p.tbase,p.T,p.R,p.nwls,p.nw,p.NP,p.τ,\
@@ -27,10 +27,11 @@ def solveEulerEquation(p,model='baseline'):
     
     #Call the routing to solve the model
     solveEulerEquation1(policyA1, policyC, policyp,V,EV,EVb,pmutil,pr,reform,
-                        p.r,p.δ,p.R,p.α,p.q,p.amin,p.wls,p.nwls,
-                        np.array(p.w),p.income,p.points,p.agrid,p.y_N,p.T,p.NA,p.nw,p.σ,
-                        p.NP,p.pgrid,p.ρ,p.E_bar_now,
-                        p.Pmax,p.add_points,p.nq,p.wls_point,p.q_grid,p.points_base,p.Π)
+                        p.r,p.δ,p.R,p.α,p.q,p.nwls,
+                        np.array(p.w),p.income,p.points,p.agrid,p.T,p.NA,p.nw,p.σ,
+                        p.NP,p.pgrid,
+                        p.nq,p.wls_point,p.q_grid,p.Π,
+                        p.age_ret,p.points_mult)
                         
 
     
@@ -39,13 +40,14 @@ def solveEulerEquation(p,model='baseline'):
 #@profile
 @njit(parallel=True)
 def solveEulerEquation1(policyA1, policyC, policyp,V,EV,EVb,pmutil,pr,reform,
-                        r,δ,R,α,q,amin,wls,nwls,
-                        w,income,points,agrid,y_N,T,NA,nw,σ,
-                        NP,pgrid,ρ,E_bar_now,
-                        Pmax,add_points,nq,wls_point,q_grid,points_base,Π):
+                        r,δ,R,α,q,nwls,
+                        w,income,points,agrid,T,NA,nw,σ,
+                        NP,pgrid,
+                        nq,wls_point,q_grid,Π,
+                        age_ret,points_mult):
     
     
-    ce,pe,ae,ce_bc,pe_bc,ae_bc,aem,cem,vem=np.zeros((9,nwls,NA, NP, nw, nq))
+    ce,pe,ae,ce_bc,pe_r,aem,cem,vem,aem=np.zeros((9,nwls,NA, NP, nw, nq, 2))-1e8
     
 
     
@@ -54,7 +56,8 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,EV,EVb,pmutil,pr,reform,
         for ip in range(NP): 
             for iw in range(nw): 
                 for iq in range(nq): 
-                    idx=(T-1,0,ia,ip,iw,iq);idw = (T-1,0,iw,ip)
+
+                    idx=(T-1,0,ia,ip,iw,iq,1);idw = (T-1,0,iw,ip,1)
                     
                     policyA1[idx] = agrid[ia]*(1+r)   # optimal savings
                     policyC[idx] = agrid[ia]*(1+r)+1e-9
@@ -66,7 +69,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,EV,EVb,pmutil,pr,reform,
          
 
         #Integration (beginning of period expectation, before taste shocks are realized)
-        E_mutil_c=np.zeros((NA, NP,nw,nq))
+        E_mutil_c=np.zeros((NA, NP,nw,nq, 2))
         expectation(t,NA,NP,nw,nq,V,EV[t+1,...],EVb[t+1,...],σ,α,pr,E_mutil_c,policyC,Π[t])    
         if t==-1:break
         
@@ -75,44 +78,70 @@ def solveEulerEquation1(policyA1, policyC, policyp,V,EV,EVb,pmutil,pr,reform,
         for ia in prange(NA): 
             for iw in range(nw): 
                 for iq in range(nq): 
-                    for i in range(nwls):                           
-                        if ((t<R) | ((t>=R) & (i==0))):
+                    for i in range(nwls):      
+                        for ir in range(2): 
                             
-                            #Use the euler equation + BC to find optimal consumtpion
-                            #ce for (endogenous) grid of assets ae
-                            for ip in range(NP): 
-                                  
-                                idx=(i,ia,ip,iw,iq);idw = (t,i,iw,ip);idp = (t,i,iw,reform) 
-    
-                                ce[idx]=(E_mutil_c[ia,ip,iw,iq]*(1+r)/(1+δ))**(-1/α)#Euler equation                           
-                                pe[idx]=pgrid[ip]-points[idp] if (t+1<=R) else pgrid[ip]
-                                ae[idx]=(agrid[ia]-income[idw]+ce[idx])/(1+r)#BC
-                            
-                          
-                            #Interpolate to get policy related to right points in t
-                            idx=(i,ia,slice(None),iw,iq);tidx=(t,i,ia,slice(None),iw,iq);
-                            t1idx=(t+1,ia,slice(None),iw,iq);idp = (t,i,iw,reform) 
-                            
-                            #Get policy functions conistent with pension points
-                            linear_interp.interp_1d_vec(pe[idx],ce[idx],pgrid,cem[idx])
-                            linear_interp.interp_1d_vec(pe[idx],ae[idx],pgrid,aem[idx])                        
-                            
-                            policyp[tidx]=pgrid+points[idp] if (t+1<=R) else pgrid
-                            linear_interp.interp_1d_vec(pgrid,EV[t1idx],policyp[tidx],vem[idx])
-                       
-                                            
-        #Interpolate to get decisions on grid + apply upper-envelop algorithm                
+                            if (((ir==0) & (t<=age_ret[-1]))    | #cannot retire yet case                             
+                                ((ir==1) & (t>=age_ret[0]) &  (i==0))):    #have already retired
+                                
+                                irp = 1 if ((i==0) & (t>=age_ret[0]))  | (t>age_ret[-1]) else ir
+                                
+                                #Use the euler equation + BC to find optimal consumtpion
+                                #ce for (endogenous) grid of assets ae
+                                for ip in range(NP): 
+                                      
+                                    idx=(i,ia,ip,iw,iq,ir)
+                                    idp = (t,i,iw,reform,ir)  
+        
+                                    ce[idx]=(E_mutil_c[ia,ip,iw,iq,irp]*(1+r)/(1+δ))**(-1/α)#Euler equation                           
+                                    
+                                    ae[idx]=(agrid[ia]-income[t,i,iw,ip,ir]+ce[idx])/(1+r)#BC
+                                    
+                                    if   ((ir==0)  & (t<age_ret[0])):       pe[idx] =  pgrid[ip]-points[idp]
+                                    elif   ((ir==0)  & (t>=age_ret[0]) & (i>0)):       pe[idx] =  pgrid[ip]-points[idp]                                    
+                                    elif ((ir==0)  & (t>=age_ret[0]) & (i==0)):       pe[idx] =  pgrid[ip]/points_mult[t-R+2]
+                                    elif  (ir==1)  & (t>=age_ret[0]):  pe[idx] =  pgrid[ip]
+                                 
+                                                              
+                                #Interpolate to get policy related to right points in t
+                                idx=(i,ia,slice(None),iw,iq,ir);tidx=(t,i,ia,slice(None),iw,iq,ir);
+                                t1idx=(t+1,ia,slice(None),iw,iq,irp);idp = (t,i,iw,reform,ir)
+                                
+                                #Get policy functions conistent with pension points
+                                linear_interp.interp_1d_vec(pe[idx],ce[idx],pgrid,cem[idx])
+                                linear_interp.interp_1d_vec(pe[idx],ae[idx],pgrid,aem[idx])   
+                                
+                                if   ((ir==0)  & (t<age_ret[0])):       policyp[tidx] =  pgrid+points[idp]
+                                elif ((ir==0)  & (t>=age_ret[0]) & (i>0)):       policyp[tidx] =  pgrid+points[idp]
+                                elif ((ir==0)  & (t>=age_ret[0]) & (i==0)):       policyp[tidx] =  pgrid*points_mult[t-R+2]
+                                elif  (ir==1)  & (t>=age_ret[0]):  policyp[tidx] =  pgrid
+                                #policyp[tidx] =  pgrid
+                                                            
+                                linear_interp.interp_1d_vec(pgrid,EV[t1idx],policyp[tidx],vem[i,ia,slice(None),iw,iq,ir])
+                                #if (ir==1) & (t==40):i[1,1]=3
+                               
+                                                                          
+        #Interpolate to get decisions on grid + apply upper-envelop algorithm   
+             
         for ip in prange(NP):
             for iw in range(nw):
                 for iq in range(nq):
-                    for i in range(nwls):
-                        if ((t<R) | ((t>=R) & (i==0))):
+                    for ir in range(2): 
+                        for i in range(nwls):
+                           
+                            if (((ir==0) & (t<=age_ret[-1]))    | #cannot retire yet case                             
+                                ((ir==1) & (t>=age_ret[0]) &  (i==0))):    #have already retired
                             
     
-                            tidx=(t,i,slice(None),ip,iw,iq);idx=(i,slice(None),ip,iw,iq);idw = (t,i,iw,ip)
-
-                            uppere(agrid,agrid+cem[idx],cem[idx],vem[idx]/(1+δ),agrid*(1+r)+income[idw],policyC[tidx],V[tidx],*(q_grid[iq,i,iw],α,))
-                            policyA1[tidx] =agrid*(1+r)+income[idw]-policyC[tidx]
+                                tidx=(t,i,slice(None),ip,iw,iq,ir);idx=(i,slice(None),ip,iw,iq,ir);
+                                idw = (t,i,iw,ip,ir) 
+                            
+                                
+                                uppere(agrid,agrid+cem[idx],cem[idx],vem[idx]/(1+δ),agrid*(1+r)+income[idw],policyC[tidx],V[tidx],*(q_grid[iq,i,iw],α,))
+                                policyA1[tidx] =agrid*(1+r)+income[idw]-policyC[tidx]
+                                
+                                
+                                
                             
        
 @njit(parallel=True)
@@ -122,24 +151,25 @@ def expectation(t,NA,NP,nw,nq,V,EV,EVb,σ,α,pr,E_mutil_c,policyC,Πt):
         for ip in range(NP):
             for iw in range(nw):
                 for iq in range(nq):
+                    for ir in range(2):
                     
-                    # Expected value in t+1 - AFTER shock iw' is realized - before taste shock takes place
-                    idx=(t+1,slice(None),ia,ip,iw,iq)
-                    lc=np.max(V[idx])/σ#local normalizing variable
-                    EVb[ia,ip,iw,iq] = σ*np.euler_gamma+σ*(lc+np.log(np.sum(np.exp(V[idx]/σ-lc)))  )
-                    pr[idx]=np.exp(V[idx]/σ-(EVb[ia,ip,iw,iq]-σ*np.euler_gamma)/σ)
+                        # Expected value in t+1 - AFTER shock iw' is realized - before taste shock takes place
+                        idx=(t+1,slice(None),ia,ip,iw,iq, ir)
+                        lc=np.max(V[idx])/σ#local normalizing variable
+                        EVb[ia,ip,iw,iq,ir] = σ*np.euler_gamma+σ*(lc+np.log(np.sum(np.exp(V[idx]/σ-lc)))  )
+                        pr[idx]=np.exp(V[idx]/σ-(EVb[ia,ip,iw,iq,ir]-σ*np.euler_gamma)/σ)
  
 
     for ia in prange(NA):
         for ip in range(NP):
             for iw in range(nw):
-                for iq in range(nq):                        
-                    for iwp in range(nw):
-                        
-                        idxp=(t+1,slice(None),ia,ip,iwp,iq)
-                       
-                        #aaa[ia,ip,iw,iq] += Πt[iwp,iw]
-                        # Expected value and marg util from C in t+1 BEFORE shock iw' is realized, given iw is current shock
-                        E_mutil_c[ia,ip,iw,iq] += Πt[iwp,iw]*np.sum(pr[idxp]*policyC[idxp]**(-α))
-                        EV[ia,ip,iw,iq]        += Πt[iwp,iw]*EVb[ia,ip,iwp,iq]
+                for iq in range(nq):             
+                    for ir in range(2):
+                        for iwp in range(nw):
+                                              
+                            idxp=(t+1,slice(None),ia,ip,iwp,iq, ir)
+                           
+                            # Expected value and marg util from C in t+1 BEFORE shock iw' is realized, given iw is current shock
+                            E_mutil_c[ia,ip,iw,iq,ir] += Πt[iwp,iw]*np.sum(pr[idxp]*policyC[idxp]**(-α))
+                            EV[ia,ip,iw,iq,ir]        += Πt[iwp,iw]*EVb[ia,ip,iwp,iq,ir]
  

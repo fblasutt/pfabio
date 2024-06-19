@@ -83,11 +83,11 @@ plt.show()
     
 # 3
 fig = plt.figure(figsize=(10,4)) 
-plt.plot(t,np.mean(SP['h'],axis=1), 'blue',
-          t, np.mean(SB['h'],axis=1), 'red')
+plt.plot(t,np.mean(SP['h']>0,axis=1), 'blue',
+          t, np.mean(SB['h']>0,axis=1), 'red')
 plt.xlabel("Age")
 plt.legend(('Reform','No Reform','Wages increase'))
-plt.ylabel("Hours over time")
+plt.ylabel("Employment over time")
 plt.show()
 
 
@@ -122,8 +122,8 @@ plt.show()
 
 #Graph the value of participating or not in the labor market 2 periods before retirement
 fig, ax = plt.subplots(figsize=(11, 8))   #Initialize figure and size
-ax.plot(p.agrid,ModB['V'][p.R-29,1,:,0,0,0], label="Value of FLP=0") 
-ax.plot(p.agrid,ModB['V'][p.R-29,0,:,0,0,0], label="Value of FLP=1") 
+ax.plot(p.agrid,ModB['V'][p.T-1,1,:,0,0,0,0], label="Value of FLP=0") 
+ax.plot(p.agrid,ModB['V'][p.T-1,0,:,0,0,0,0], label="Value of FLP=1") 
 #ax.plot(p.agrid,ModB['V'][p.R-2,2,:,0,0], label="Value of FLP=0") 
 #ax.plot(p.agrid,ModB['V'][p.R-2,1,:,0,0], label="Value of FLP=1") 
 ax.grid()
@@ -135,7 +135,7 @@ plt.show()                                #Show the graph
 
 #Graph difference in the value of participating and not in the mkt
 fig, ax = plt.subplots(figsize=(11, 8))   #Initialize figure and size
-ax.plot(p.agrid,ModB['V'][p.R-2,0,:,0,0]-ModB['V'][p.R-2,0,:,0,0], label="Value(FLP=0)-Value(FLP=1)") 
+ax.plot(p.agrid,ModB['V'][p.R-2,0,:,0,0,0]-ModB['V'][p.R-2,0,:,0,0,0], label="Value(FLP=0)-Value(FLP=1)") 
 ax.grid()
 ax.set_xlabel('Assets')                   #Label of x axis
 ax.set_ylabel('Utility')                  #Label of y axis
@@ -145,8 +145,8 @@ plt.show()                                #Show the graph
 
 #Consumption under participation and not participation
 fig, ax = plt.subplots(figsize=(11, 8))   #Initialize figure and size
-ax.plot(p.agrid[:],ModB['V'][0,1,:,0,0,0], label="Cons if FLP=1") 
-ax.plot(p.agrid[:],ModB['V'][0,1,:,0,0,0], label="Cons if FLP=0") 
+ax.plot(p.agrid[:],ModB['V'][0,1,:,0,0,0,0], label="Cons if FLP=1") 
+ax.plot(p.agrid[:],ModB['V'][0,1,:,0,0,0,0], label="Cons if FLP=0") 
 ax.grid()
 ax.set_xlabel('Assets')                   #Label of x axis
 ax.set_ylabel('Consumption')              #Label of y axis
@@ -154,8 +154,8 @@ plt.legend()                              #Plot the legend
 plt.show()     
 
 fig, ax = plt.subplots(figsize=(11, 8))   #Initialize figure and size
-ax.plot(p.agrid[:],ModB['c'][52,0,:,1,8,1], label="Cons if FLP=1") 
-ax.plot(p.agrid[:],ModB['c'][52,0,:,1,8,1], label="Cons if FLP=0") 
+ax.plot(p.agrid[:],ModB['c'][52,0,:,1,8,1,0], label="Cons if FLP=1") 
+ax.plot(p.agrid[:],ModB['c'][52,0,:,1,8,1,0], label="Cons if FLP=0") 
 ax.grid()
 ax.set_xlabel('Assets')                   #Label of x axis
 ax.set_ylabel('Consumption')              #Label of y axis
