@@ -37,10 +37,10 @@ p = co.setup()
 ModP= sol.solveEulerEquation(p,model='pension reform') 
 ModB = sol.solveEulerEquation(p,model='baseline') 
  
-pτ = co.setup();pτ.tbase[8:12]=p.tbase[8:12]-0.1#-0.096
+pτ = co.setup();pτ.tbase[8:12]=p.tbase[8:12]-0.16
 Modτ = sol.solveEulerEquation(pτ,model='baseline') 
  
-pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=2.36 #2.0
+pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.452
 ModPN = sol.solveEulerEquation(pPN,model='pension reform') 
  
 #pm = co.setup();pm.wls_point=0;pm.add_points=1.543 
@@ -50,10 +50,11 @@ ModPN = sol.solveEulerEquation(pPN,model='pension reform')
 # simulate the models 
 ######################################## 
  
-SB = sim.simNoUncer_interp(p,  ModB, Astart=p.startA,Pstart=np.ones(p.N)*p.startP) 
-SP = sim.simNoUncer_interp(p,  ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:]) 
-Sτ = sim.simNoUncer_interp(pτ, Modτ,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:]) 
-SPN= sim.simNoUncer_interp(pPN,ModPN,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:]) 
+SB = sim.simNoUncer_interp(p,  ModB, Tstart=0,Astart=p.startA,Pstart=np.ones(p.N)*p.startP,izstart=p.tw) 
+#SB = sim.simNoUncer_interp(p,  ModB,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:],izstart=SB['iz'][8,:]) 
+SP = sim.simNoUncer_interp(p,  ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['pb3'][8,:],izstart=SB['iz'][8,:]) 
+Sτ = sim.simNoUncer_interp(pτ, Modτ,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:],izstart=SB['iz'][8,:]) 
+SPN= sim.simNoUncer_interp(pPN,ModPN,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:],izstart=SB['iz'][8,:]) 
 #Sm = sim.simNoUncer_interp(pm, Modm,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:]) 
  
  
@@ -68,9 +69,9 @@ EVP    =np.mean(((np.cumsum((adjustb*SP['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[
 EVτ    =np.mean(((np.cumsum((adjustb*Sτ['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t]) 
 EVPN   =np.mean(((np.cumsum((adjustb*SPN['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t]) 
 #EVm    =np.mean(((np.cumsum((adjustb*Sm['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t]) 
-for i in np.linspace(1.00005,1.016,100): 
+for i in np.linspace(1.00005,1.0099,100): 
      
-    St= sim.simNoUncer_interp(p, ModB,cadjust=i,Astart=p.startA,Pstart=np.ones(p.N)*p.startP) 
+    St= sim.simNoUncer_interp(p, ModB,cadjust=i,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['p'][8,:],izstart=SB['iz'][8,:]) 
     EVt = np.mean(((np.cumsum((adjustb*St['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])#np.nanmean(EV_time) 
     Pbetter=EVt<EVP 
     τbetter=EVt<EVτ 
@@ -92,80 +93,67 @@ for i in np.linspace(1.00005,1.016,100):
      
  
 #2) Govt. budget 
- 
-#pension expenditures 
-###!!!!!!!!!!!!!Mistake taxes are zero after retirement, should not be the case!!!
-expe_P=p.ρ*SP['p'][p.R:,:]-SP['taxes'][p.R:,:]
-expe_B=p.ρ*SB['p'][p.R:,:]-SB['taxes'][p.R:,:]
-expe_τ=pτ.ρ*Sτ['p'][pτ.R:,:]-Sτ['taxes'][p.R:,:] 
-expe_PN=pPN.ρ*SPN['p'][pPN.R:,:]-SPN['taxes'][p.R:,:] 
-#expe_m=pm.ρ*Sm['p'][pm.R:,:] 
- 
-#taxes 
-tax_P=SP['taxes'][8:p.R,:] 
-tax_B=SB['taxes'][8:p.R,:] 
-tax_τ=Sτ['taxes'][8:pτ.R,:] 
-tax_PN=SPN['taxes'][8:pPN.R,:] 
-#tax_m=pm.τ[8:pm.R,None]*Sm['wh'][8:pm.R,:] 
+
  
 #adjusted deficits 
 adjust=np.ones(SP['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None] 
-deficit_B=(np.nansum(expe_B*adjust[p.R:,:])  -np.nansum(tax_B*adjust[8:p.R,:])) 
-deficit_P=(np.nansum(expe_P*adjust[p.R:,:])  -np.nansum(tax_P*adjust[8:p.R,:])) 
-deficit_τ=(np.nansum(expe_τ*adjust[p.R:,:])  -np.nansum(tax_τ*adjust[8:p.R,:])) 
-deficit_PN=(np.nansum(expe_PN*adjust[p.R:,:])-np.nansum(tax_PN*adjust[8:p.R,:])) 
-#deficit_m=(np.nansum(expe_m*adjust[p.R:,:])  -np.nansum(tax_m*adjust[8:p.R,:])) 
- 
+deficit_B=np.nansum(adjust*SB['taxes'])#(np.nansum(expe_B*adjust[p.R:,:])  -np.nansum(tax_B*adjust[8:p.R,:])) 
+deficit_P=np.nansum(adjust*SP['taxes'])#(np.nansum(expe_P*adjust[p.R:,:])  -np.nansum(tax_P*adjust[8:p.R,:])) 
+deficit_τ=np.nansum(adjust*Sτ['taxes'])#(np.nansum(expe_τ*adjust[p.R:,:])  -np.nansum(tax_τ*adjust[8:p.R,:])) 
+deficit_PN=np.nansum(adjust*SPN['taxes'])#(np.nansum(expe_PN*adjust[p.R:,:])-np.nansum(tax_PN*adjust[8:p.R,:])) 
+
 #3) Gender wage gaps in old age 
-ggap_old_B=1.0-(np.nanmean(p.ρ*SB['p'][p.R:,:]))/np.nanmean(p.y_N[p.R:,:]) 
-ggap_old_P=1.0-(np.nanmean(p.ρ*SP['p'][p.R:,:]))/np.nanmean(p.y_N[p.R:,:]) 
-ggap_old_τ=1.0-(np.nanmean(pτ.ρ*Sτ['p'][pτ.R:,:]))/np.nanmean(pτ.y_N[p.R:,:]) 
-ggap_old_PN=1.0-(np.nanmean(pPN.ρ*SPN['p'][pPN.R:,:]))/np.nanmean(pPN.y_N[p.R:,:]) 
+ggap_old_B=1.0-(np.nanmean(p.ρ*SB['p'][SB['ir']==1]))/np.nanmean(p.y_N[35,SB['iz']])
+ggap_old_P=1.0-(np.nanmean(p.ρ*SP['p'][SP['ir']==1]))/np.nanmean(p.y_N[35,SB['iz']])
+ggap_old_τ=1.0-(np.nanmean(pτ.ρ*Sτ['p'][Sτ['ir']==1]))/np.nanmean(pτ.y_N[35,SB['iz']])
+ggap_old_PN=1.0-(np.nanmean(pPN.ρ*SPN['p'][SPN['ir']==1]))/np.nanmean(pPN.y_N[35,SB['iz']])
 #ggap_old_m=1.0-(np.nanmean(pm.ρ*Sm['p'][pm.R:,:]))/np.nanmean(pm.y_N[p.R:,:]) 
  
 #4) WLP 
-WLS_B=co.hours(p,SB,8,12)#  np.nanmean(SB['h'][8:12,:]>0) 
-WLS_P=co.hours(p,SP,8,12)#np.nanmean(SP['h'][8:12,:]>0) 
-WLS_τ=co.hours(p,Sτ,8,12)#np.nanmean(Sτ['h'][8:12,:]>0) 
-WLS_PN=co.hours(p,SPN,8,12)#=np.nanmean(SPN['h'][8:12,:]>0) 
+WLS_B=co.hours(p,SB,8,32)#  np.nanmean(SB['h'][8:12,:]>0) 
+WLS_P=co.hours(p,SP,8,32)#np.nanmean(SP['h'][8:12,:]>0) 
+WLS_τ=co.hours(p,Sτ,8,32)#np.nanmean(Sτ['h'][8:12,:]>0) 
+WLS_PN=co.hours(p,SPN,8,32)#=np.nanmean(SPN['h'][8:12,:]>0) 
 #WLS_m=co.hours(p,Sm,8,12)#np.nanmean(Sτ['h'][8:12,:]>0) 
  
-WLP_B=np.nanmean(SB['h'][8:12,:]>0) 
-WLP_P=np.nanmean(SP['h'][8:12,:]>0) 
-WLP_τ=np.nanmean(Sτ['h'][8:12,:]>0) 
-WLP_PN=np.nanmean(SPN['h'][8:12,:]>0) 
+WLP_B=np.nanmean(SB['h'][8:32,:]>0) 
+WLP_P=np.nanmean(SP['h'][8:32,:]>0) 
+WLP_τ=np.nanmean(Sτ['h'][8:32,:]>0) 
+WLP_PN=np.nanmean(SPN['h'][8:32,:]>0) 
 #WLP_m=np.nanmean(Sm['h'][8:12,:]>0) 
  
  
 #5) mini-jobs 
-mini_B=np.nanmean(SB['h'][8:12,:]==1) 
-mini_P=np.nanmean(SP['h'][8:12,:]==1) 
-mini_τ=np.nanmean(Sτ['h'][8:12,:]==1) 
-mini_PN=np.nanmean(SPN['h'][8:12,:]==1) 
+ret_B=np.mean(p.T-np.cumsum(SB['ir'],axis=0)[-1])
+ret_P=np.mean(p.T-np.cumsum(SP['ir'],axis=0)[-1])
+ret_τ=np.mean(pτ.T-np.cumsum(Sτ['ir'],axis=0)[-1])
+ret_PN=np.mean(pPN.T-np.cumsum(SPN['ir'],axis=0)[-1]) 
 #mini_m=np.nanmean(Sm['h'][8:12,:]==1) 
  
 # Table with experiments 
 def p42(x): return str('%4.2f' % x)  
-def p43(x): return str('%4.2f' % x)     
-def p50(x): return str('%4.3f' % x)       
+def p43(x): return str('%4.3f' % x)     
+def p40(x): return str('%4.0f' % x)       
 table=r'\begin{table}[htbp]'+\
+      r'\begin{threeparttable}'+\
        r'\caption{Lifecycle model: counterfactual experiments}\label{table:experiments}'+\
        r'\centering\footnotesize'+\
        r'\begin{tabular}{lccccc}'+\
        r' \toprule '+\
-       r"& Pension & Women's labor & Women's labor & Women in &  Welfare gains  \\"+\
-       r"&gender gap &hours &  participation  (\%) & marginal jobs (\%)  & wrt baseline (\%)  \\"+\
+       r"& Pension & Women's labor & Women's labor & Average age &  Welfare gains  \\"+\
+       r"&gender gap &hours &  participation  (\%) & at retirement  & wrt baseline (\%)  \\"+\
        r'\midrule   '+\
-       r' Baseline                                   &'+p50(ggap_old_B) +'&'+p43(WLS_B) +'&'+p43(WLP_B*100) +'&'+p43(mini_B*100) +'& 0.0\\\\'+\
-       r' Caregiver credits                          &'+p50(ggap_old_P) +'&'+p43(WLS_P) +'&'+p43(WLP_P*100) +'&'+p43(mini_P*100) +'&'+p50(welf_P*100)+'\\\\'+\
-       r' Lower income taxes                         &'+p50(ggap_old_τ) +'&'+p43(WLS_τ) +'&'+p43(WLP_τ*100) +'&'+p43(mini_τ*100) +'&'+p50(welf_τ*100)+'\\\\'+\
+       r' Baseline                                   &'+p43(ggap_old_B)  +'&'+p42(WLS_B)  +'&'+p42(WLP_B*100)  +'&'+p42(ret_B) +'& 0.0\\\\'+\
+       r' Caregiver credits                          &'+p43(ggap_old_P)  +'&'+p42(WLS_P)  +'&'+p42(WLP_P*100)  +'&'+p42(ret_P) +'&'+p43(welf_P*100)+'\\\\'+\
+       r' Caregiver credits, no threshold            &'+p43(ggap_old_PN) +'&'+p42(WLS_PN) +'&'+p42(WLP_PN*100) +'&'+p42(ret_PN) +'&'+p43(welf_P*100)+'\\\\'+\
+       r' Lower income taxes                         &'+p43(ggap_old_τ)  +'&'+p42(WLS_τ)  +'&'+p42(WLP_τ*100)  +'&'+p42(ret_τ) +'&'+p43(welf_τ*100)+'\\\\'+\
        r' \bottomrule'+\
-       r'\multicolumn{5}{l}{\textsc{Notes:} The experiments in the last three rows imply the same government deficit. }'+'\\\\'+\
-       r'\multicolumn{5}{l}{Welfare gains = increase in consumption at baseline to be indifferent with the experiment under analysis. }'+'\\\\'+\
-       r'\multicolumn{5}{l}{Labor outcomes are measured while the child is 10 y.o. or younger }''\\\\'+\
-       r'\multicolumn{5}{l}{Reforms are in place while the child is 10 y.o. or younger }''\\\\'+\
-      """\end{tabular} 
-      """+\
+       r'\end{tabular}'+\
+       r'\begin{tablenotes}[flushleft]\small\item \textsc{Notes:} The experiments in the last three rows imply the same government deficit.'+\
+       r' Welfare gains = increase in consumption at baseline to be indifferent with the experiment under analysis.'+\
+       r' Reforms are in place while the child is 10 y.o. or younger''\\\\'+\
+       r'\end{tablenotes}'+\
+      r'\end{threeparttable}'+\
       r'\end{table}' 
        
 #Write table to tex file 
@@ -173,8 +161,7 @@ with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_expe.tex'
     f.write(table) 
     f.close() 
 
-#r' Caregiver credits, no upper threshold      &'+p50(ggap_old_PN)+'&'+p43(WLS_PN)+'&'+p43(WLP_PN*100)+'&'+p43(mini_PN*100)+'&'+p50(welf_PN*100)+'\\\\'+\
- 
+
 ################################### 
 # TARGETED MOMENTS AND PRAMETERS 
 #################################### 
@@ -204,11 +191,10 @@ table=r'\begin{table}[htbp]'+\
        r" Parameter & Value & \multicolumn{3}{c}{Target statistics}  \\\cline{3-5} "+\
        r" &  &  Name & Data & Model  \\"+\
        r'\midrule   '+\
-       r' Discount factor ($\beta$)      &'+p50(1/(1+p.δ))+'& Effect of reform on hours   & 2.32 &'+p42(eff_h)+'\\\\'+\
-       r' Cost of working - mini ($q_{10}$)   &'+p50(p.q[1])+'& Share mini-jobs           & 0.26 &'+p42(sh_mini)+'\\\\'+\
-       r' Cost of working - part ($q_{20}$)   &'+p50(p.q[2])+'& Share part-time           & 0.20 &'+p42(sh_part)+'\\\\'+\
-       r' Cost of working - full ($q_{38.5}$)      &'+p50(p.q[3])+'& Share full time      & 0.20 &'+p42(sh_full)+'\\\\'+\
-       r' Fixed effect - standard deviation ($\sigma_q$)   &'+p50(p.σq)+'& Effect of reform on employment   & 0.06&'+p42(eff_empl)+'\\\\'+\
+       r' Cost of working - mini ($q_{10}$)   &'+p43(p.q[1]*p.qmean)+'& Share mini-jobs           & 0.26 &'+p42(sh_mini)+'\\\\'+\
+       r' Cost of working - part ($q_{20}$)   &'+p43(p.q[2]*p.qmean)+'& Share part-time           & 0.20 &'+p42(sh_part)+'\\\\'+\
+       r' Cost of working - full ($q_{38.5}$)      &'+p43(p.qmean)+'& Share full time      & 0.20 &'+p42(sh_full)+'\\\\'+\
+       r' Fixed effects dispersion ($\sigma_q$)   &'+p43(p.qvar)+'& \\begin{tabular}{@{}c@{}}Effect of the reform on employment \\\\ Effect of the reform on hours\\end{tabular}   & \\begin{tabular}{@{}c@{}}0.06 \\\\ 2.31\\end{tabular}& \\begin{tabular}{@{}c@{}}'+p42(eff_empl)+' \\\\'+p42(eff_h)+'\\end{tabular}\\\\'+\
        r'  \bottomrule'+\
       """\end{tabular}"""+\
       r'\end{table}' 
@@ -231,50 +217,51 @@ def share(r,δ,T,k,per):
 adjustr = adjust*(1+p.r)**8 
  
 #MPE out of pension wealth, using tretroactive credits 
-SB_retro= sim.simNoUncer_interp(p,ModB,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['pb3'][8,:]) 
+SB_retro= sim.simNoUncer_interp(p,ModB,Tstart=8,Astart=SB['A'][8,:]+1,Pstart=SB['p'][8,:],izstart=SB['iz'][8,:]) 
  
-change_earn  =((np.nanmean((SB_retro['wh'][8:12,:]*adjustr[8:12,:]).sum(axis=0)))-\
-                np.nanmean((SB['wh'][8:12,:]      *adjustr[8:12,:]).sum(axis=0))) 
+change_earn  =((np.nanmean((SB_retro['w'][8:12,:]*p.wls[SB_retro['h'][8:12,:]]*adjustr[8:12,:]).sum(axis=0)))-\
+                np.nanmean((SB['w'][8:12,:]      *p.wls[SB['h'][8:12,:]]      *adjustr[8:12,:]).sum(axis=0))) 
      
-change_pweal = np.mean((p.ρ*SB_retro['p'][p.R:,:]*adjustr[p.R,:]).sum(axis=0))-\
-               np.mean((p.ρ*SB['p'][p.R:,:]*adjustr[p.R:,:]).sum(axis=0)) 
-                
-change_pweal = np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjustr[p.R,:]).sum(axis=0)) 
- 
+
  
 #Below annuitization like in Golosov (2024), assuming that agents sommth consumption 
-change_pweal_s = (12-8)*((p.r/(1+p.r))*(1-(1/(1+p.r))**(p.T-8))**-1)*np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjustr[p.R:,:]).sum(axis=0)) 
+change_pweal_s = (12-8)*((p.r/(1+p.r))*(1-(1/(1+p.r))**(p.T-8))**-1)#*np.mean((p.ρ*(SB['pb3']-SB['p'])*adjustr*(SB['ir']==1)).sum(axis=0)) 
  
  
-#Below annuitization like in Golosov (2024), NOT assuming that agents sommth consumption if PIH where r could be different than δ 
-change_pweal_s2 = share(p.r,p.δ,p.T,8,12-8).sum()*np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjustr[p.R:,:]).sum(axis=0)) 
+# #Below annuitization like in Golosov (2024), NOT assuming that agents sommth consumption if PIH where r could be different than δ 
+# change_pweal_s2 = share(p.r,p.δ,p.T,8,12-8).sum()#*np.mean((p.ρ*(SB['pb3']-SB['p'])*adjustr*(SB['ir']==1)).sum(axis=0)) 
  
-#Below model-consistent annuitization, where wealth is allocated according to consumption path. How to get it, 
-#use the intertemporal budget constraint and take out of summation c0 (future consumtion is replaced by ct/c0). 
-#Then manage the intertemporal BC to have c0=stuff: use it to get annuity value of future pension wealth. then 
-#sum the implied consumtion for periods 8 to 12. This can be checked against change_pweal_s2 
-ct_over_c0_discounted=np.mean(SB['c'][8:,:],axis=1)/np.mean(SB['c'][8,:])*adjustr[8:,0] 
-c0=np.mean((p.ρ*(SB['pb3'][p.R:,:]-SB['p'][p.R:,:])*adjustr[p.R:,:]).sum(axis=0))/ct_over_c0_discounted.sum() 
+# #Below model-consistent annuitization, where wealth is allocated according to consumption path. How to get it, 
+# #use the intertemporal budget constraint and take out of summation c0 (future consumtion is replaced by ct/c0). 
+# #Then manage the intertemporal BC to have c0=stuff: use it to get annuity value of future pension wealth. then 
+# #sum the implied consumtion for periods 8 to 12. This can be checked against change_pweal_s2 
+# ct_over_c0_discounted=np.mean(SB['c'][8:,:],axis=1)/np.mean(SB['c'][8,:])*adjustr[8:,0] 
+# c0=np.mean((p.ρ*(SB['pb3']-SB['p'])*adjustr*(SB['ir']==1)).sum(axis=0))/ct_over_c0_discounted.sum() 
  
-change_pweal_d = c0*((np.mean(SB['c'][8:,:],axis=1)/np.mean(SB['c'][8,:]))[:4]).sum() 
+# change_pweal_d = c0*((np.mean(SB['c'][8:,:],axis=1)/np.mean(SB['c'][8,:]))[:4]).sum() 
  
 #Finally, the marginal propensity to earn 
-MPE = change_earn/(change_pweal_d) 
+MPE = change_earn/(change_pweal_s) 
  
 #Effect of pension reform on: 
      
 #1) pension points 
 eff_points=np.nanmean(np.diff(SP['p'][8:12,:],axis=0))-np.nanmean(np.diff(SB['p'][8:12,:],axis=0)) 
+
+#2) behavioral pension points
+eff_beh_points=np.nanmean(np.diff(SP['p'][8:12,:],axis=0))-np.nanmean(np.diff(SB['p'][8:12,:],axis=0))-np.mean(SP['pb'][8:12,:])
  
-#2) full employment 
+#3) full employment 
 eff_earn=(np.nanmean(p.wls[SP['h'][8:12,:]]*SP['wh'][8:12,:])-np.nanmean(p.wls[SB['h'][8:12,:]]*SB['wh'][8:12,:]))*p.scale 
  
-#3) earnings 
+#4) earnings 
 eff_emp=np.nanmean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.nanmean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3) 
  
-#3) marginal work 
-eff_marg=np.nanmean(SP['h'][8:12,:]>1)-np.nanmean(SB['h'][8:12,:]>1)#np.nanmean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.nanmean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1) 
+#5) marginal work 
+eff_marg=np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1)
  
+#6) earnings
+eff_earn = (np.mean(SP['w'][8:12,:]*p.wls[SP['h'][8:12,:]]*(SP['h'][8:12,:]>1))-np.mean(SB['w'][8:12,:]*p.wls[SB['h'][8:12,:]]*(SB['h'][8:12,:]>1)))*p.scale
 ############################################ 
 #Table with parameters 
 ###########################################      
@@ -286,10 +273,12 @@ table=r'\begin{table}[htbp]'+\
        r" Effect of the reform on &   Data & Model  \\"+\
        r'\midrule   '+\
        r' Pension points   & 0.11 &'+p42(eff_points)+'\\\\'+\
+       r' Behavioral pension points   & 0.05 &'+p42(eff_beh_points)+'\\\\'+\
        r' Work full time    & 0.03 &'+p42(eff_emp)+'\\\\'+\
-       r' Regular employment    & -0.07 &'+p42(eff_marg)+'\\\\'+\
+       r' Marginal employment    & -0.07 &'+p42(eff_marg)+'\\\\'+\
+       r' Non-marginal employment earnings (\euro)    & 1404 &'+p40(eff_earn)+'\\\\'+\
        r'\toprule   '+\
-       r" Effect of retroactive credits on &   Data & Model  \\"+\
+       r" Other moments &   Data & Model  \\"+\
        r'\midrule   '+\
        r' Marginal propensity to earn (MPE)      & -0.51\text{ to }-0.12 &'+p42(MPE)+'\\\\'+\
        r'  \bottomrule'+\
