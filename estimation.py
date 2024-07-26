@@ -83,7 +83,7 @@ def q(pt):
     
     s_hl=np.mean(SB['wh'][7,:])*p.scale
     
-    eff_e=np.mean(SP['h'][8:12,:]>0)-np.mean(SB['h'][8:12,:]>0)
+    eff_e=np.mean(SP['h'][8:12,:]>1)-np.mean(SB['h'][8:12,:]>1)
     eff_full=np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3)
     eff_nomarg=np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1)
     eff_points=np.mean(np.diff(SP['p'][8:12,:],axis=0))-np.mean(np.diff(SB['p'][8:12,:],axis=0))
@@ -103,8 +103,8 @@ def q(pt):
     # print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.317)/ 2.317)**2,((eff_e-.064)/.064)**2,((eff_full+.0705)/.0705)**2]).sum())
     # return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.317)/ 2.317),((eff_e-.064)/.064),((eff_full+.0705)/.0705)]
         
-    print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.317)/ 2.317)**2,((eff_e-.064)/.064)**2,0*((eff_nomarg+.0705)/.0705)**2]).sum())
-    return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.317)/ 2.317),((eff_e-.064)/.064),0*((eff_nomarg+.0705)/.0705)]          
+    print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.223)/ 2.223)**2,((eff_e-.068)/.068)**2,0*((eff_nomarg+.0705)/.0705)**2]).sum())
+    return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.223)/ 2.223),((eff_e-.068)/.068),0*((eff_nomarg+.0705)/.0705)]          
             
 
 
@@ -119,30 +119,30 @@ import numpy as np
 if __name__ == '__main__':
     
 
-    # computation_options = { "num_workers" : 8,        # use four processes in parallel
-    #                         "working_dir" : "working" # where to save results in progress (in case interrupted)
-    #                         }
+    computation_options = { "num_workers" : 16,        # use four processes in parallel
+                            "working_dir" : "working" # where to save results in progress (in case interrupted)
+                            }
     
-    # global_search_options = { "num_points" : 11}  # number of points in global pre-test
+    global_search_options = { "num_points" : 11}  # number of points in global pre-test
     
-    # local_search_options = {  "algorithm"    : "dfols", # local search algorithm
-    #                                                       # can be either BOBYQA from NLOPT or NelderMead from scipy
-    #                           "num_restarts" : 16,      # how many local searches to do
-    #                           "shrink_after" : 16,       # after the first [shrink_after] restarts we begin searching
-    #                                                       # near the best point we have found so far
-    #                           "xtol_rel"     : 1e-6,     # relative tolerance on x
-    #                           "ftol_rel"     : 1e-6     # relative tolerance on f
-    #                         }
+    local_search_options = {  "algorithm"    : "dfols", # local search algorithm
+                                                          # can be either BOBYQA from NLOPT or NelderMead from scipy
+                              "num_restarts" : 16,      # how many local searches to do
+                              "shrink_after" : 16,       # after the first [shrink_after] restarts we begin searching
+                                                          # near the best point we have found so far
+                              "xtol_rel"     : 1e-6,     # relative tolerance on x
+                              "ftol_rel"     : 1e-6     # relative tolerance on f
+                            }
     
-    # opt = TikTak.TTOptimizer(computation_options, global_search_options, local_search_options, skip_global=False
-    #                           )
-    # x,fx = opt.minimize(q,xl,xu)
-    # print(f'The minimizer is {x}')
-    # print(f'The objective value at the min is {fx}')
+    opt = TikTak.TTOptimizer(computation_options, global_search_options, local_search_options, skip_global=False
+                              )
+    x,fx = opt.minimize(q,xl,xu)
+    print(f'The minimizer is {x}')
+    print(f'The objective value at the min is {fx}')
     
     
-    res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=300, bounds=(xl,xu),
-                    npt=len(xc)+5,scaling_within_bounds=True, 
-                    user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
-                                  'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
-                    objfun_has_noise=False)
+    # res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=300, bounds=(xl,xu),
+    #                 npt=len(xc)+5,scaling_within_bounds=True, 
+    #                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0,
+    #                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95},
+    #                 objfun_has_noise=False)

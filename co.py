@@ -22,13 +22,13 @@ class setup():
         # First estimated parameters 
         self.δ =  0.02 #0.00983949    # Discount rate 
              
-        self.q =np.array([0.0,0.33464657,0.15532658,1.0])  #Fixed cost of pticipation - mean 
+        self.q =np.array([0.0,0.3090941,0.16067055,1.0])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
         self.ρq =0.0#-0.4#0.00195224 
     
-        self.qmean = 0.10369031 
-        self.qvar = 0.65441251 
-         
+        self.qmean = 0.11269104
+        self.qvar = 0.66782515 
+                 
         # Economic Environment: set pameters  
         self.T = 55         # Number of time periods  
         self.R = 35         # Retirement period  
@@ -271,12 +271,12 @@ def compute_atax_income_points(etax,tbase,T,R,nwls,nw,NP,τ,add_points,add_point
 def hours(params,data,beg,end): 
      
     D=data['h'][beg:end,:] 
-    return np.mean(D==1)*10.0+np.mean(D==2)*20.0+np.mean(D==3)*38.5 
+    return np.mean(D==1)*0.0+np.mean(D==2)*20.0+np.mean(D==3)*38.5 
  
 def hours_pr(params,data,beg,end): 
      
     D=data['wls_pr'][beg:end,:] 
-    return D[:,:,1]*10.0+D[:,:,2]*20.0+D[:,:,3]*38.5 
+    return D[:,:,1]*0.0+D[:,:,2]*20.0+D[:,:,3]*38.5 
  
 def addaco_dist(sd_z,mu,npts):  
     
