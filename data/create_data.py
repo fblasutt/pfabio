@@ -62,5 +62,15 @@ df=pandas.DataFrame(data=data,columns=['treated','age','yi','yf','freq'])
 #Drop entries with zero frequency
 data_panda = df.drop(df[(df['freq']==0)].index)
 
+
+#create weights summing up to 1
+data_panda['freq']=data_panda['freq']/data_panda['freq'].sum()
+
+#reset index 
+data_panda=data_panda.reset_index()
+
+#drop old index
+data_panda=data_panda.drop(['index'],axis=1)
+
 #Save
 data_panda.to_excel("C:/Users/32489/Dropbox/occupation/model/pfabio/frequencies.xlsx")  

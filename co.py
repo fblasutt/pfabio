@@ -22,12 +22,12 @@ class setup():
         # First estimated parameters 
         self.δ =  0.02 #0.00983949    # Discount rate 
              
-        self.q =np.array([0.0,0.3090941,0.16067055,1.0])  #Fixed cost of pticipation - mean 
+        self.q =np.array([0.0,0.45436211,0.20652629,1.0])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
         self.ρq =0.0#-0.4#0.00195224 
     
-        self.qmean = 0.11269104
-        self.qvar = 0.66782515 
+        self.qmean = 0.09515101
+        self.qvar = 0.02239751
                  
         # Economic Environment: set pameters  
         self.T = 55         # Number of time periods  
@@ -129,14 +129,14 @@ class setup():
         ####################################################################### 
         np.random.seed(2)  
           
-        self.N = 10000#40000        # agents to simulate  
+        self.N = 50000#40000        # agents to simulate  
          
         #Initial assets   
-        self.startA=np.zeros(self.N)   
+        self.startA=np.zeros((self.T,self.N))   
         assets=np.array(data['_networth']) 
         for i in range(self.N):  
             index=int(i/self.N*9)  
-            self.startA[i]=assets[index]/self.scale  
+            self.startA[:,i]=assets[index]/self.scale  
              
         #Initial pension points 
         self.startPd = np.array(data['_points']) 
@@ -147,12 +147,12 @@ class setup():
                      
         #Distribution of types in first period and shocks to be used 
         self.tw=np.sort(qe.MarkovChain(self.Π0.T).simulate(self.N,init=self.nw//2))# Type here  
+        self.tw=np.repeat(self.tw[None,:],self.T,axis=0)
         self.shock_z=np.random.random_sample((self.N,self.T)) 
          
         #Distribution of taste shocks 
         self.ts=np.random.rand(self.T,self.N)  
          
-        #Fixed effect 
          
  
 #taxes: based on page 72 in https://www.fabian-kindermann.de/docs/progressive_pensions.pdf 
@@ -271,12 +271,19 @@ def compute_atax_income_points(etax,tbase,T,R,nwls,nw,NP,τ,add_points,add_point
 def hours(params,data,beg,end): 
      
     D=data['h'][beg:end,:] 
-    return np.mean(D==1)*0.0+np.mean(D==2)*20.0+np.mean(D==3)*38.5 
+    return np.mean(D==1)*10.0+np.mean(D==2)*20.0+np.mean(D==3)*38.5 
  
 def hours_pr(params,data,beg,end): 
      
     D=data['wls_pr'][beg:end,:] 
-    return D[:,:,1]*0.0+D[:,:,2]*20.0+D[:,:,3]*38.5 
+    return D[:,:,1]*10.0+D[:,:,2]*20.0+D[:,:,3]*38.5 
+
+def hours_value(params,data,beg,end): 
+     
+    D=data['h'][beg:end,:] 
+    return (D==1)*10.0+(D==2)*20.0+(D==3)*38.5 
+
+
  
 def addaco_dist(sd_z,mu,npts):  
     

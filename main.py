@@ -49,10 +49,10 @@ ModB = sol.solveEulerEquation(p,model='baseline')
 ########################################
 
 #Baseline
-SB= sim.simNoUncer_interp(p,ModB,Tstart=0,Astart=p.startA,Pstart=np.ones(p.N)*p.startP,izstart=p.tw)
+SB= sim.simNoUncer_interp(p,ModB,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw)
 
 #Pension reform
-SP= sim.simNoUncer_interp(p,ModP,Tstart=8,Astart=SB['A'][8,:],Pstart=SB['pb3'][8,:],izstart=SB['iz'][8,:])
+SP= sim.simNoUncer_interp(p,ModP,Tstart=np.zeros(p.N,dtype=np.int16)+8,Astart=SB['A'],Pstart=SB['pb3'],izstart=SB['iz'])
 
 
 
@@ -190,18 +190,18 @@ print("Additional average caregiver pension points in p (0.66,1.00]     at *base
 
 
 print("-----------------------------------------------------------------------------------------------------------------------------------------------------------")
-print("Effect on hours is {}, data is 3.565 hours".format(
-   (np.mean(SP['h'][8:12,:]==1)*0.0+np.mean(SP['h'][8:12,:]==2)*20.0+np.mean(SP['h'][8:12,:]==3)*38.5)-\
-   (np.mean(SB['h'][8:12,:]==1)*0.0+np.mean(SB['h'][8:12,:]==2)*20.0+np.mean(SB['h'][8:12,:]==3)*38.5)))
+print("Effect on hours is {}, data is 2.846 hours".format(
+   (np.mean(SP['h'][8:12,:]==1)*10.0+np.mean(SP['h'][8:12,:]==2)*20.0+np.mean(SP['h'][8:12,:]==3)*38.5)-\
+   (np.mean(SB['h'][8:12,:]==1)*10.0+np.mean(SB['h'][8:12,:]==2)*20.0+np.mean(SB['h'][8:12,:]==3)*38.5)))
         
-print("The effect on all employment is {}, data is {}".format(np.mean(SP['h'][8:12,:]>0)-np.mean(SB['h'][8:12,:]>0),0.099))
-print("The effect on full time employment is {}, data is {}".format(np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3),0.045))
-print("The effect on marginal employment is {}, data is {}".format(np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1),-0.11))
-print("The effect on regual employment is {}, data is {}".format(np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]>1)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]>1), 0.105))
+print("The effect on all employment is {}, data is {}".format(np.mean(SP['h'][8:12,:]>0)-np.mean(SB['h'][8:12,:]>0),0.0772))
+print("The effect on full time employment is {}, data is {}".format(np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3),0.0587))
+print("The effect on marginal employment is {}, data is {}".format(np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1),-0.054))
+#print("The effect on regual employment is {}, data is {}".format(np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]>1)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]>1), 0.105))
 print("Effect of pension point is {}, data is 0.153".format(np.nanmean(np.diff(SP['p'][8:13,:],axis=0))-np.nanmean(np.diff(SB['p'][8:13,:],axis=0))))
 print("Effect of behavioral pension points is {}, data is 0.102".format(np.nanmean(np.diff(SP['p'][8:13,:],axis=0))-np.nanmean(np.diff(SB['p'][8:13,:],axis=0))-np.mean(SP['pb'][8:12,:])))
-print("Effect on non-marginal earnings is {}, data is {}".format((np.mean(SP['wh'][8:12,:])-np.mean(SB['wh'][8:12,:]))*p.scale,2809))
-print("Effect on non-marginal earnings (>0) is {}, data is {}".format((np.mean(SP['wh'][8:12,:][SP['wh'][8:12,:]>0])-np.mean(SB['wh'][8:12,:][SB['wh'][8:12,:]>0]))*p.scale,1588))
+print("Effect on non-marginal earnings is {}, data is {}".format((np.mean(SP['wh'][8:12,:])-np.mean(SB['wh'][8:12,:]))*p.scale,1233))
+print("Effect on non-marginal earnings (>0) is {}, data is {}".format((np.mean(SP['wh'][8:12,:][SP['wh'][8:12,:]>0])-np.mean(SB['wh'][8:12,:][SB['wh'][8:12,:]>0]))*p.scale,-17))
 
 
 print("-----------------------------------------------------------------------------------------------------------------------------------------------------------")
