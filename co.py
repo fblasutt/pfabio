@@ -22,20 +22,20 @@ class setup():
         # First estimated parameters 
         self.δ =  0.02 #0.00983949    # Discount rate 
              
-        self.q =np.array([0.0,0.45436211,0.20652629,1.0])  #Fixed cost of pticipation - mean 
+        self.q =np.array([0.0,0.28088338,0.17844076,1.0])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
         self.ρq =0.0#-0.4#0.00195224 
     
-        self.qmean = 0.09515101
-        self.qvar = 0.02239751
+        self.qmean = 0.42860397
+        self.qvar = 0.61470056
                  
         # Economic Environment: set pameters  
         self.T = 55         # Number of time periods  
         self.R = 35         # Retirement period  
-        self.r = 0.03      # Interest rate  
+        self.r = 0.015      # Interest rate  
         self.σ=0.001        #Size of taste shock  
          
-        self.α= 1.5#1.20152824 
+        self.α= 1#1.20152824 
                      
         #Income 
         self.scale=1000 #Show everything in 1000 euros 
@@ -75,6 +75,7 @@ class setup():
          
  
         self.Π=[np.kron(self.Π_zw[t],self.Π_zm[t]) for t in range(self.T-1)] # couples trans matrix     
+        for t in range(self.R,self.T-1):self.Π[t]=np.eye(self.nzw*self.nzm)
         self.Π0=np.kron(self.Π_zw0[0],self.Π_zm0[0]) 
          
          
@@ -90,7 +91,7 @@ class setup():
         self.y_N=np.zeros((self.T,self.nw))#final grid for w's income         
         for t in range(self.T)  : 
             for iz in range(self.nw):     
-                if t<self.R: self.y_N[t,iz]=np.exp(8.390582 +.0945329+0.07439798*(t+30) -0.00083151 *(t+30)**2 + self.grid_zm[t][iz%self.nzm])/self.scale 
+                if t<self.R: self.y_N[t,iz]=np.exp(8.390582 +.0945329+0.07439798*(t+30) -0.00083151 *(t+30)**2 + self.grid_zm[t][iz%self.nzw])/self.scale 
                 else:        self.y_N[t,iz]=self.y_N[self.R-1,iz]*0.45 
    
       
@@ -240,7 +241,7 @@ def compute_atax_income_points(etax,tbase,T,R,nwls,nw,NP,τ,add_points,add_point
                                                
                         tax=τ[t]      if (i>1) else 0.0 
                          
-                        policy_timing=((t >=8) & (t <=11)) 
+                        policy_timing=((t >=3) & (t <=10)) 
                          
                         
                         #Multiplier of points based on points 

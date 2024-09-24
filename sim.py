@@ -120,11 +120,11 @@ def fast_simulate(Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agrid,pgrid,w,E_b
                   
                 cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n]) 
                 hpath[t, n] = i #linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n]) 
-                pepath[t, n] = np.maximum(np.minimum(mp2*wls[i]*w[t,i,iz[t,n]]/E_bar_now,Pmax),wls[i]*w[t,i,iz[t,n]]/E_bar_now)*(wls_point[i])-wls[i]*w[t,i,iz[t,n]]/E_bar_now*(wls_point[i]) 
-                pepath2[t, n]= np.maximum(np.minimum(mp *wls[i]*w[t,i,iz[t,n]]/E_bar_now,Pmax),wls[i]*w[t,i,iz[t,n]]/E_bar_now)*(wls_point[i])-wls[i]*w[t,i,iz[t,n]]/E_bar_now*(wls_point[i]) 
-                 
+                pepath[t, n] = co.points(mp2,wls[i]*w[t,i,iz[t,n]],E_bar_now,Pmax,wls_point[i])
+                pepath2[t, n]= co.points(points_base,wls[i]*w[t,i,iz[t,n]],E_bar_now,Pmax,wls_point[i])
+              
                 wpath[t, n] = w[t,i,iz[t,n]]#!!! not sure if useful 
-                epath[t, n] = income[t,i,iz[t,n],0,ir[t,n]] if ir[t,n]==0 else np.interp(ppath[t, n],pgrid,income[t,i,iz[t,n],:,ir[t,n]]) 
+                epath[t, n] = w[t,i,iz[t,n]]*wls[i] if i>1 else 0.0#income[t,i,iz[t,n],0,ir[t,n]] if ir[t,n]==0 else np.interp(ppath[t, n],pgrid,income[t,i,iz[t,n],:,ir[t,n]]) 
                 eataxpath[t, n] = taxes[t,i,iz[t,n],0,ir[t,n]] if ir[t,n]==0 else np.interp(ppath[t, n],pgrid,taxes[t,i,iz[t,n],:,ir[t,n]]) 
                 epath_mod[t, n] = income_mod[t,i,iz[t,n],0,ir[t,n]] if ir[t,n]==0 else np.interp(ppath_exp[t, n],pgrid,income[t,i,iz[t,n],:,ir[t,n]]) 
                 
@@ -135,7 +135,7 @@ def fast_simulate(Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agrid,pgrid,w,E_b
                  
                  
                 if t<T-1:apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n]) 
-                if t<T-1:ppath[t+1, n] =     linear_interp.interp_2d(agrid,pgrid,Pp    ,apath[t,n],ppath[t,n]) 
+                if t<T-1:ppath[t+1, n] =     linear_interp.interp_2d(agrid,pgrid,Pp    ,apath[t,n],ppath[t,n])
                 if t<T-1:ppath_exp[t+1, n] = linear_interp.interp_2d(agrid,pgrid,Pp_exp,apath[t,n],ppath_exp[t,n]) 
                 if t<T-1:pepath3[t+1, n]= pepath3[t, n] + np.maximum(np.minimum(mp3 *wls[i]*w[t,i,iz[t,n]]/E_bar_now,Pmax),wls[i]*w[t,i,iz[t,n]]/E_bar_now)*(wls_point[i]) 
                 if t<T-1: ir[t+1,n] = 1 if ir[t,n] == 1 else 0 

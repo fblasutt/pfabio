@@ -195,7 +195,7 @@ file close myfile
 *Average earnings
 gen age_3=age^3
 reg earnings_mod age age_2  i.syear [weight=phrf] if  earnings_mod>0
-replace pred35 = _b[_cons]+_b[2000.syear]+_b[age]*35+_b[age_2]*35^2
+gen pred35 = _b[_cons]+_b[2000.syear]+_b[age]*35+_b[age_2]*35^2
 *+_b[age_3]*35^3
 sum pred35
 
