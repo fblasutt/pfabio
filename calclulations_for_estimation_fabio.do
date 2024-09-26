@@ -300,4 +300,4 @@ bysort category: keep if _n==1
 keep _*
 
 *Save
-export delimited "C:\Users\32489\Dropbox\occupation\model\pfabio\categories.csv"
+export delimited "C:\Users\32489\Dropbox\occupation\model\pfabio\categories.csv",replace

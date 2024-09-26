@@ -48,6 +48,7 @@ ModB = sol.solveEulerEquation(p,model='baseline')
 # simulate the model
 ########################################
 
+
 #Baseline
 SB= sim.simNoUncer_interp(p,ModB,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw)
 

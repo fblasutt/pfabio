@@ -22,17 +22,17 @@ class setup():
         # First estimated parameters 
         self.δ =  0.02 #0.00983949    # Discount rate 
              
-        self.q =np.array([0.0,0.28088338,0.17844076,1.0])  #Fixed cost of pticipation - mean 
+        self.q =np.array([0.0,0.30268301,0.19308384,1.0])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
         self.ρq =0.0#-0.4#0.00195224 
     
-        self.qmean = 0.42860397
-        self.qvar = 0.61470056
+        self.qmean =0.4220038
+        self.qvar = 0.58340946
                  
         # Economic Environment: set pameters  
         self.T = 55         # Number of time periods  
         self.R = 35         # Retirement period  
-        self.r = 0.015      # Interest rate  
+        self.r = 0.015     # Interest rate  
         self.σ=0.001        #Size of taste shock  
          
         self.α= 1#1.20152824 
