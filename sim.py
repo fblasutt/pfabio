@@ -25,16 +25,16 @@ def simNoUncer_interp(p, model, Years=np.ones(1), Tstart=0, Astart=0.0, Pstart=0
   
       
     #Call the simulator  
-    epath,ppath,cpath,apath,hpath,pepath,pepath2,pepath3,vpath,evpath,wpath,w_pr_path,v_pr_path,eataxpath,eataxpath_mod,iz,ir=\
-        fast_simulate(Years,Tstart,Astart,Pstart,izstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,p.Pmax,p.add_points,p.tw,p.ts,p.wls,p.nwls,  
+    epath,ppath,ppath_exp,cpath,apath,hpath,pepath,pepath2,pepath3,vpath,evpath,wpath,w_pr_path,v_pr_path,eataxpath,eataxpath_mod,iz,ir=\
+        fast_simulate(p.beg,p.end,Years,Tstart,Astart,Pstart,izstart,Vstart,p.amax,p.T,p.N,p.agrid,p.pgrid,p.w,p.E_bar_now,p.Pmax,p.add_points,p.add_points_exp,p.tw,p.ts,p.wls,p.nwls,  
                       p.δ,p.q_grid,p.σ,p.taxes,p.income_mod,p.income,p.Π,p.shock_z,  
-                      model['A'],model['c'],model['p'],model['p_exp'],model['pr'],model['V'],model['V1'],model['model'],cadjust,p.wls_point,p.q_sim,p.points_base,p.R,p.r,p.y_N,p.τ,p.age_ret)  
+                      model['A'],model['c'],model['p'],model['p_exp'],model['pr'],model['V'],model['V1'],model['model'],cadjust,p.wls_point,p.wls_point2,p.standard_wls,p.q_sim,p.points_base,p.R,p.r,p.y_N,p.τ,p.age_ret,p.ρ)  
       
-    return {'wh':epath,'p':ppath,'c':cpath,'A':apath,'h':hpath,'pb':pepath, 'pb2':pepath2,'pb3':pepath3, 'v':vpath,'ev':evpath,'w':wpath,'wls_pr':w_pr_path,'v_pr':v_pr_path,'taxes':eataxpath,'income_mod':eataxpath_mod,'iz':iz,'ir':ir}  
+    return {'wh':epath,'p':ppath,'pexp':ppath_exp,'c':cpath,'A':apath,'h':hpath,'pb':pepath, 'pb2':pepath2,'pb3':pepath3, 'v':vpath,'ev':evpath,'w':wpath,'wls_pr':w_pr_path,'v_pr':v_pr_path,'taxes':eataxpath,'income_mod':eataxpath_mod,'iz':iz,'ir':ir}  
       
 @njit(parallel=True)  
-def fast_simulate(Years,Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,Pmax,add_points,tw,ts,wls,nwls,δ,q,σ,taxes,income_mod,income,Π,shock_z,  
-                  policyA1,policyC,policyP,policyP_exp,pr,V,V1,reform,cadjust,wls_point,q_sim,points_base,R,r,y_N,τ,age_ret):  
+def fast_simulate(beg,end,Years,Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,Pmax,add_points,add_points_exp,tw,ts,wls,nwls,δ,q,σ,taxes,income_mod,income,Π,shock_z,  
+                  policyA1,policyC,policyP,policyP_exp,pr,V,V1,reform,cadjust,wls_point,wls_point2,standard_wls,q_sim,points_base,R,r,y_N,τ,age_ret,ρ):  
   
     # Arguments for output  
     cpath = np.nan+ np.zeros((T, N))           # consumption  
@@ -81,9 +81,10 @@ def fast_simulate(Years,Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agrid,pgrid
                            
                   
                 iq = q_sim[n]#[iz[t,n]][n]  
-                policy2=((t >=3) & (t <=10) & (reform==1))  
+                policy2=((t >=beg) & (t <=end) & (reform==1))  
                 mp2=add_points if policy2 else points_base  
-                mp3=add_points if (t >=3) & (t <=10) & (Years[t,n]>=1992) else points_base  
+                mp3=add_points if (t >=beg) & (t <=end) & (Years[t,n]>=1992) else points_base  
+
                  
                 ref = 1 if policy2 else 0 
                  
@@ -119,13 +120,13 @@ def fast_simulate(Years,Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agrid,pgrid
                    
                 cpath[t, n] = linear_interp.interp_2d(agrid,pgrid,Cp,apath[t,n],ppath[t,n])  
                 hpath[t, n] = i #linear_interp.interp_2d(agrid,pgrid,hp,apath[t,n],ppath[t,n])  
-                pepath[t, n] = co.points(mp2,wls[i]*w[t,i,iz[t,n]],E_bar_now,Pmax,wls_point[i]) 
-                pepath2[t, n]= co.points(points_base,wls[i]*w[t,i,iz[t,n]],E_bar_now,Pmax,wls_point[i]) 
+                pepath[t, n] = co.points(t,beg,end,mp2,wls[i]*w[t,i,iz[t,n]],E_bar_now,Pmax,wls_point[i],wls_point2[i],standard_wls) 
+                pepath2[t, n]= co.points(t,beg,end,points_base,wls[i]*w[t,i,iz[t,n]],E_bar_now,Pmax,wls_point[i],wls_point2[i],standard_wls) 
                
                 wpath[t, n] = w[t,i,iz[t,n]]#!!! not sure if useful  
-                epath[t, n] = w[t,i,iz[t,n]]*wls[i] if i>1 else 0.0#income[t,i,iz[t,n],0,ir[t,n]] if ir[t,n]==0 else np.interp(ppath[t, n],pgrid,income[t,i,iz[t,n],:,ir[t,n]])  
-                eataxpath[t, n] = taxes[t,i,iz[t,n],0,ir[t,n]] if ir[t,n]==0 else np.interp(ppath[t, n],pgrid,taxes[t,i,iz[t,n],:,ir[t,n]])  
-                epath_mod[t, n] = income_mod[t,i,iz[t,n],0,ir[t,n]] if ir[t,n]==0 else np.interp(ppath_exp[t, n],pgrid,income[t,i,iz[t,n],:,ir[t,n]])  
+                epath[t, n] =( w[t,i,iz[t,n]]*wls[i] if wls_point[i]>0.0 else 0.0) if ir[t,n]==0 else np.interp(ppath[t, n],pgrid,income[t,i,iz[t,n],:,ir[t,n]])  
+                eataxpath[t, n] = taxes[t,i,iz[t,n],0,ir[t,n]] if ir[t,n]==0 else      np.interp(ppath[t, n]     ,pgrid,taxes[t,i,iz[t,n],:,ir[t,n]])  
+                epath_mod[t, n] =  income_mod[t,i,iz[t,n],0,ir[t,n]] if ir[t,n]==0 else np.interp(ppath_exp[t, n],pgrid,income[t,i,iz[t,n],:,ir[t,n]])
                  
                   
                 evpath[t, n] = linear_interp.interp_2d(agrid,pgrid,V1[t,:,:,iz[t,n],iq,ir[t,n]],apath[t,n],ppath[t,n])#+σ*np.euler_gamma-σ*np.log(prs[i])              
@@ -134,9 +135,9 @@ def fast_simulate(Years,Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agrid,pgrid
                   
                   
                 if t<T-1:apath[t+1, n] = linear_interp.interp_2d(agrid,pgrid,A1p,apath[t,n],ppath[t,n])  
-                if t<T-1:ppath[t+1, n] =   ppath[t, n] + co.points(mp2,wls[i]*w[t,i,iz[t,n]],E_bar_now,Pmax,wls_point[i]) 
-                if t<T-1:ppath_exp[t+1, n] = linear_interp.interp_2d(agrid,pgrid,Pp_exp,apath[t,n],ppath_exp[t,n])  
-                if t<T-1:pepath3[t+1, n]= pepath3[t, n] + co.points(mp3,wls[i]*w[t,i,iz[t,n]],E_bar_now,Pmax,wls_point[i]) 
+                if t<T-1:ppath[t+1, n] =   ppath[t, n] + co.points(t,beg,end,mp2,wls[i]*w[t,i,iz[t,n]],E_bar_now,Pmax,wls_point[i],wls_point2[i],standard_wls) 
+                if t<T-1:ppath_exp[t+1, n] = ppath_exp[t, n] + co.points(t,beg,end,points_base,wls[i]*w[t,i,iz[t,n]],E_bar_now,Pmax,wls_point[i],wls_point2[i],False) 
+                if t<T-1:pepath3[t+1, n]= pepath3[t, n] + co.points(t,beg,end,mp3,wls[i]*w[t,i,iz[t,n]],E_bar_now,Pmax,wls_point[i],wls_point2[i],standard_wls) 
                 if t<T-1: ir[t+1,n] = 1 if ir[t,n] == 1 else 0  
               
-    return epath,ppath,cpath,apath,hpath,pepath,pepath2,pepath3,vpath,evpath,wpath, w_pr_path, v_pr_path, eataxpath, epath_mod,iz,ir  
+    return epath,ppath,ppath_exp,cpath,apath,hpath,pepath,pepath2,pepath3,vpath,evpath,wpath, w_pr_path, v_pr_path, eataxpath, epath_mod,iz,ir  

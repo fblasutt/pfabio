@@ -39,18 +39,9 @@ treatment=((age>=3)  & (year>=2001))
 after_treatment=((age>=3)  & (year>=2001)) 
  
 #Define initial point (xc) and boundaries (xl,xu) 
-xc=np.array([0.17897197, 0.28365274, 0.41639799, 0.61443697])#good for old targets 
-xc=np.array([0.17767284, 0.2962443 , 0.41233575, 0.58322198])#good for new targets 
-xc=np.array([0.18812077, 0.30812166, 0.41186075, 0.5675635 ])#good for new moments with variance weighting  
-xc=np.array([0.1902654 , 0.30777262, 0.4160138 , 0.57285105])#good for nex moments excluding employment 
- 
- 
-#xc=np.array([0.16507527, 0.36226663, 0.442507  , 0.60536359])#good for new moments, r=0.03 
- 
- 
-xc=np.array([0.19087226, 0.31308342, 0.41432303, 0.56703035])#good for nex moments excluding employment +rich women
-xc=np.array([0.19311519, 0.30264831, 0.42231907, 0.58381345])#good for old moments excluding employment +rich women
- 
+xc=np.array([0.18984307, 0.39156348, 0.42656235, 0.38537558])#hours target, 7
+xc=np.array([0.17315422, 0.34080107, 0.47102776, 0.6111401 ])#points target, 7
+
 xl=np.array([0.01, 0.01, 0.01, 0.0]) 
 xu=np.array([0.5 , 0.99, 1.99, 2.0]) 
  
@@ -120,6 +111,9 @@ def q(pt,additional_tests=False):
     age_3_10=np.zeros((p.T,p.N)) 
     age_3_10[(age>=3) & (age<=10)]=1 
     after_2000=np.array(year>=2001) 
+    
+    b2001_2003=np.array((year>=2001) & (year<=2003))
+    b2004_2006=np.array((year>=2004) & (year<=2006))
     hours = co.hours_value(p,S,0,p.T) 
     employed=np.array(S['h']>0,dtype=np.float64) 
     not_marginal=np.array(S['h']>1,dtype=np.float64) 
@@ -148,6 +142,8 @@ def q(pt,additional_tests=False):
                                age.flatten(),    
                                age_3_10.flatten(),    
                                after_2000.flatten(), 
+                               b2001_2003.flatten(),
+                               b2004_2006.flatten(),
                                hours.flatten(), 
                                employed.flatten(), 
                                not_marginal.flatten(), 
@@ -159,17 +155,21 @@ def q(pt,additional_tests=False):
                                points.flatten()), 
                                axis=0).T,dtype=np.float64)         
    
-    dfa=pd.DataFrame(data=df,columns=['year','age','age_3_10','after_2000','hours','employed','not_marginal','marginal','full','earnings','sample','points_behavioral','points'])         
+    dfa=pd.DataFrame(data=df,columns=['year','age','age_3_10','after_2000','b2001_2003','b2004_2006','hours','employed','not_marginal','marginal','full','earnings','sample','points_behavioral','points'])         
                              
-     
     formula='age_3_10*after_2000+age_3_10+after_2000+C(age)' 
-    eff_h   =smf.ols(formula='hours ~'+formula,data = dfa[dfa['sample']==1]).fit().params['age_3_10:after_2000'] 
-    eff_e   =smf.ols(formula='employed ~'+formula,data = dfa[dfa['sample']==1]).fit().params['age_3_10:after_2000'] 
-    eff_full=smf.ols(formula='full ~'+formula,data = dfa[(dfa['sample']==1) & (dfa['employed']==1)]).fit().params['age_3_10:after_2000'] 
-    eff_marg=smf.ols(formula='marginal ~'+formula,data = dfa[(dfa['sample']==1) & (dfa['employed']==1)]).fit().params['age_3_10:after_2000'] 
-    eff_earn=smf.ols(formula='earnings ~'+formula,data = dfa[(dfa['sample']==1)]).fit().params['age_3_10:after_2000'] 
-    eff_points=smf.ols(formula='points ~'+formula,data = dfa[(dfa['sample']==1)]).fit().params['age_3_10:after_2000'] 
-    eff_points_behavioral=smf.ols(formula='points_behavioral ~'+formula,data = dfa[(dfa['sample']==1)]).fit().params['age_3_10:after_2000'] 
+    param='age_3_10:after_2000'
+    
+    formula='age_3_10*b2001_2003+age_3_10*b2004_2006+age_3_10+C(year)+C(age)' 
+    param='age_3_10:b2004_2006'
+    
+    eff_h   =smf.ols(formula='hours ~'+formula,data = dfa[dfa['sample']==1]).fit().params[param] 
+    eff_e   =smf.ols(formula='employed ~'+formula,data = dfa[dfa['sample']==1]).fit().params[param] 
+    eff_full=smf.ols(formula='full ~'+formula,data = dfa[(dfa['sample']==1) & (dfa['employed']==1)]).fit().params[param] 
+    eff_marg=smf.ols(formula='marginal ~'+formula,data = dfa[(dfa['sample']==1) & (dfa['employed']==1)]).fit().params[param] 
+    eff_earn=smf.ols(formula='earnings ~'+formula,data = dfa[(dfa['sample']==1)]).fit().params[param] 
+    eff_points=smf.ols(formula='points ~'+formula,data = dfa[(dfa['sample']==1)]).fit().params[param] 
+    eff_points_behavioral=smf.ols(formula='points_behavioral ~'+formula,data = dfa[(dfa['sample']==1)]).fit().params[param] 
          
     # years=np.array(range(1995,2007)) 
     # import matplotlib.pyplot as plt 
@@ -205,7 +205,7 @@ def q(pt,additional_tests=False):
                 r' Cost of working - mini ($q_{10}$)   &'+p43(p.q[1]*p.qmean)+'& Share mini-jobs           & 0.26 &'+p42(sh_min)+'\\\\'+\
                 r' Cost of working - part ($q_{20}$)   &'+p43(p.q[2]*p.qmean)+'& Share part-time           & 0.20 &'+p42(sh_part)+'\\\\'+\
                 r' Cost of working - full ($q_{38.5}$)      &'+p43(p.qmean)+'& Share full time      & 0.20 &'+p42(sh_full)+'\\\\'+\
-                r' Fixed effects dispersion ($\sigma_q$)   &'+p43(p.qvar)+'& Effect of the reform on hours  & 2.31 & '+p42(eff_h)+'\\\\'+\
+                r' Fixed effects dispersion ($\sigma_q$)   &'+p43(p.qvar)+'& Effect of the reform on hours  & 3.56 & '+p42(eff_h)+'\\\\'+\
                 r'  \bottomrule'+\
               """\end{tabular}"""+\
               r'\end{table}' 
@@ -267,12 +267,12 @@ def q(pt,additional_tests=False):
                 r' \toprule '+\
                 r" Effect of the reform on &   Data & Model  \\"+\
                 r'\midrule   '+\
-                r' Pension points   & 0.04 &'+p42(eff_points)+'\\\\'+\
-                r' Behavioral pension points   & xxx &'+p42(eff_points_behavioral)+'\\\\'+\
-                r' Work full time    & 0.03 &'+p42(eff_e)+'\\\\'+\
-                r' Marginal employment    & -0.06 &'+p42(eff_marg)+'\\\\'+\
-                r' Non-marginal employment earnings (\euro)    & 1584 &'+p40(eff_earn)+'\\\\'+\
-                r'Employed    & 0.06 &'+p42(eff_e)+'\\\\'+\
+                r' Pension points   & 0.15 &'+p42(eff_points)+'\\\\'+\
+                r' Behavioral pension points   & 0.10 &'+p42(eff_points_behavioral)+'\\\\'+\
+                r' Work full time    & 0.05 &'+p42(eff_e)+'\\\\'+\
+                r' Marginal employment    & -0.12 &'+p42(eff_marg)+'\\\\'+\
+                r' Non-marginal employment earnings (\euro)    & 2809 &'+p40(eff_earn)+'\\\\'+\
+                r'Employed    & 0.10 &'+p42(eff_e)+'\\\\'+\
                 r'\toprule   '+\
                 r" Other moments &   Data & Model  \\"+\
                 r'\midrule   '+\
@@ -288,7 +288,7 @@ def q(pt,additional_tests=False):
             f.close() 
              
          
-        print("The point is {}, the moments are shfull {}, sh_part {}, sh_min {}, eff_h {} , eff_e {}, eff_full  {}, eff_marg {}, eff_earn {}, eff_points {}".format(pt,sh_full,sh_part,sh_min,eff_h,eff_e,eff_full,eff_marg,eff_earn,eff_points))    
+    print("The point is {}, the moments are shfull {}, sh_part {}, sh_min {}, eff_h {} , eff_e {}, eff_full  {}, eff_marg {}, eff_earn {}, eff_points {}".format(pt,sh_full,sh_part,sh_min,eff_h,eff_e,eff_full,eff_marg,eff_earn,eff_points))    
      
      
     # print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.84)/ 2.84)**2,((eff_e-.0772)/.0772)**2]).sum())  
@@ -302,8 +302,8 @@ def q(pt,additional_tests=False):
     # return [((sh_full-.1984)/0.0058),((sh_part-.1986)/0.00589),((sh_min-.256)/0.00644),((eff_h- 2.84)/0.822),((eff_e-.0772)/.0257)]         
     
              
-    print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.3144)/ 2.3144)**2]).sum())  
-    return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.3144)/ 2.3144)]            
+    print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_points- 0.153)/ 0.153)**2]).sum())  
+    return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_points- 0.153)/ 0.153)]            
  
  
 # [ 0.40706012  0.03525281 -0.51941101  0.00186123  1.60048109  0.03695673] first tentative σ=0.0005 
@@ -339,7 +339,7 @@ if __name__ == '__main__':
     # print(f'The objective value at the min is {fx}') 
      
      
-    res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=300, bounds=(xl,xu), 
+    res=dfols.solve(q, xc, rhobeg = 0.1, rhoend=1e-6, maxfun=300, bounds=(xl,xu), 
                     npt=len(xc)+5,scaling_within_bounds=True,  
                     user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
                                   'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 

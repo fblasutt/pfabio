@@ -14,20 +14,20 @@ class setup():
     def __init__(self):  
       
         # Size of gridpoints: 
-        self.nq = 3    #fixed points, preference for working 
+        self.nq = 7    #fixed points, preference for working 
         self.NA = 35  #assets gridpoints 
         self.NP = 11    #pension points gridpoints 
         self.nwls = 4  #hours choice 
          
         # First estimated parameters 
-        self.δ =  0.02 #0.00983949    # Discount rate 
-             
-        self.q =np.array([0.0,0.30268301,0.19308384,1.0])  #Fixed cost of pticipation - mean 
+        self.δ =  0.01 #0.00983949    # Discount rate 
+
+        self.q =np.array([0.0,0.34080107,0.17315422,1.0])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
         self.ρq =0.0#-0.4#0.00195224 
     
-        self.qmean =0.4220038
-        self.qvar = 0.58340946
+        self.qmean =0.47102776
+        self.qvar = 0.6111401 
                  
         # Economic Environment: set pameters  
         self.T = 55         # Number of time periods  
@@ -36,6 +36,8 @@ class setup():
         self.σ=0.001        #Size of taste shock  
          
         self.α= 1#1.20152824 
+        
+        self.point_expe=0.0
                      
         #Income 
         self.scale=1000 #Show everything in 1000 euros 
@@ -55,6 +57,11 @@ class setup():
         self.add_points_exp=1.0
         self.points_base=1.0        #standard points if not reform 
         self.wls_point = np.array([0.0,0.0,1.0,1.0])      #share of income relevant for pension contributions  
+        self.wls_point2 = np.array([0.0,0.0,1.0,1.0]) 
+        self.standard_wls = True
+        
+        self.beg=3
+        self.end=10
          
         #penalty/bonuses for early retirement, statutory, see https://frank-leenders.github.io/LW_LCScar.pdf 
         self.age_ret = np.array([33,34,35,36,37,38,39,40],dtype=np.int32) #possible ages at retirement 
@@ -225,7 +232,7 @@ def after_tax_income(tbase,y1g,y2g,y_mean,fraction,τ,no_retired = True):
     return y1g + y2g - total_taxes, total_taxes 
  
 #@njit(parallel=True) 
-def compute_atax_income_points(etax,tbase,T,R,nwls,nw,NP,τ,add_points,add_points_exp,points_base,wls,w,E_bar_now,Pmax,wls_point,y_N,pgrid,ρ): 
+def compute_atax_income_points(beg,end,etax,tbase,T,R,nwls,nw,NP,τ,add_points,add_points_exp,points_base,wls,w,E_bar_now,Pmax,wls_point,wls_point2,standard_wls,y_N,pgrid,ρ): 
  
     income = np.zeros((T,nwls,nw,NP,2)) 
     total_taxes = np.zeros((T,nwls,nw,NP,2)) 
@@ -239,9 +246,9 @@ def compute_atax_income_points(etax,tbase,T,R,nwls,nw,NP,τ,add_points,add_point
                 for ip in range(NP): 
                     for ret in range(2): 
                                                
-                        tax=τ[t]      if (i>1) else 0.0 
+                        tax=τ[t]      if ( wls_point[i]>0.0) else 0.0 
                          
-                        policy_timing=((t >=3) & (t <=10)) 
+                        policy_timing=((t >=beg) & (t <=end)) 
                          
                         
                         #Multiplier of points based on points 
@@ -252,21 +259,24 @@ def compute_atax_income_points(etax,tbase,T,R,nwls,nw,NP,τ,add_points,add_point
                         mp_base_exp  =points_base 
                          
                          
-                        point[t,i,iw,0,ret] = points(mp_base  ,wls[i]*w[t,i,iw],E_bar_now,Pmax,wls_point[i]) 
-                        point[t,i,iw,1,ret] = points(mp_policy,wls[i]*w[t,i,iw],E_bar_now,Pmax,wls_point[i]) 
+                        point[t,i,iw,0,ret] = points(t,beg,end,mp_base  ,wls[i]*w[t,i,iw],E_bar_now,Pmax,wls_point[i],wls_point2[i],standard_wls) 
+                        point[t,i,iw,1,ret] = points(t,beg,end,mp_policy,wls[i]*w[t,i,iw],E_bar_now,Pmax,wls_point[i],wls_point2[i],standard_wls) 
                          
-                        point_exp[t,i,iw,0,ret] = points(mp_base_exp  ,wls[i]*w[t,i,iw],E_bar_now,Pmax,wls_point[i]) 
-                        point_exp[t,i,iw,1,ret] = points(mp_policy_exp,wls[i]*w[t,i,iw],E_bar_now,Pmax,wls_point[i]) 
+                        point_exp[t,i,iw,0,ret] = points(t,beg,end,mp_base_exp  ,wls[i]*w[t,i,iw],E_bar_now,Pmax,wls_point[i],wls_point2[i],standard_wls) 
+                        point_exp[t,i,iw,1,ret] = points(t,beg,end,mp_policy_exp,wls[i]*w[t,i,iw],E_bar_now,Pmax,wls_point[i],wls_point2[i],standard_wls) 
                          
                         if (ret==0):  
                              
+                            etaxx=(1-etax[t]) 
                             income[t,i,iw,ip,ret], total_taxes[t,i,iw,ip,ret]  = after_tax_income(tbase[t],w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax) 
-                            income_mod[t,i,iw,ip,ret], _  = after_tax_income(tbase[t],w[t,i,iw]*wls[i]*(1-etax[t]),y_N[t,iw],E_bar_now,wls_point[i],tax) 
-                                                     
+                            income_mod[t,i,iw,ip,ret], a  = after_tax_income(tbase[t],w[t,i,iw]*wls[i]*etaxx,y_N[t,iw],E_bar_now,wls_point[i],tax) 
+                            #income_mod[t,i,iw,ip,ret]=w[t,i,iw]*wls[i]*etaxx#income_mod[t,i,iw,ip,ret]#+ a                         
                         else:             
                              
-                            income[t,i,iw,ip,ret], total_taxes[t,i,iw,ip,ret]  = after_tax_income(1.0,ρ*pgrid[ip]     ,y_N[t,iw],E_bar_now,wls_point[i],tax,False) 
- 
+                            income[t,i,iw,ip,ret], total_taxes[t,i,iw,ip,ret]  = after_tax_income(1.0,ρ*pgrid[ip],y_N[t,iw],E_bar_now,1.0,tax,False) 
+                            income_mod[t,i,iw,ip,ret], a  = after_tax_income(1.0,ρ*pgrid[ip],y_N[t,iw],E_bar_now,1.0,tax,False) 
+                            #income_mod[t,i,iw,ip,ret]=ρ*pgrid[ip]#income_mod[t,i,iw,ip,ret]#+ a
+                            
     return income,point,point_exp, total_taxes, income_mod 
                 
 def hours(params,data,beg,end): 
@@ -308,8 +318,10 @@ def log(c,q,α):
  
  
 @njit 
-def points(mp,earnings,E_bar_now,Pmax,wls_point): 
-    return np.minimum(np.maximum(np.minimum(mp*earnings/E_bar_now,Pmax),earnings/E_bar_now),2)*wls_point 
+def points(t,beg,end,mp,earnings,E_bar_now,Pmax,wls_point1,wls_point2,standard_wls=True): 
+    
+    wls_point= wls_point1 if (standard_wls) | (t<beg) | (t>end) else wls_point2
+    return np.minimum(np.maximum(np.minimum(mp*earnings*wls_point/E_bar_now,Pmax),earnings*wls_point/E_bar_now),2)
  
  
 ########################### 

@@ -37,10 +37,10 @@ p = co.setup()
 ModP= sol.solveEulerEquation(p,model='pension reform') 
 ModB = sol.solveEulerEquation(p,model='baseline') 
  
-pτ = co.setup();pτ.tbase[3:11]=p.tbase[3:11]-0.25
+pτ = co.setup();pτ.tbase[3:11]=p.tbase[3:11]-0.235#0.22#197
 Modτ = sol.solveEulerEquation(pτ,model='baseline') 
  
-pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.4
+pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.48#1.4#35
 ModPN = sol.solveEulerEquation(pPN,model='pension reform') 
  
 #pm = co.setup();pm.wls_point=0;pm.add_points=1.543 
@@ -52,9 +52,9 @@ ModPN = sol.solveEulerEquation(pPN,model='pension reform')
  
 SB = sim.simNoUncer_interp(p,  ModB, Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw) 
 #SB = sim.simNoUncer_interp(p,  ModB,Tstart=np.zeros(p.N,dtype=np.int16)+3,Astart=SB['A'],Pstart=SB['p'],izstart=SB['iz']) 
-SP = sim.simNoUncer_interp(p,  ModP,Tstart=np.zeros(p.N,dtype=np.int16)+3,Astart=SB['A'],Pstart=SB['pb3'],izstart=SB['iz']) 
-Sτ = sim.simNoUncer_interp(pτ, Modτ,Tstart=np.zeros(p.N,dtype=np.int16)+3,Astart=SB['A'],Pstart=SB['p'],izstart=SB['iz']) 
-SPN= sim.simNoUncer_interp(pPN,ModPN,Tstart=np.zeros(p.N,dtype=np.int16)+3,Astart=SB['A'],Pstart=SB['p'],izstart=SB['iz']) 
+SP = sim.simNoUncer_interp(p,  ModP,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw) 
+Sτ = sim.simNoUncer_interp(pτ, Modτ,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw) 
+SPN= sim.simNoUncer_interp(pPN,ModPN,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw) 
 #Sm = sim.simNoUncer_interp(pm, Modm,Tstart=np.zeros(p.N,dtype=np.int16)+3,Astart=SB['A'],Pstart=SB['p']) 
  
  
@@ -64,14 +64,14 @@ SPN= sim.simNoUncer_interp(pPN,ModPN,Tstart=np.zeros(p.N,dtype=np.int16)+3,Astar
  
  
 adjustb=np.ones(SB['c'].shape)/((1+p.δ)**(np.cumsum(np.ones(p.T))-1.0))[:,None] 
-t=3
+t=0
 EVP    =np.mean(((np.cumsum((adjustb*SP['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t]) 
 EVτ    =np.mean(((np.cumsum((adjustb*Sτ['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t]) 
 EVPN   =np.mean(((np.cumsum((adjustb*SPN['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t]) 
 #EVm    =np.mean(((np.cumsum((adjustb*Sm['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t]) 
-for i in np.linspace(1.00005,1.0199,100): 
+for i in np.linspace(1.00005,1.0299,100): 
      
-    St= sim.simNoUncer_interp(p, ModB,cadjust=i,Tstart=np.zeros(p.N,dtype=np.int16)+3,Astart=SB['A'],Pstart=SB['p'],izstart=SB['iz']) 
+    St= sim.simNoUncer_interp(p, ModB,cadjust=i,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw) 
     EVt = np.mean(((np.cumsum((adjustb*St['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])#np.nanmean(EV_time) 
     Pbetter=EVt<EVP 
     τbetter=EVt<EVτ 
@@ -97,10 +97,10 @@ for i in np.linspace(1.00005,1.0199,100):
  
 #adjusted deficits 
 adjust=np.ones(SP['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None] 
-deficit_B=np.nansum(adjust*SB['taxes'])#(np.nansum(expe_B*adjust[p.R:,:])  -np.nansum(tax_B*adjust[3:p.R,:])) 
-deficit_P=np.nansum(adjust*SP['taxes'])#(np.nansum(expe_P*adjust[p.R:,:])  -np.nansum(tax_P*adjust[3:p.R,:])) 
-deficit_τ=np.nansum(adjust*Sτ['taxes'])#(np.nansum(expe_τ*adjust[p.R:,:])  -np.nansum(tax_τ*adjust[3:p.R,:])) 
-deficit_PN=np.nansum(adjust*SPN['taxes'])#(np.nansum(expe_PN*adjust[p.R:,:])-np.nansum(tax_PN*adjust[3:p.R,:])) 
+deficit_B=np.nansum(adjust*p.ρ*SB['p']*(SB['ir']==1))-np.nansum(adjust*SB['taxes'])#(np.nansum(expe_B*adjust[p.R:,:])  -np.nansum(tax_B*adjust[3:p.R,:])) 
+deficit_P=np.nansum(adjust*p.ρ*SP['p']*(SP['ir']==1))-np.nansum(adjust*SP['taxes'])#(np.nansum(expe_P*adjust[p.R:,:])  -np.nansum(tax_P*adjust[3:p.R,:])) 
+deficit_τ=np.nansum(adjust*pτ.ρ*Sτ['p']*(Sτ['ir']==1))-np.nansum(adjust*Sτ['taxes'])#(np.nansum(expe_τ*adjust[p.R:,:])  -np.nansum(tax_τ*adjust[3:p.R,:])) 
+deficit_PN=np.nansum(adjust*pPN.ρ*SPN['p']*(SPN['ir']==1))-np.nansum(adjust*SPN['taxes'])#(np.nansum(expe_PN*adjust[p.R:,:])-np.nansum(tax_PN*adjust[3:p.R,:])) 
 
 #3) Gender wage gaps in old age 
 ggap_old_B=1.0-(np.nanmean(p.ρ*SB['p'][SB['ir']==1]))/np.nanmean(p.y_N[35,SB['iz']])
@@ -160,134 +160,3 @@ table=r'\begin{table}[htbp]'+\
 with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_expe.tex', 'w') as f: 
     f.write(table) 
     f.close() 
-
-
-################################### 
-# TARGETED MOMENTS AND PRAMETERS 
-#################################### 
- 
-#1) effect of the reform on employment 
-eff_h=co.hours(p,SP,8,12)-co.hours(p,SB,8,12) 
- 
-#2) share into mini-jobs 
-sh_mini = np.nanmean(SB['h'][7,:]==1) 
- 
-#3) share part-tme 
-sh_part = np.nanmean(SB['h'][7,:]==2) 
- 
-#4) share full 
-sh_full = np.nanmean(SB['h'][7,:]==3) 
- 
-#5) effect on employment 
-eff_empl=np.nanmean(p.wls[SP['h'][8:12,:]]>0)-np.nanmean(p.wls[SB['h'][8:12,:]]>0) 
- 
- 
-#Table with parameters     
-table=r'\begin{table}[htbp]'+\
-        r'\caption{Model parameters and fit}\label{table:model_param}'+\
-        r'\centering\footnotesize'+\
-        r'\begin{tabular}{lcccc}'+\
-        r' \toprule '+\
-        r" Parameter & Value & \multicolumn{3}{c}{Target statistics}  \\\cline{3-5} "+\
-        r" &  &  Name & Data & Model  \\"+\
-        r'\midrule   '+\
-        r' Cost of working - mini ($q_{10}$)   &'+p43(p.q[1]*p.qmean)+'& Share mini-jobs           & 0.26 &'+p42(sh_mini)+'\\\\'+\
-        r' Cost of working - part ($q_{20}$)   &'+p43(p.q[2]*p.qmean)+'& Share part-time           & 0.20 &'+p42(sh_part)+'\\\\'+\
-        r' Cost of working - full ($q_{38.5}$)      &'+p43(p.qmean)+'& Share full time      & 0.20 &'+p42(sh_full)+'\\\\'+\
-        r' Fixed effects dispersion ($\sigma_q$)   &'+p43(p.qvar)+'& \\begin{tabular}{@{}c@{}}Effect of the reform on employment \\\\ Effect of the reform on hours\\end{tabular}   & \\begin{tabular}{@{}c@{}}0.06 \\\\ 2.31\\end{tabular}& \\begin{tabular}{@{}c@{}}'+p42(eff_empl)+' \\\\'+p42(eff_h)+'\\end{tabular}\\\\'+\
-        r'  \bottomrule'+\
-      """\end{tabular}"""+\
-      r'\end{table}' 
-       
-#Write table to tex file 
-with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_params.tex', 'w') as f: 
-    f.write(table) 
-    f.close() 
-    
-############################### 
-#Compute nontargeted moments 
-############################## 
- 
-def share(r,δ,T,k,per): 
-    #Model-based annuitization to compute MPE: https://michael-graber.github.io/pdf/Golosov-Graber-Mogstad-Novgorodsky-2023.pdf pg 38 
-    share = np.array([ ((1+r)/(1+δ))**(t+1)*(δ/(1+δ))*(1-(1/(1+δ))**(T-k))**-1  for t in range(per)]) 
-     
-    return share 
- 
-adjustr = adjust*(1+p.r)**8 
- 
-#MPE out of pension wealth, using tretroactive credits 
-SB_retro= sim.simNoUncer_interp(p,ModB,Tstart=8,Astart=SB['A'][8,:]+1,Pstart=SB['p'][8,:],izstart=SB['iz'][8,:]) 
- 
-change_earn  =((np.nanmean((SB_retro['w'][8:12,:]*p.wls[SB_retro['h'][8:12,:]]*adjustr[8:12,:]).sum(axis=0)))-\
-                np.nanmean((SB['w'][8:12,:]      *p.wls[SB['h'][8:12,:]]      *adjustr[8:12,:]).sum(axis=0))) 
-     
-
- 
-#Below annuitization like in Golosov (2024), assuming that agents sommth consumption 
-change_pweal_s = (12-8)*((p.r/(1+p.r))*(1-(1/(1+p.r))**(p.T-8))**-1)#*np.mean((p.ρ*(SB['pb3']-SB['p'])*adjustr*(SB['ir']==1)).sum(axis=0)) 
- 
- 
-# #Below annuitization like in Golosov (2024), NOT assuming that agents sommth consumption if PIH where r could be different than δ 
-# change_pweal_s2 = share(p.r,p.δ,p.T,8,12-8).sum()#*np.mean((p.ρ*(SB['pb3']-SB['p'])*adjustr*(SB['ir']==1)).sum(axis=0)) 
- 
-# #Below model-consistent annuitization, where wealth is allocated according to consumption path. How to get it, 
-# #use the intertemporal budget constraint and take out of summation c0 (future consumtion is replaced by ct/c0). 
-# #Then manage the intertemporal BC to have c0=stuff: use it to get annuity value of future pension wealth. then 
-# #sum the implied consumtion for periods 8 to 12. This can be checked against change_pweal_s2 
-# ct_over_c0_discounted=np.mean(SB['c'][8:,:],axis=1)/np.mean(SB['c'][8,:])*adjustr[8:,0] 
-# c0=np.mean((p.ρ*(SB['pb3']-SB['p'])*adjustr*(SB['ir']==1)).sum(axis=0))/ct_over_c0_discounted.sum() 
- 
-# change_pweal_d = c0*((np.mean(SB['c'][8:,:],axis=1)/np.mean(SB['c'][8,:]))[:4]).sum() 
- 
-#Finally, the marginal propensity to earn 
-MPE = change_earn/(change_pweal_s) 
- 
-#Effect of pension reform on: 
-     
-#1) pension points 
-eff_points=np.nanmean(np.diff(SP['p'][8:12,:],axis=0))-np.nanmean(np.diff(SB['p'][8:12,:],axis=0)) 
-
-#2) behavioral pension points
-eff_beh_points=np.nanmean(np.diff(SP['p'][8:12,:],axis=0))-np.nanmean(np.diff(SB['p'][8:12,:],axis=0))-np.mean(SP['pb'][8:12,:])
- 
-#3) full employment 
-eff_earn=(np.nanmean(p.wls[SP['h'][8:12,:]]*SP['wh'][8:12,:])-np.nanmean(p.wls[SB['h'][8:12,:]]*SB['wh'][8:12,:]))*p.scale 
- 
-#4) earnings 
-eff_emp=np.nanmean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==3)-np.nanmean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==3) 
- 
-#5) marginal work 
-eff_marg=np.mean(SP['h'][8:12,:][SP['h'][8:12,:]>0]==1)-np.mean(SB['h'][8:12,:][SB['h'][8:12,:]>0]==1)
- 
-#6) earnings
-eff_earn = (np.mean(SP['w'][8:12,:]*p.wls[SP['h'][8:12,:]]*(SP['h'][8:12,:]>1))-np.mean(SB['w'][8:12,:]*p.wls[SB['h'][8:12,:]]*(SB['h'][8:12,:]>1)))*p.scale
-############################################ 
-#Table with parameters 
-###########################################      
-table=r'\begin{table}[htbp]'+\
-        r'\caption{Non-targeted moments}\label{table:nontargeted_moments}'+\
-        r'\centering\footnotesize'+\
-        r'\begin{tabular}{lcc}'+\
-        r' \toprule '+\
-        r" Effect of the reform on &   Data & Model  \\"+\
-        r'\midrule   '+\
-        r' Pension points   & 0.11 &'+p42(eff_points)+'\\\\'+\
-        r' Behavioral pension points   & 0.05 &'+p42(eff_beh_points)+'\\\\'+\
-        r' Work full time    & 0.03 &'+p42(eff_emp)+'\\\\'+\
-        r' Marginal employment    & -0.07 &'+p42(eff_marg)+'\\\\'+\
-        r' Non-marginal employment earnings (\euro)    & 1404 &'+p40(eff_earn)+'\\\\'+\
-        r'\toprule   '+\
-        r" Other moments &   Data & Model  \\"+\
-        r'\midrule   '+\
-        r' Marginal propensity to earn (MPE)      & -0.51\text{ to }-0.12 &'+p42(MPE)+'\\\\'+\
-        r'  \bottomrule'+\
-        r'\multicolumn{3}{l}{}'+\
-      """\end{tabular}"""+\
-      r'\end{table}' 
-       
-#Write table to tex file 
-with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_nontargetd.tex', 'w') as f: 
-    f.write(table) 
-    f.close() 
-     

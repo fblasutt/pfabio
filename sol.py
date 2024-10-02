@@ -21,9 +21,9 @@ def solveEulerEquation(p,model='baseline'):
     EV,EVb=np.zeros((2,p.T,p.NA, p.NP,p.nw,p.nq,2)) 
      
     #Precompute after-tax income and points for a given decision 
-    p.income, p.points,p.points_exp, p.taxes, p.income_mod = co.compute_atax_income_points(p.tax,p.tbase,p.T,p.R,p.nwls,p.nw,p.NP,p.τ,\
+    p.income, p.points,p.points_exp, p.taxes, p.income_mod = co.compute_atax_income_points(p.beg,p.end,p.tax,p.tbase,p.T,p.R,p.nwls,p.nw,p.NP,p.τ,\
                                                           p.add_points,p.add_points_exp,p.points_base,p.wls,p.w,\
-                                                          p.E_bar_now,p.Pmax,p.wls_point,p.y_N,p.pgrid,p.ρ) 
+                                                          p.E_bar_now,p.Pmax,p.wls_point,p.wls_point2,p.standard_wls,p.y_N,p.pgrid,p.ρ) 
      
     #Call the routing to solve the model 
     solveEulerEquation1(policyA1, policyC, policyp,policyp_exp,V,EV,EVb,pmutil,pr,reform, 
@@ -92,7 +92,8 @@ def solveEulerEquation1(policyA1, policyC, policyp,policyp_exp,V,EV,EVb,pmutil,p
                                 for ip in range(NP):  
                                        
                                     idx=(i,ia,ip,iw,iq,ir) 
-                                    idp = (t,i,iw,reform,ir)   
+                                    idp = (t,i,iw,reform,ir)
+                                    idpp = (t,i,iw,1,ir)
          
                                     ce[idx]=(E_mutil_c[ia,ip,iw,iq,irp]*(1+r)/(1+δ))**(-1/α)#Euler equation                            
                                      
@@ -103,15 +104,15 @@ def solveEulerEquation1(policyA1, policyC, policyp,policyp_exp,V,EV,EVb,pmutil,p
                                     elif ((ir==0)  & (t>=age_ret[0]) & (i==0)):       pe[idx] =  pgrid[ip]/points_mult[t-R+2] 
                                     elif  (ir==1)  & (t>=age_ret[0]):  pe[idx] =  pgrid[ip] 
                                      
-                                    if   ((ir==0)  & (t<age_ret[0])):       pe_exp[idx] =  pgrid[ip]-points_exp[idp] 
-                                    elif   ((ir==0)  & (t>=age_ret[0]) & (i>0)):       pe_exp[idx] =  pgrid[ip]-points_exp[idp]                                     
+                                    if   ((ir==0)  & (t<age_ret[0])):       pe_exp[idx] =  pgrid[ip]-points_exp[idpp] 
+                                    elif   ((ir==0)  & (t>=age_ret[0]) & (i>0)):       pe_exp[idx] =  pgrid[ip]-points_exp[idpp]                                     
                                     elif ((ir==0)  & (t>=age_ret[0]) & (i==0)):       pe_exp[idx] =  pgrid[ip]/points_mult[t-R+2] 
                                     elif  (ir==1)  & (t>=age_ret[0]):  pe_exp[idx] =  pgrid[ip] 
                                   
                                                                
                                 #Interpolate to get policy related to right points in t 
                                 idx=(i,ia,slice(None),iw,iq,ir);tidx=(t,i,ia,slice(None),iw,iq,ir); 
-                                t1idx=(t+1,ia,slice(None),iw,iq,irp);idp = (t,i,iw,reform,ir) 
+                                t1idx=(t+1,ia,slice(None),iw,iq,irp);idp = (t,i,iw,reform,ir) ;idpp = (t,i,iw,1,ir)
                                  
                                 #Get policy functions conistent with pension points 
                                 linear_interp.interp_1d_vec(pe[idx],ce[idx],pgrid,cem[idx]) 
@@ -122,8 +123,8 @@ def solveEulerEquation1(policyA1, policyC, policyp,policyp_exp,V,EV,EVb,pmutil,p
                                 elif ((ir==0)  & (t>=age_ret[0]) & (i==0)):       policyp[tidx] =  pgrid*points_mult[t-R+2] 
                                 elif  (ir==1)  & (t>=age_ret[0]):  policyp[tidx] =  pgrid 
                                  
-                                if   ((ir==0)  & (t<age_ret[0])):       policyp_exp[tidx] =  pgrid+points_exp[idp] 
-                                elif ((ir==0)  & (t>=age_ret[0]) & (i>0)):       policyp_exp[tidx] =  pgrid+points_exp[idp] 
+                                if   ((ir==0)  & (t<age_ret[0])):       policyp_exp[tidx] =  pgrid+points_exp[idpp] 
+                                elif ((ir==0)  & (t>=age_ret[0]) & (i>0)):       policyp_exp[tidx] =  pgrid+points_exp[idpp] 
                                 elif ((ir==0)  & (t>=age_ret[0]) & (i==0)):       policyp_exp[tidx] =  pgrid*points_mult[t-R+2] 
                                 elif  (ir==1)  & (t>=age_ret[0]):  policyp_exp[tidx] =  pgrid 
                                  
