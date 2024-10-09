@@ -21,12 +21,12 @@ adjust=np.ones((p.T,p.N))/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 
 
 
-increase=0.0805
+increase=0.065#0.0815
 p.tax[beg:end] = -increase;p.wls_point=np.array([0.0,0.0,1.0,1.0]);p.wls_point2=np.array([0.0,0.0,1.0,1.0]);ModB = sol.solveEulerEquation(p,model='baseline')
 SB= sim.simNoUncer_interp(p,ModB,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw)
 
 p1 = co.setup()
-p1.wls_point=np.array([0.0,0.0,1.0,1.0]);p1.wls_point2=np.array([0.0,0.5,1.5,1.5]);ModB1 = sol.solveEulerEquation(p1,model='baseline')
+p1.wls_point=np.array([0.0,0.0,1.0,1.0]);p1.wls_point2=np.array([0.0,0.3,1.3,1.3]);ModB1 = sol.solveEulerEquation(p1,model='baseline')
 SB1= sim.simNoUncer_interp(p1,ModB1,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p1.startA,Pstart=np.ones((p1.T,p1.N))*p1.startP,izstart=p1.tw)
 
 
@@ -44,7 +44,7 @@ print("Income pre-post retirement is {}".format(income_pre_retirement-income_pos
 ########################################################################"
 
 #1) Pension caregiver reform
-pρ = co.setup();pρ.wls_point2=np.array([0.0,0.5,1.5,1.5]);pρ.standard_wls=False#point_equivalent
+pρ = co.setup();pρ.wls_point2=np.array([0.0,0.3,1.3,1.3]);pρ.standard_wls=False#point_equivalent
 Modρ = sol.solveEulerEquation(pρ,model='baseline')
 Sρ= sim.simNoUncer_interp(pρ,Modρ,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw)
 

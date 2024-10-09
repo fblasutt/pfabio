@@ -10,17 +10,7 @@ import co
 def simNoUncer_interp(p, model, Years=np.ones(1), Tstart=0, Astart=0.0, Pstart=0.0,izstart=0, Vstart= -1.0*np.ones((2,2,2,2,2)),cadjust=1.0):  
    
     np.random.seed(2)   
-    p.q_sim = np.zeros(p.N,dtype=np.int32)          
-    means = np.linspace(-p.ρq ,p.ρq ,p.nw//p.nzm)  
     if Years.shape==(1,):Years=np.repeat(np.array(range(1992,1992+p.T))[:,None],p.N,axis=1) 
-    for iw in range(p.nw):  
-         
-        iswage=(p.tw[0,:]==iw)  
-        iswagelen=np.sum(iswage)  
-          
-        p.q_sim[iswage]=np.minimum(np.maximum(np.array(np.random.uniform(0.0+means[iw//p.nzm],p.nq+means[iw//p.nzm],size=iswagelen),dtype=np.int32),0),p.nq-1)  
-        #p.q_sim[iswage]=np.random.randint(0.0,p.nq-1,size=iswagelen)  
-      
     p.q_sim=np.array(np.random.uniform(0.0,p.nq,size=p.N),dtype=np.int32) 
   
       

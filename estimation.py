@@ -39,8 +39,7 @@ treatment=((age>=3)  & (year>=2001))
 after_treatment=((age>=3)  & (year>=2001)) 
  
 #Define initial point (xc) and boundaries (xl,xu) 
-xc=np.array([0.18984307, 0.39156348, 0.42656235, 0.38537558])#hours target, 7
-xc=np.array([0.17315422, 0.34080107, 0.47102776, 0.6111401 ])#points target, 7
+xc=np.array([0.18751795, 0.30696361, 0.42984451, 0.64078798])
 
 xl=np.array([0.01, 0.01, 0.01, 0.0]) 
 xu=np.array([0.5 , 0.99, 1.99, 2.0]) 
@@ -303,7 +302,7 @@ def q(pt,additional_tests=False):
     
              
     print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_points- 0.153)/ 0.153)**2]).sum())  
-    return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_points- 0.153)/ 0.153)]            
+    return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_points- .153)/ 0.153)]            
  
  
 # [ 0.40706012  0.03525281 -0.51941101  0.00186123  1.60048109  0.03695673] first tentative σ=0.0005 

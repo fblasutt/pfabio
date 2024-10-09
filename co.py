@@ -14,24 +14,25 @@ class setup():
     def __init__(self):  
       
         # Size of gridpoints: 
-        self.nq = 7    #fixed points, preference for working 
+        self.nq = 7   #fixed points, preference for working 
         self.NA = 35  #assets gridpoints 
         self.NP = 11    #pension points gridpoints 
         self.nwls = 4  #hours choice 
          
         # First estimated parameters 
-        self.δ =  0.01 #0.00983949    # Discount rate 
+        self.δ =  1/0.98-1 #0.00983949    # Discount rate 
 
-        self.q =np.array([0.0,0.34080107,0.17315422,1.0])  #Fixed cost of pticipation - mean 
+        self.q =np.array([0.0,0.30696361,0.18751795,1.0])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
         self.ρq =0.0#-0.4#0.00195224 
     
-        self.qmean =0.47102776
-        self.qvar = 0.6111401 
+        self.qmean = 0.42984451
+        self.qvar = 0.64078798
                  
         # Economic Environment: set pameters  
-        self.T = 55         # Number of time periods  
-        self.R = 35         # Retirement period  
+        #Demographic data for pension: https://www.bmas.de/EN/Social-Affairs/Old-age-security-in-Germany/old-age-security-in-germany-art.html
+        self.T = 57         # Number of time periods  
+        self.R = 37         # Retirement period  
         self.r = 0.015     # Interest rate  
         self.σ=0.001        #Size of taste shock  
          
@@ -64,8 +65,8 @@ class setup():
         self.end=10
          
         #penalty/bonuses for early retirement, statutory, see https://frank-leenders.github.io/LW_LCScar.pdf 
-        self.age_ret = np.array([33,34,35,36,37,38,39,40],dtype=np.int32) #possible ages at retirement 
-        self.points_mult = np.array([1-0.036*2,1-0.036*1,1.0,1+0.06,1+2*0.06,1+3*0.06,1+4*0.06,1+5*0.06]) # point multiplier for early / late retirement 
+        self.age_ret = np.array([34,35,36,37,38,39,40,41],dtype=np.int32) #possible ages at retirement 
+        self.points_mult = np.array([1-0.036*4,1-0.036*3,1.0-0.036*2,1-0.036*1,1.0,1+0.06,1+2*0.06,1+3*0.06]) # point multiplier for early / late retirement 
         #self.points_mult[-1]=1.0 
          
         #External estimation 
@@ -90,7 +91,7 @@ class setup():
         for t in range(self.T)  : 
             for iz in range(self.nw):     
                 for i in range(self.nwls): 
-                    self.w[t,i,iz]=np.exp(-.3300579+.0943017+0.10336214*(t+30) -0.00115570  *(t+30)**2 + self.grid_zw[t][iz//self.nzm])/self.scale*38.5*52 
+                    self.w[t,i,iz]=np.exp(-.3300579+.0943017+0.10336214*(t+29) -0.00115570  *(t+29)**2 + self.grid_zw[t][iz//self.nzm])/self.scale*38.5*52 
                     if i==1:#miniwages are floored at 325*12 euros a year  
                         self.w[t,i,iz]=np.minimum(324*12/self.scale/self.wls[i],self.w[t,i,iz]) 
    
@@ -98,8 +99,8 @@ class setup():
         self.y_N=np.zeros((self.T,self.nw))#final grid for w's income         
         for t in range(self.T)  : 
             for iz in range(self.nw):     
-                if t<self.R: self.y_N[t,iz]=np.exp(8.390582 +.0945329+0.07439798*(t+30) -0.00083151 *(t+30)**2 + self.grid_zm[t][iz%self.nzw])/self.scale 
-                else:        self.y_N[t,iz]=self.y_N[self.R-1,iz]*0.45 
+                if t<self.R: self.y_N[t,iz]=np.exp(8.390582 +.0945329+0.07439798*(t+29) -0.00083151 *(t+29)**2 + self.grid_zm[t][iz%self.nzw])/self.scale 
+                else:        self.y_N[t,iz]=self.y_N[self.R-1,iz]*0.439
    
       
           
@@ -115,7 +116,7 @@ class setup():
         # self.q_grid_π=np.zeros((self.nq,self.nw)) 
         # self.q_gridt,_=addaco_dist(self.σq,0.0,self.nq) 
          
-        self.q_gridt = np.linspace(self.qmean-self.qmean*self.qvar,self.qmean+self.qmean*self.qvar,self.nq)#dist_gamma(self.qshape,self.qscale,self.nq) 
+        self.q_gridt = np.linspace(self.qmean-self.qmean*self.qvar,self.qmean+self.qmean*self.qvar,self.nq)
  
         for il in range(1,self.nwls): 
             for iw in range(self.nw): 
@@ -462,41 +463,5 @@ def mc_simulate(statein,Piin,shocks):
      
     """  
     return  np.sum(np.cumsum(Piin[:,statein])<shocks) 
- 
- 
- 
- 
- 
-def dist_gamma(k,theta,npts): 
-    """ 
-    Discretize the gamma function into npts points. Idea: first divide 
-    X space into npts+1 points. Between each point there should be the same  
-    probability 
-     
- 
-    Parameters 
-    ---------- 
-    k : TYPE: real 
-        DESCRIPTION: shape parameter of gamma distribution 
-    theta : TYPE: real 
-        DESCRIPTION:  scale parameter of gamma distribution 
-    npts : TYPE; int 
-        DESCRIPTION: number of points gamma function should be discretized 
- 
-    Returns 
-    ------- 
-    discr : TYPE np.array, one dimension of length npts 
-        DESCRIPTION. 
- 
-    """ 
-     
-    #percent point function, equal spacing for percentiles 
-    zvals = gamma.ppf(np.linspace(0.0, 1.0, npts+1), k,scale=theta) 
-     
-    #expected value between two consecutive zvals (note the rescaling) 
-    discr = np.array([gamma.expect(lambda x:x,args=(k,),scale=theta,lb=zvals[i],ub=zvals[i+1])/ 
-                      gamma.expect(lambda x:1,args=(k,),scale=theta,lb=zvals[i],ub=zvals[i+1])for i in range(npts)]) 
-     
-    return discr 
  
  
