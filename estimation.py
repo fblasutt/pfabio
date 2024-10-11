@@ -39,16 +39,19 @@ treatment=((age>=3)  & (year>=2001))
 after_treatment=((age>=3)  & (year>=2001)) 
  
 #Define initial point (xc) and boundaries (xl,xu) 
-xc=np.array([0.18984307, 0.39156348, 0.42656235, 0.38537558])#hours target, 7
-xc=np.array([0.17315422, 0.34080107, 0.47102776, 0.6111401 ])#points target, 7
+xc=np.array([0.18108606, 0.32964772, 0.47548368, 0.61767188])#0.01, 50000
+xc=np.array([0.17978348, 0.3575861,  0.38105063, 0.55291408])#0.02, 50000
+xc=np.array([0.17613872, 0.34827078, 0.38803979, 0.57131894])#0.02, 50000 5
+xc=np.array([0.1785878,  0.34289608, 0.39650153, 0.59513274])#0.02, 50000 6
 
+xc=np.array([0.18133082, 0.34155564, 0.397275  , 0.59939252])
 xl=np.array([0.01, 0.01, 0.01, 0.0]) 
 xu=np.array([0.5 , 0.99, 1.99, 2.0]) 
  
  
 #Function to minimize 
 def q(pt,additional_tests=False): 
- 
+
      
     #Define main parameters 
     p = co.setup() 
@@ -169,7 +172,7 @@ def q(pt,additional_tests=False):
     eff_marg=smf.ols(formula='marginal ~'+formula,data = dfa[(dfa['sample']==1) & (dfa['employed']==1)]).fit().params[param] 
     eff_earn=smf.ols(formula='earnings ~'+formula,data = dfa[(dfa['sample']==1)]).fit().params[param] 
     eff_points=smf.ols(formula='points ~'+formula,data = dfa[(dfa['sample']==1)]).fit().params[param] 
-    eff_points_behavioral=smf.ols(formula='points_behavioral ~'+formula,data = dfa[(dfa['sample']==1)]).fit().params[param] 
+    eff_points_behavioral=0.0#smf.ols(formula='points_behavioral ~'+formula,data = dfa[(dfa['sample']==1)]).fit().params[param] 
          
     # years=np.array(range(1995,2007)) 
     # import matplotlib.pyplot as plt 
@@ -181,12 +184,12 @@ def q(pt,additional_tests=False):
     if additional_tests:
         
         #True effects below
-        # group=(age>=3)  & (age<=10) & (year>=2001)
-        # eff_ht=(co.hours_value(p,SP,0,p.T)[group]-co.hours_value(p,SB,0,p.T)[group]).mean()
-        # eff_et=(SP['h'][group]>0).mean()-(SB['h'][group]>0).mean()
-        # eff_earnt=(SP['wh'][group].mean()-SB['wh'][group].mean())*p.scale 
-        # eff_fullt=(SP['h'][group]>=3).mean()-(SB['h'][group]>=3).mean()
-        # eff_pointst=(SP['pb']-SB['pb'])[group].mean()
+        group=(age>=3)  & (age<=10) & (year>=2001)
+        eff_ht=(co.hours_value(p,SP,0,p.T)[group]-co.hours_value(p,SB,0,p.T)[group]).mean()
+        eff_et=(SP['h'][group]>0).mean()-(SB['h'][group]>0).mean()
+        eff_earnt=(SP['wh'][group].mean()-SB['wh'][group].mean())*p.scale 
+        eff_fullt=(SP['h'][group]>=3).mean()-(SB['h'][group]>=3).mean()
+        eff_pointst=(SP['pb']-SB['pb'])[group].mean()
     
     
         #Table with parameters + targeted moments  

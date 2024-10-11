@@ -37,12 +37,15 @@ p = co.setup()
 ModP= sol.solveEulerEquation(p,model='pension reform') 
 ModB = sol.solveEulerEquation(p,model='baseline') 
  
-pτ = co.setup();pτ.tbase[3:11]=p.tbase[3:11]-0.235#0.22#197
+pτ = co.setup();pτ.tbase[3:11]=p.tbase[3:11]-0.175#0.22#197
 Modτ = sol.solveEulerEquation(pτ,model='baseline') 
  
-pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.48#1.4#35
-ModPN = sol.solveEulerEquation(pPN,model='pension reform') 
+# pPN = co.setup();pPN.wls_point2=np.array([0.0,0.1,1.0,1.0]);pPN.standard_wls=False
+# ModPN = sol.solveEulerEquation(pPN,model='baseline') 
  
+pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.68#1.4#35 
+ModPN = sol.solveEulerEquation(pPN,model='pension reform') 
+
 #pm = co.setup();pm.wls_point=0;pm.add_points=1.543 
 #Modm = sol.solveEulerEquation(pm,model='pension reform') 
  
@@ -103,10 +106,10 @@ deficit_τ=np.nansum(adjust*pτ.ρ*Sτ['p']*(Sτ['ir']==1))-np.nansum(adjust*Sτ
 deficit_PN=np.nansum(adjust*pPN.ρ*SPN['p']*(SPN['ir']==1))-np.nansum(adjust*SPN['taxes'])#(np.nansum(expe_PN*adjust[p.R:,:])-np.nansum(tax_PN*adjust[3:p.R,:])) 
 
 #3) Gender wage gaps in old age 
-ggap_old_B=1.0-(np.nanmean(p.ρ*SB['p'][SB['ir']==1]))/np.nanmean(p.y_N[35,SB['iz']])
-ggap_old_P=1.0-(np.nanmean(p.ρ*SP['p'][SP['ir']==1]))/np.nanmean(p.y_N[35,SB['iz']])
-ggap_old_τ=1.0-(np.nanmean(pτ.ρ*Sτ['p'][Sτ['ir']==1]))/np.nanmean(pτ.y_N[35,SB['iz']])
-ggap_old_PN=1.0-(np.nanmean(pPN.ρ*SPN['p'][SPN['ir']==1]))/np.nanmean(pPN.y_N[35,SB['iz']])
+ggap_old_B=1.0-(np.nanmean(p.ρ*SB['p'][SB['ir']==1]))/np.nanmean(p.y_N[p.R,SB['iz']])
+ggap_old_P=1.0-(np.nanmean(p.ρ*SP['p'][SP['ir']==1]))/np.nanmean(p.y_N[p.R,SB['iz']])
+ggap_old_τ=1.0-(np.nanmean(pτ.ρ*Sτ['p'][Sτ['ir']==1]))/np.nanmean(pτ.y_N[p.R,SB['iz']])
+ggap_old_PN=1.0-(np.nanmean(pPN.ρ*SPN['p'][SPN['ir']==1]))/np.nanmean(pPN.y_N[p.R,SB['iz']])
 #ggap_old_m=1.0-(np.nanmean(pm.ρ*Sm['p'][pm.R:,:]))/np.nanmean(pm.y_N[p.R:,:]) 
  
 #4) WLP 
@@ -138,20 +141,20 @@ table=r'\begin{table}[htbp]'+\
       r'\begin{threeparttable}'+\
        r'\caption{Lifecycle model: counterfactual experiments}\label{table:experiments}'+\
        r'\centering\footnotesize'+\
-       r'\begin{tabular}{lccccc}'+\
+       r'\begin{tabular}{lcccc}'+\
        r' \toprule '+\
-       r"& Pension & Women's labor & Women's labor & Average age &  Welfare gains  \\"+\
-       r"&gender gap &hours &  participation  (\%) & at retirement  & wrt baseline (\%)  \\"+\
+       r"& Pension &  Women's labor & Average age &  Welfare gains  \\"+\
+       r"&gender gap &hours &  at retirement  & wrt baseline (\%)  \\"+\
        r'\midrule   '+\
-       r' Baseline                                   &'+p43(ggap_old_B)  +'&'+p42(WLS_B)  +'&'+p42(WLP_B*100)  +'&'+p42(ret_B) +'& 0.0\\\\'+\
-       r' Caregiver credits                          &'+p43(ggap_old_P)  +'&'+p42(WLS_P)  +'&'+p42(WLP_P*100)  +'&'+p42(ret_P) +'&'+p43(welf_P*100)+'\\\\'+\
-       r' Caregiver credits, no threshold            &'+p43(ggap_old_PN) +'&'+p42(WLS_PN) +'&'+p42(WLP_PN*100) +'&'+p42(ret_PN) +'&'+p43(welf_P*100)+'\\\\'+\
-       r' Lower income taxes                         &'+p43(ggap_old_τ)  +'&'+p42(WLS_τ)  +'&'+p42(WLP_τ*100)  +'&'+p42(ret_τ) +'&'+p43(welf_τ*100)+'\\\\'+\
+       r' Baseline                                   &'+p43(ggap_old_B)  +'&'+p42(WLS_B)    +'&'+p42(30+ret_B) +'& 0.0\\\\'+\
+       r' Caregiver credits                          &'+p43(ggap_old_P)  +'&'+p42(WLS_P)    +'&'+p42(30+ret_P) +'&'+p43(welf_P*100)+'\\\\'+\
+       r' Caregiver credits, no threshold            &'+p43(ggap_old_PN) +'&'+p42(WLS_PN)  +'&'+p42(30+ret_PN) +'&'+p43(welf_PN*100)+'\\\\'+\
+       r' Lower income taxes                         &'+p43(ggap_old_τ)  +'&'+p42(WLS_τ)    +'&'+p42(30+ret_τ) +'&'+p43(welf_τ*100)+'\\\\'+\
        r' \bottomrule'+\
        r'\end{tabular}'+\
        r'\begin{tablenotes}[flushleft]\small\item \textsc{Notes:} The experiments in the last three rows imply the same government deficit.'+\
        r' Welfare gains = increase in consumption at baseline to be indifferent with the experiment under analysis.'+\
-       r' Reforms are in place while the child is 10 y.o. or younger''\\\\'+\
+       r' Reforms are in place while the child is 3-10 y.o.''\\\\'+\
        r'\end{tablenotes}'+\
       r'\end{threeparttable}'+\
       r'\end{table}' 

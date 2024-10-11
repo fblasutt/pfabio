@@ -14,26 +14,26 @@ class setup():
     def __init__(self):  
       
         # Size of gridpoints: 
-        self.nq = 7    #fixed points, preference for working 
+        self.nq = 6   #fixed points, preference for working 
         self.NA = 35  #assets gridpoints 
-        self.NP = 11    #pension points gridpoints 
+        self.NP = 21    #pension points gridpoints 
         self.nwls = 4  #hours choice 
          
         # First estimated parameters 
-        self.δ =  0.01 #0.00983949    # Discount rate 
+        self.δ =  1-1/(1+0.02) #0.00983949    # Discount rate 
 
-        self.q =np.array([0.0,0.34080107,0.17315422,1.0])  #Fixed cost of pticipation - mean 
+        self.q =np.array([0.0,0.34155564,0.18133082,1.0])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
         self.ρq =0.0#-0.4#0.00195224 
     
-        self.qmean =0.47102776
-        self.qvar = 0.6111401 
+        self.qmean =0.397275
+        self.qvar =  0.59939252
                  
         # Economic Environment: set pameters  
-        self.T = 55         # Number of time periods  
-        self.R = 35         # Retirement period  
+        self.T = 57        # Number of time periods - 29+52.91 -https://www-genesis.destatis.de/genesis/online?operation=abruftabelleBearbeiten&levelindex=0&levelid=1728661059558&auswahloperation=abruftabelleAuspraegungAuswaehlen&auswahlverzeichnis=ordnungsstruktur&auswahlziel=werteabruf&code=12621-0002&auswahltext=&werteabruf=Value+retrieval#abreadcrumb 
+        self.R = 35        # Retirement period  
         self.r = 0.015     # Interest rate  
-        self.σ=0.001        #Size of taste shock  
+        self.σ=0.00001        #Size of taste shock  
          
         self.α= 1#1.20152824 
         
@@ -63,10 +63,11 @@ class setup():
         self.beg=3
         self.end=10
          
-        #penalty/bonuses for early retirement, statutory, see https://frank-leenders.github.io/LW_LCScar.pdf 
-        self.age_ret = np.array([33,34,35,36,37,38,39,40],dtype=np.int32) #possible ages at retirement 
-        self.points_mult = np.array([1-0.036*2,1-0.036*1,1.0,1+0.06,1+2*0.06,1+3*0.06,1+4*0.06,1+5*0.06]) # point multiplier for early / late retirement 
-        #self.points_mult[-1]=1.0 
+        #penalty/bonuses for early retirement, statutory, see https://frank-leenders.github.io/LW_LCScar.pdf  
+        self.age_ret = np.array([33,34,35,36,37,38,39,40],dtype=np.int32) #possible ages at retirement  
+        self.points_mult = np.array([1-0.036*2,1-0.036*1,1.0,1+0.06,1+2*0.06,1+3*0.06,1+4*0.06,1+5*0.06]) # point multiplier for early / late retirement  
+        #self.points_mult[-1]=1.0  
+          
          
         #External estimation 
         data=pd.read_csv('categories.csv')   
@@ -90,7 +91,7 @@ class setup():
         for t in range(self.T)  : 
             for iz in range(self.nw):     
                 for i in range(self.nwls): 
-                    self.w[t,i,iz]=np.exp(-.3300579+.0943017+0.10336214*(t+30) -0.00115570  *(t+30)**2 + self.grid_zw[t][iz//self.nzm])/self.scale*38.5*52 
+                    self.w[t,i,iz]=np.exp(-.3300579+.0943017+0.10336214*(t+29) -0.00115570  *(t+29)**2 + self.grid_zw[t][iz//self.nzm])/self.scale*38.5*52 
                     if i==1:#miniwages are floored at 325*12 euros a year  
                         self.w[t,i,iz]=np.minimum(324*12/self.scale/self.wls[i],self.w[t,i,iz]) 
    
@@ -98,8 +99,8 @@ class setup():
         self.y_N=np.zeros((self.T,self.nw))#final grid for w's income         
         for t in range(self.T)  : 
             for iz in range(self.nw):     
-                if t<self.R: self.y_N[t,iz]=np.exp(8.390582 +.0945329+0.07439798*(t+30) -0.00083151 *(t+30)**2 + self.grid_zm[t][iz%self.nzw])/self.scale 
-                else:        self.y_N[t,iz]=self.y_N[self.R-1,iz]*0.45 
+                if t<self.R: self.y_N[t,iz]=np.exp(8.390582 +.0945329+0.07439798*(t+29) -0.00083151 *(t+29)**2 + self.grid_zm[t][iz%self.nzw])/self.scale 
+                else:        self.y_N[t,iz]=self.y_N[self.R-1,iz]*0.439
    
       
           
