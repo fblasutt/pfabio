@@ -21,7 +21,7 @@ adjust=np.ones((p.T,p.N))/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 
 
 
-increase=0.083
+increase=0.0645#0.067
 p.tax[beg:end] = -increase;p.wls_point=np.array([0.0,0.0,1.0,1.0]);p.wls_point2=np.array([0.0,0.0,1.0,1.0]);ModB = sol.solveEulerEquation(p,model='baseline')
 SB= sim.simNoUncer_interp(p,ModB,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw)
 

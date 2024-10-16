@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.10.4)  11 OCT 2024 08:08
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.10.4)  16 OCT 2024 10:49
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -489,24 +489,37 @@ Underfull \hbox (badness 10000) in paragraph at lines 1--1
  []
 
 
-Overfull \hbox (35.88663pt too wide) in paragraph at lines 1--1
+Overfull \hbox (112.11673pt too wide) in paragraph at lines 1--1
 [] 
  []
 
 ) (./table_params.tex
-Overfull \hbox (41.8063pt too wide) in paragraph at lines 1--1
+Overfull \hbox (42.87299pt too wide) in paragraph at lines 1--1
  [][] 
  []
 
 ) (./table_nontargetd.tex
 ! Undefined control sequence.
 l.1 ... propensity to earn (MPE)      & -0.51\text
-                                                  { to }-0.12 &-0.45\\  \bot...
+                                                  { to }-0.12 &-0.33\\  \bot...
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
+
+
+LaTeX Warning: Reference `pension_table:main_outcomes' on page 1 undefined on i
+nput line 1.
+
+
+LaTeX Warning: Reference `pension_table:pension_contrib' on page 1 undefined on
+ input line 1.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1--1
+
+ []
 
 ) [1
 
@@ -516,28 +529,33 @@ and I'll forget about whatever was undefined.
 LaTeX2e <2023-06-01> patch level 1
 L3 programming layer <2023-08-29>
  ***********
+
+
+LaTeX Warning: There were undefined references.
+
  ) 
 Here is how much of TeX's memory you used:
- 13234 strings out of 474928
- 268038 string characters out of 5763562
- 1930785 words of memory out of 5000000
- 34527 multiletter control sequences out of 15000+600000
- 562540 words of font info for 52 fonts, out of 8000000 for 9000
+ 13238 strings out of 474928
+ 268117 string characters out of 5763562
+ 1931785 words of memory out of 5000000
+ 34530 multiletter control sequences out of 15000+600000
+ 562848 words of font info for 53 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 84i,10n,89p,1025b,375s stack positions out of 10000i,1000n,20000p,200000b,200000s
-<c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb><c:/te
-xlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb><c:/texlive/2023
-/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb><c:/texlive/2023/texmf-dis
-t/fonts/type1/public/amsfonts/cm/cmr10.pfb><c:/texlive/2023/texmf-dist/fonts/ty
-pe1/public/amsfonts/cm/cmr12.pfb><c:/texlive/2023/texmf-dist/fonts/type1/public
-/amsfonts/cm/cmr17.pfb><c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/
-cm/cmr6.pfb><c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb
-><c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb><c:/texliv
-e/2023/texmf-dist/fonts/type1/public/eurosym/feymr10.pfb>
-Output written on visual_tables.pdf (2 pages, 116418 bytes).
+ 84i,10n,89p,1097b,401s stack positions out of 10000i,1000n,20000p,200000b,200000s
+<c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb><c:/texl
+ive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb><c:/texlive/2023
+/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb><c:/texlive/2023/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmmi8.pfb><c:/texlive/2023/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmr10.pfb><c:/texlive/2023/texmf-dist/fonts/type1/public
+/amsfonts/cm/cmr12.pfb><c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/
+cm/cmr17.pfb><c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pf
+b><c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb><c:/texli
+ve/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb><c:/texlive/2023/tex
+mf-dist/fonts/type1/public/eurosym/feymr10.pfb>
+Output written on visual_tables.pdf (2 pages, 126174 bytes).
 PDF statistics:
- 64 PDF objects out of 1000 (max. 8388607)
- 39 compressed objects within 1 object stream
+ 69 PDF objects out of 1000 (max. 8388607)
+ 42 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  13 words of extra memory for PDF output out of 10000 (max. 10000000)
 

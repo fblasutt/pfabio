@@ -44,9 +44,11 @@ xc=np.array([0.17978348, 0.3575861,  0.38105063, 0.55291408])#0.02, 50000
 xc=np.array([0.17613872, 0.34827078, 0.38803979, 0.57131894])#0.02, 50000 5
 xc=np.array([0.1785878,  0.34289608, 0.39650153, 0.59513274])#0.02, 50000 6
 
-xc=np.array([0.18133082, 0.34155564, 0.397275  , 0.59939252])
-xl=np.array([0.01, 0.01, 0.01, 0.0]) 
-xu=np.array([0.5 , 0.99, 1.99, 2.0]) 
+
+xc=np.array([0.06825989, 0.13707109, 0.39572032, 0.64277352])
+
+xl=np.array([0.01, 0.01, 0.01, 0.0])
+xu=np.array([0.5 , 0.99, 1.99, 1.5])
  
  
 #Function to minimize 
@@ -57,16 +59,15 @@ def q(pt,additional_tests=False):
     p = co.setup() 
      
     #..and update them 
-    p.q =np.array([0.0,pt[1],pt[0],1.0])   #Fixed cost of pticipation - mean 
+    p.q =np.array([0.0,pt[1],pt[0],pt[2]])   #Fixed cost of pticipation - mean 
      
-    p.qmean=pt[2] 
      
     p.qvar =pt[3] #Fixed cost of pticipation -sd  
     
      
     #Disutility from working 
     p.q_grid=np.zeros((p.nq,p.nwls,p.nw)) 
-    p.q_gridt = np.linspace(p.qmean-p.qmean*p.qvar,p.qmean+p.qmean*p.qvar,p.nq)#co.dist_gamma(p.qshape,p.qscale,p.nq) 
+    p.q_gridt = np.linspace(1.0-p.qvar,1.0+p.qvar,p.nq)#np.linspace(p.qmean-p.qmean*p.qvar,p.qmean+p.qmean*p.qvar,p.nq)#co.dist_gamma(p.qshape,p.qscale,p.nq) 
  
     for il in range(1,p.nwls): 
         for iw in range(p.nw): 
@@ -205,10 +206,10 @@ def q(pt,additional_tests=False):
                 r" Parameter & Value & \multicolumn{3}{c}{Target statistics}  \\\cline{3-5} "+\
                 r" &  &  Name & Data & Model  \\"+\
                 r'\midrule   '+\
-                r' Cost of working - mini ($q_{10}$)   &'+p43(p.q[1]*p.qmean)+'& Share mini-jobs           & 0.26 &'+p42(sh_min)+'\\\\'+\
-                r' Cost of working - part ($q_{20}$)   &'+p43(p.q[2]*p.qmean)+'& Share part-time           & 0.20 &'+p42(sh_part)+'\\\\'+\
-                r' Cost of working - full ($q_{38.5}$)      &'+p43(p.qmean)+'& Share full time      & 0.20 &'+p42(sh_full)+'\\\\'+\
-                r' Fixed effects dispersion ($\sigma_q$)   &'+p43(p.qvar)+'& Effect of the reform on hours  & 3.56 & '+p42(eff_h)+'\\\\'+\
+                r' Cost of working - mini ($q_{10}$)   &'+p43(p.q[1])+'& Share mini-jobs           & 0.26 &'+p42(sh_min)+'\\\\'+\
+                r' Cost of working - part ($q_{20}$)   &'+p43(p.q[0])+'& Share part-time           & 0.20 &'+p42(sh_part)+'\\\\'+\
+                r' Cost of working - full ($q_{38.5}$)      &'+p43(p.q[2])+'& Share full time      & 0.20 &'+p42(sh_full)+'\\\\'+\
+                r' Fixed effects distribution ($q_{LIM}$)    &'+p43(p.qvar)+'& Effect of the reform on pension points  & 0.153 & '+p42(eff_points)+'\\\\'+\
                 r'  \bottomrule'+\
               """\end{tabular}"""+\
               r'\end{table}' 
@@ -270,9 +271,8 @@ def q(pt,additional_tests=False):
                 r' \toprule '+\
                 r" Effect of the reform on &   Data & Model  \\"+\
                 r'\midrule   '+\
-                r' Pension points   & 0.15 &'+p42(eff_points)+'\\\\'+\
                 r' Behavioral pension points   & 0.10 &'+p42(eff_points_behavioral)+'\\\\'+\
-                r' Work full time    & 0.05 &'+p42(eff_e)+'\\\\'+\
+                r' Work full time    & 0.05 &'+p42(eff_full)+'\\\\'+\
                 r' Marginal employment    & -0.12 &'+p42(eff_marg)+'\\\\'+\
                 r' Non-marginal employment earnings (\euro)    & 2809 &'+p40(eff_earn)+'\\\\'+\
                 r'Employed    & 0.10 &'+p42(eff_e)+'\\\\'+\
@@ -305,8 +305,8 @@ def q(pt,additional_tests=False):
     # return [((sh_full-.1984)/0.0058),((sh_part-.1986)/0.00589),((sh_min-.256)/0.00644),((eff_h- 2.84)/0.822),((eff_e-.0772)/.0257)]         
     
              
-    print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_points- 0.153)/ 0.153)**2]).sum())  
-    return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_points- 0.153)/ 0.153)]            
+    print(np.array([((sh_full-.1984))**2,((sh_part-.1986))**2,((sh_min-.256))**2,((eff_points- 0.153))**2]).sum())  
+    return [((sh_full-.1984)),((sh_part-.1986)),((sh_min-.256)),((eff_points- 0.153))]            
  
  
 # [ 0.40706012  0.03525281 -0.51941101  0.00186123  1.60048109  0.03695673] first tentative σ=0.0005 

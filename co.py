@@ -22,16 +22,18 @@ class setup():
         # First estimated parameters 
         self.δ =  1-1/(1+0.02) #0.00983949    # Discount rate 
 
-        self.q =np.array([0.0,0.34155564,0.18133082,1.0])  #Fixed cost of pticipation - mean 
+        self.q =np.array([0.0,0.13707109,0.06825989,0.39572032])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
         self.ρq =0.0#-0.4#0.00195224 
     
-        self.qmean =0.397275
-        self.qvar =  0.59939252
+        self.qmean =0.40299779
+        self.qvar =    0.64277352
                  
         # Economic Environment: set pameters  
-        self.T = 57        # Number of time periods - 29+52.91 -https://www-genesis.destatis.de/genesis/online?operation=abruftabelleBearbeiten&levelindex=0&levelid=1728661059558&auswahloperation=abruftabelleAuspraegungAuswaehlen&auswahlverzeichnis=ordnungsstruktur&auswahlziel=werteabruf&code=12621-0002&auswahltext=&werteabruf=Value+retrieval#abreadcrumb 
-        self.R = 35        # Retirement period  
+        #np.linspace(0,100,101)+29
+        self.T = 56        # Number of time periods - 29+52.91 -https://www-genesis.destatis.de/genesis//online?operation=table&code=12621-0002&bypass=true&levelindex=0&levelid=1728670528126#abreadcrumb
+                           #84 in 2019 https://tradingeconomics.com/germany/life-expectancy-at-birth-female-years-wb-data.html
+        self.R = 36       # Retirement period  age 65
         self.r = 0.015     # Interest rate  
         self.σ=0.00001        #Size of taste shock  
          
@@ -51,7 +53,7 @@ class setup():
            
         #Pension 
         self.E_bar_now = 27740.65230618203/self.scale  # Average earnings: ttps://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256, exchange rate 1.9569471624266144 
-        self.ρ =348/self.scale      #Dollar value of points  
+        self.ρ =303.768/self.scale      #Dollar value of points:https://de.wikipedia.org/wiki/Aktueller_Rentenwert 
         self.Pmax = 1               #Threshold for pension points reform 
         self.add_points=1.5         #point multiplicator during reform 
         self.add_points_exp=1.0
@@ -64,7 +66,7 @@ class setup():
         self.end=10
          
         #penalty/bonuses for early retirement, statutory, see https://frank-leenders.github.io/LW_LCScar.pdf  
-        self.age_ret = np.array([33,34,35,36,37,38,39,40],dtype=np.int32) #possible ages at retirement  
+        self.age_ret = np.array([34,35,36,37,38,39,40,41],dtype=np.int32) #possible ages at retirement  
         self.points_mult = np.array([1-0.036*2,1-0.036*1,1.0,1+0.06,1+2*0.06,1+3*0.06,1+4*0.06,1+5*0.06]) # point multiplier for early / late retirement  
         #self.points_mult[-1]=1.0  
           
@@ -116,7 +118,7 @@ class setup():
         # self.q_grid_π=np.zeros((self.nq,self.nw)) 
         # self.q_gridt,_=addaco_dist(self.σq,0.0,self.nq) 
          
-        self.q_gridt = np.linspace(self.qmean-self.qmean*self.qvar,self.qmean+self.qmean*self.qvar,self.nq)#dist_gamma(self.qshape,self.qscale,self.nq) 
+        self.q_gridt = np.linspace(1.0-self.qvar,1.0+self.qvar,self.nq)#dist_gamma(self.qshape,self.qscale,self.nq) 
  
         for il in range(1,self.nwls): 
             for iw in range(self.nw): 
@@ -152,7 +154,7 @@ class setup():
         self.startP=np.zeros(self.N)  
         for i in range(self.N):  
             index=int(i/self.N*9)  
-            self.startP[i]=self.startPd[index]+3.0 
+            self.startP[i]=self.startPd[index]#+3.0 
                      
         #Distribution of types in first period and shocks to be used 
         self.tw=np.sort(qe.MarkovChain(self.Π0.T).simulate(self.N,init=self.nw//2))# Type here  
