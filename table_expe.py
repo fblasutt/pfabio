@@ -148,7 +148,7 @@ table=r'\begin{table}[htbp]'+\
        r'\midrule   '+\
        r' Baseline                                   &'+p43(ggap_old_B)  +'&'+p42(WLS_B)  +'&'+p42(WLP_B*100)  +'&'+p42(29+ret_B) +'& 0.0\\\\'+\
        r' Caregiver credits                          &'+p43(ggap_old_P)  +'&'+p42(WLS_P)  +'&'+p42(WLP_P*100)  +'&'+p42(29+ret_P) +'&'+p43(welf_P*100)+'\\\\'+\
-       r' Caregiver credits, no threshold            &'+p43(ggap_old_PN) +'&'+p42(WLS_PN) +'&'+p42(WLP_PN*100) +'&'+p42(29+ret_PN) +'&'+p43(welf_P*100)+'\\\\'+\
+       r' Caregiver credits, no threshold            &'+p43(ggap_old_PN) +'&'+p42(WLS_PN) +'&'+p42(WLP_PN*100) +'&'+p42(29+ret_PN) +'&'+p43(welf_PN*100)+'\\\\'+\
        r' Lower income taxes                         &'+p43(ggap_old_τ)  +'&'+p42(WLS_τ)  +'&'+p42(WLP_τ*100)  +'&'+p42(29+ret_τ) +'&'+p43(welf_τ*100)+'\\\\'+\
        r' \bottomrule'+\
        r'\end{tabular}'+\

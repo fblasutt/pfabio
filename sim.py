@@ -28,7 +28,7 @@ def fast_simulate(beg,end,Years,Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agr
   
     # Arguments for output  
     cpath = np.nan+ np.zeros((T, N))           # consumption  
-    hpath = np.zeros((T, N),dtype=np.int32)           # earnings path  
+    hpath = np.zeros((T, N),dtype=np.int32)-2           # earnings path  
     pepath = np.nan+ np.zeros((T, N))           #corrected potints path  
       
     pepath2 = np.nan+ np.zeros((T, N))           #additional caregiver credits  

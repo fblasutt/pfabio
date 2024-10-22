@@ -14,6 +14,10 @@ keep if age>=20 & age<65
 * == 5 if agreed upon hours is larger than 30
 
 
+gen couple=0
+replace couple=1 if  parid!=.
+
+
 **# Bookmark #1
 *Model start at age 29, when every women has a kid
 

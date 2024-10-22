@@ -14,20 +14,20 @@ class setup():
     def __init__(self):  
       
         # Size of gridpoints: 
-        self.nq = 6   #fixed points, preference for working 
+        self.nq = 4   #fixed points, preference for working 
         self.NA = 35  #assets gridpoints 
-        self.NP = 21    #pension points gridpoints 
+        self.NP = 11    #pension points gridpoints 
         self.nwls = 4  #hours choice 
          
         # First estimated parameters 
         self.δ =  1-1/(1+0.02) #0.00983949    # Discount rate 
-
-        self.q =np.array([0.0,0.13707109,0.06825989,0.39572032])  #Fixed cost of pticipation - mean 
+    
+        self.q =np.array([0.0,0.21605719,0.28014434,0.90757308])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
         self.ρq =0.0#-0.4#0.00195224 
     
         self.qmean =0.40299779
-        self.qvar =    0.64277352
+        self.qvar =  .68
                  
         # Economic Environment: set pameters  
         #np.linspace(0,100,101)+29
@@ -35,7 +35,7 @@ class setup():
                            #84 in 2019 https://tradingeconomics.com/germany/life-expectancy-at-birth-female-years-wb-data.html
         self.R = 36       # Retirement period  age 65
         self.r = 0.015     # Interest rate  
-        self.σ=0.00001        #Size of taste shock  
+        self.σ=0.001        #Size of taste shock  
          
         self.α= 1#1.20152824 
         
@@ -95,8 +95,8 @@ class setup():
                 for i in range(self.nwls): 
                     self.w[t,i,iz]=np.exp(-.3300579+.0943017+0.10336214*(t+29) -0.00115570  *(t+29)**2 + self.grid_zw[t][iz//self.nzm])/self.scale*38.5*52 
                     if i==1:#miniwages are floored at 325*12 euros a year  
-                        self.w[t,i,iz]=np.minimum(324*12/self.scale/self.wls[i],self.w[t,i,iz]) 
-   
+                        self.w[t,i,iz]=np.minimum(325*12/self.scale/self.wls[i],self.w[t,i,iz]) 
+                  
  
         self.y_N=np.zeros((self.T,self.nw))#final grid for w's income         
         for t in range(self.T)  : 
@@ -118,13 +118,13 @@ class setup():
         # self.q_grid_π=np.zeros((self.nq,self.nw)) 
         # self.q_gridt,_=addaco_dist(self.σq,0.0,self.nq) 
          
-        self.q_gridt = np.linspace(1.0-self.qvar,1.0+self.qvar,self.nq)#dist_gamma(self.qshape,self.qscale,self.nq) 
+        self.q_gridt = np.linspace(0.0,self.qvar,self.nq)#dist_gamma(self.qshape,self.qscale,self.nq) 
  
         for il in range(1,self.nwls): 
             for iw in range(self.nw): 
                 for iq in range(self.nq): 
                      
-                    self.q_grid[iq,il,iw]= self.q[il]*self.q_gridt[iq] 
+                    self.q_grid[iq,il,iw]= self.q_gridt[iq]*(il>1)+self.q[il]#*0+1.2*(self.wls[il]**(1+1/0.75))/(1+1/0.75)+self.q_gridt[iq]*(il>1)
                      
              
         # Assets  grid    
@@ -133,7 +133,7 @@ class setup():
         self.agrid=nonlinspace(self.amin,self.amax,self.NA,1.8) 
          
         #Pension points grid 
-        self.pgrid=nonlinspace(5.0,11.0+self.R*2,self.NP,1.0)          
+        self.pgrid=nonlinspace(0.0,11.0+self.R*2,self.NP,1.0)          
      
         ####################################################################### 
         #Simulations 
@@ -147,14 +147,14 @@ class setup():
         assets=np.array(data['_networth']) 
         for i in range(self.N):  
             index=int(i/self.N*9)  
-            self.startA[:,i]=assets[index]/self.scale  
+            self.startA[:,i]=assets[index]*0/self.scale  
              
         #Initial pension points 
         self.startPd = np.array(data['_points']) 
         self.startP=np.zeros(self.N)  
         for i in range(self.N):  
             index=int(i/self.N*9)  
-            self.startP[i]=self.startPd[index]#+3.0 
+            self.startP[i]=self.startPd[index]*0.8#+3.0 
                      
         #Distribution of types in first period and shocks to be used 
         self.tw=np.sort(qe.MarkovChain(self.Π0.T).simulate(self.N,init=self.nw//2))# Type here  
@@ -169,6 +169,7 @@ class setup():
 #taxes: based on page 72 in https://www.fabian-kindermann.de/docs/progressive_pensions.pdf 
 #                           https://www.fabian-kindermann.de/docs/women_redistribution pg 20 
 # http://www.parmentier.de/steuer/index.php?site=einkommensteuersatz 
+# https://de.wikipedia.org/wiki/Tarifgeschichte_der_Einkommensteuer_in_Deutschland#Entwicklung_der_Eingangs-_und_Spitzensteuers%C3%A4tze
 # euro/de: 1.95583? Year 2000 
  
 # 13500(->13500/1.95583/27740.65=0.2488) 0.229 
@@ -177,7 +178,7 @@ class setup():
  
 # 114696(-> 114696/1.95583/27740.65=2.1139) 0.51 
 @njit 
-def after_tax_income(tbase,y1g,y2g,y_mean,fraction,τ,no_retired = True): 
+def after_tax_income(tbase,y1g,y2g,y_mean,fraction,τ,p_not_retired,no_retired = True): 
      
     y1c = min(y1g*fraction*tbase,2*y_mean) 
     y2c = min(y2g,         2*y_mean) 
@@ -186,13 +187,13 @@ def after_tax_income(tbase,y1g,y2g,y_mean,fraction,τ,no_retired = True):
     payroll_tax_2 = τ*y2c 
      
     #Compute taxable income 
-    y1 = y1g*tbase -  payroll_tax_1 if no_retired else y1g 
-    y2 = y2g       -  payroll_tax_2 if no_retired else y2g 
+    y1 = y1g*tbase*fraction -  payroll_tax_1 if no_retired else y1g 
+    y2 = y2g                -  payroll_tax_2 if p_not_retired else y2g 
      
     #If mini-job, then taxable income for woman is 0 
-    if fraction<1: y1 = 0.0 
+    #if fraction<1: y1 = 0.0 
      
-    share_married=1.65 
+    share_married=2#1.71
     j_income = (y1+y2)/(share_married) 
     rel_income = j_income/y_mean 
      
@@ -201,36 +202,42 @@ def after_tax_income(tbase,y1g,y2g,y_mean,fraction,τ,no_retired = True):
     if rel_income<0.2488:  
         tax = 0.0 
      
-    elif (rel_income<0.25) & (rel_income>=0.2488):  
+    elif (rel_income<0.3224) & (rel_income>=0.2488):  
         tax = y_mean*share_married*(\
                                 (rel_income-0.2488)*0.229+\
-                                (rel_income-0.2488)*((0.25-0.229)*(rel_income-0.2488)/(0.25-0.2488))/2                       
+                                (rel_income-0.2488)*((0.25-0.229)*(rel_income-0.2488)/(0.3224-0.2488))/2                       
                                 )
              
-    elif (rel_income<2.1139) & (rel_income>=0.25):
+    elif (rel_income<2.1139) & (rel_income>=0.3224):
         tax = y_mean*share_married*(\
-                                 (0.25-0.2488)*0.229+\
-                                 (0.25-0.2488)*((0.25-0.229)*(0.25-0.2488)/(0.25-0.2488))/2+\
+                                 (0.3224-0.2488)*0.229+\
+                                 (0.3224-0.2488)*((0.25-0.229)*(0.25-0.2488)/(0.3224-0.2488))/2+\
                                  
-                                 (rel_income-0.25)*0.25+\
-                                 (rel_income-0.25)*((0.51-0.25)*(rel_income-0.25)/(2.1139-0.25))/2   
+                                 (rel_income-0.3224)*0.25+\
+                                 (rel_income-0.3224)*((0.51-0.25)*(rel_income-0.3224)/(2.1139-0.3224))/2   
                                  
                                  ) 
     else: 
          
         tax = y_mean*share_married*(\
-                                 (0.25-0.2488)*0.229+\
-                                 (0.25-0.2488)*((0.25-0.229)*(0.25-0.2488)/(0.25-0.2488))/2+\
+                                 (0.3224-0.2488)*0.229+\
+                                 (0.3224-0.2488)*((0.25-0.229)*(0.25-0.2488)/(0.3224-0.2488))/2+\
                                  
-                                 (2.1139-0.25)*0.25+\
-                                 (2.1139-0.25)*((0.51-0.25)*(2.1139-0.25)/(2.1139-0.25))/2 +\
+                                 (2.1139-0.3224)*0.25+\
+                                 (2.1139-0.3224)*((0.51-0.25)*(2.1139-0.3224)/(2.1139-0.3224))/2 +\
                                       
                                  (rel_income-2.1139)*0.51 
                                            
                                  ) 
     
- 
-    total_taxes = tax + payroll_tax_1 + payroll_tax_2 if no_retired else tax 
+    if (no_retired) & (p_not_retired): total_taxes = tax + payroll_tax_1 + payroll_tax_2
+    elif (no_retired) & (not p_not_retired): total_taxes = tax + payroll_tax_1  #+ payroll_tax_2
+    elif (not no_retired) & (p_not_retired): total_taxes = tax + payroll_tax_2
+    else: total_taxes = tax
+    
+    # if payroll_tax_2==0.0:
+    #     tax[1,1]=3
+    #     print(no_retired,p_not_retired,payroll_tax_1,payroll_tax_2)
      
     return y1g + y2g - total_taxes, total_taxes 
  
@@ -249,9 +256,11 @@ def compute_atax_income_points(beg,end,etax,tbase,T,R,nwls,nw,NP,τ,add_points,a
                 for ip in range(NP): 
                     for ret in range(2): 
                                                
-                        tax=τ[t]      if ( wls_point[i]>0.0) else 0.0 
+                        tax=τ[t]  #    if ( wls_point[i]>0.0) else 0.0 
                          
                         policy_timing=((t >=beg) & (t <=end)) 
+                        
+                        p_not_retired= t<R
                          
                         
                         #Multiplier of points based on points 
@@ -271,13 +280,13 @@ def compute_atax_income_points(beg,end,etax,tbase,T,R,nwls,nw,NP,τ,add_points,a
                         if (ret==0):  
                              
                             etaxx=(1-etax[t]) 
-                            income[t,i,iw,ip,ret], total_taxes[t,i,iw,ip,ret]  = after_tax_income(tbase[t],w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax) 
-                            income_mod[t,i,iw,ip,ret], a  = after_tax_income(tbase[t],w[t,i,iw]*wls[i]*etaxx,y_N[t,iw],E_bar_now,wls_point[i],tax) 
+                            income[t,i,iw,ip,ret], total_taxes[t,i,iw,ip,ret]  = after_tax_income(tbase[t],w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax,p_not_retired) 
+                            income_mod[t,i,iw,ip,ret], a  = after_tax_income(tbase[t],w[t,i,iw]*wls[i]*etaxx,y_N[t,iw],E_bar_now,wls_point[i],tax,p_not_retired) 
                             #income_mod[t,i,iw,ip,ret]=w[t,i,iw]*wls[i]*etaxx#income_mod[t,i,iw,ip,ret]#+ a                         
                         else:             
                              
-                            income[t,i,iw,ip,ret], total_taxes[t,i,iw,ip,ret]  = after_tax_income(1.0,ρ*pgrid[ip],y_N[t,iw],E_bar_now,1.0,tax,False) 
-                            income_mod[t,i,iw,ip,ret], a  = after_tax_income(1.0,ρ*pgrid[ip],y_N[t,iw],E_bar_now,1.0,tax,False) 
+                            income[t,i,iw,ip,ret], total_taxes[t,i,iw,ip,ret]  = after_tax_income(1.0,ρ*pgrid[ip],y_N[t,iw],E_bar_now,1.0,tax,p_not_retired,False) 
+                            income_mod[t,i,iw,ip,ret], a  = after_tax_income(1.0,ρ*pgrid[ip],y_N[t,iw],E_bar_now,1.0,tax,p_not_retired,False) 
                             #income_mod[t,i,iw,ip,ret]=ρ*pgrid[ip]#income_mod[t,i,iw,ip,ret]#+ a
                             
     return income,point,point_exp, total_taxes, income_mod 
