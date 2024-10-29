@@ -21,7 +21,7 @@ import co # user defined functions
 import sol 
 import sim 
 import numpy as np 
-import matplotlib.pyplot as plt 
+#import matplotlib.pyplot as plt 
  
  
 # set up parameters 

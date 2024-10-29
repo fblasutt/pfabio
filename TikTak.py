@@ -3,7 +3,7 @@ import multiprocessing
 import os
 import scipy
 import dfols
-import nlopt
+#import nlopt
 import time
 from datetime import datetime
 from functools import partial
@@ -19,13 +19,12 @@ class TTOptimizer:
         self.SRF = os.path.join(computation_options["working_dir"],"searchResults.dat")
         self.skip_global = skip_global
 
-        if self.local_search_options['algorithm'].lower() == 'bobyqa':
-            self.minimizer = BOBYQA
-        elif self.local_search_options['algorithm'].lower() == 'neldermead':
+        # if self.local_search_options['algorithm'].lower() == 'bobyqa':
+        #     self.minimizer = BOBYQA
+        if self.local_search_options['algorithm'].lower() == 'neldermead':
             self.minimizer = NelderMead
         elif self.local_search_options['algorithm'].lower() == 'dfols':
-            self.minimizer = DFOLS
-                
+            self.minimizer = DFOLS               
         else:
             raise RunTimeError("local search algorithm not recognized")
 
@@ -199,25 +198,25 @@ def DFOLS(f,x,initial_step,lower_bounds,upper_bounds,xtol_rel,ftol_rel):
     print(res)
     return (res.x, np.sum(res.resid**2) )
 
-def BOBYQA(f,x,initial_step,lower_bounds,upper_bounds,xtol_rel,ftol_rel):
-    opt = nlopt.opt(nlopt.LN_BOBYQA, len(x))
-    fwrapped = lambda x,grad: f(x)
-    opt.set_min_objective(fwrapped)
-    opt.set_xtol_rel(xtol_rel)
-    opt.set_ftol_rel(ftol_rel)
+# def BOBYQA(f,x,initial_step,lower_bounds,upper_bounds,xtol_rel,ftol_rel):
+#     opt = nlopt.opt(nlopt.LN_BOBYQA, len(x))
+#     fwrapped = lambda x,grad: f(x)
+#     opt.set_min_objective(fwrapped)
+#     opt.set_xtol_rel(xtol_rel)
+#     opt.set_ftol_rel(ftol_rel)
 
-    if not initial_step is None:
-        opt.set_initial_step(initial_step)
+#     if not initial_step is None:
+#         opt.set_initial_step(initial_step)
 
-    if not lower_bounds is None:
-        opt.set_lower_bounds(lower_bounds)
+#     if not lower_bounds is None:
+#         opt.set_lower_bounds(lower_bounds)
 
-    if not upper_bounds is None:
-        opt.set_upper_bounds(upper_bounds)
+#     if not upper_bounds is None:
+#         opt.set_upper_bounds(upper_bounds)
 
-    xopt = opt.optimize(x)
-    minf = opt.last_optimum_value()
-    return (xopt, minf)
+#     xopt = opt.optimize(x)
+#     minf = opt.last_optimum_value()
+#     return (xopt, minf)
 
 
 

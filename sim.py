@@ -73,7 +73,7 @@ def fast_simulate(beg,end,Years,Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agr
                 iq = q_sim[n]#[iz[t,n]][n]  
                 policy2=((t >=beg) & (t <=end) & (reform==1))  
                 mp2=add_points if policy2 else points_base  
-                mp3=add_points if (t >=beg) & (t <=end) & (Years[t,n]>=1992) else points_base  
+                mp3=add_points if (t >=beg) & (t <=end) & (Years[0,n]>=1992) else points_base  
 
                  
                 ref = 1 if policy2 else 0 

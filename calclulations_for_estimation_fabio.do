@@ -79,7 +79,7 @@ replace points =  min((earnings / 27740.65230618203),2) if irregular==0
 * Women here
 ********************************************************************************
 
-probit employed age age_2 i.syear  i.mortgage
+probit employed age age_2 i.syear  i.mortgage 
 
 gen sample=0
 replace sample=1 if  e(sample)==1
@@ -89,7 +89,7 @@ predict gm
 replace gm=-gm
 gen     lambda=normalden(gm)/(1-normal(gm))
 
-reg log_wage age age_2 i.syear lambda  [weight= phrf ]
+reg log_wage age age_2 i.syear lambda  [weight= phrf ] if  e(sample)==1
 predict Wdelta,resid
 
 gen Wcons =_b[_cons]+_b[2000.syear]
@@ -98,7 +98,7 @@ gen Wage2 =_b[age_2]
 
 *Produce hidden productivity
 bysort pid (syear): gen d_log_wage=log_wage-log_wage[_n-1] if syear==syear[_n-1]+1
-reg d_log_wage i.age i.syear i.numberofchildren i.education [weight=phrf] if sex==2 
+reg d_log_wage i.age i.syear i.numberofchildren i.education [weight=phrf]
 
 
 *Get residuals and predition
@@ -120,9 +120,9 @@ g var_pers=r(mean)
 
 egen wvar=sd(log_wage) if sex==2,by(age)
 replace wvar=wvar^2
-binscatter wvar age if age>=30 & age<=60 
+binscatter wvar age if age>=29 & age<=60 
 
-nlsur (wvar={sigma02}+(age-30)*var_pers) [weight=phrf] if age>=30 & age<=35 & var_pers!=.
+nlsur (wvar={sigma02}+(age-29)*var_pers) [weight=phrf] if age>=29 & age<=35 & var_pers!=.
 gen sigma02=_b[/sigma02]
 
 
@@ -136,7 +136,7 @@ gen earnings_p=pglabgro_p*12*adjust
 replace earnings_p=. if pglabgro_p==0
 
 gen log_earnings_p=log(earnings_p)
-reg log_earnings_p age age_2 i.syear [weight=phrf]
+reg log_earnings_p age age_2 i.syear [weight=phrf] 
 
 gen Mcons =_b[_cons]+_b[2000.syear]
 gen Mage  =_b[age]
@@ -145,7 +145,7 @@ predict Mdelta,resid
 
 
 bysort pid (syear): gen d_log_earnings_p=log_earnings_p-log_earnings_p[_n-1] if syear==syear[_n-1]+1
-reg d_log_earnings_p i.age i.syear i.numberofchildren i.education [weight=phrf]  if sex==2 & age>=23 & age<65 
+reg d_log_earnings_p i.age i.syear i.numberofchildren i.education [weight=phrf]  
 
 
 *Get residuals and predition
@@ -167,9 +167,9 @@ g var_persm=r(mean)
 
 egen wvarm=sd(log_earnings_p) if sex==2,by(age)
 replace wvarm=wvarm^2
-binscatter wvarm age if age>=30 & age<=60 
+binscatter wvarm age if age>=29 & age<=60 
 
-nlsur (wvarm={sigmam02}+(age-30)*var_persm) [weight=phrf]  if age>=30 & age<=35 & var_persm!=.
+nlsur (wvarm={sigmam02}+(age-29)*var_persm) [weight=phrf]  if age>=29 & age<=35 & var_persm!=.
 gen sigmam02=_b[/sigmam02]
 
 ********************************************************************************
