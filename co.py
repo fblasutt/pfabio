@@ -34,7 +34,7 @@ class setup():
         self.T = 56        # Number of time periods - 29+52.91 -https://www-genesis.destatis.de/genesis//online?operation=table&code=12621-0002&bypass=true&levelindex=0&levelid=1728670528126#abreadcrumb
                            #84 in 2019 https://tradingeconomics.com/germany/life-expectancy-at-birth-female-years-wb-data.html
         self.R = 36       # Retirement period  age 65
-        self.r = 0.015     # Interest rate  
+        self.r = 0.015     # Interest rate  //https://www.bundesbank.de/dynamic/action/en/statistics/time-series-databases/time-series-databases/745616/745616?listId=www_skms_realzinsen&tsTab=1&statisticType=BBK_ITS&startDate=1995&tsId=BBSEI.M.ERZ.GVB.DE._Z.R10XX&endDate=2024&id=0
         self.σ=0.0001        #Size of taste shock  
          
         self.α= 1#1.20152824 
@@ -54,7 +54,7 @@ class setup():
            
         #Pension 
         self.E_bar_now = 27740.65230618203/self.scale  # Average earnings: ttps://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256, exchange rate 1.9569471624266144 
-        self.ρ =303.768/self.scale      #Dollar value of points:https://de.wikipedia.org/wiki/Aktueller_Rentenwert 
+        self.ρ =353.768/self.scale      #Dollar value of points:https://de.wikipedia.org/wiki/Aktueller_Rentenwert 
         self.Pmax = 1               #Threshold for pension points reform 
         self.add_points=1.5         #point multiplicator during reform 
         self.add_points_exp=1.0

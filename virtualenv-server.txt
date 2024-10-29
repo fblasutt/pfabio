@@ -1,0 +1,13 @@
+*Create virtual environment and install packages
+
+module load releases/2023b
+module load Python/3.11.5-GCCcore-13.2.0
+mkdir ~/pension_E
+pip install virtualenv --user
+virtualenv --system-site-packages ~/pension_E
+source ~/pension_E/bin/activate
+cd /home/users/b/l/blasutto/pfabio/
+pip install -r requirements.txt
+deactivate
+
+
