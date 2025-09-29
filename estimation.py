@@ -18,6 +18,9 @@ import TikTak
 import pandas as pd 
 import statsmodels.formula.api as smf 
  
+import statsmodels.api as sm 
+from pyhdfe import create
+
 #Actual Program 
  
      
@@ -26,64 +29,58 @@ np.random.seed(10)
 p = co.setup() 
  
  
-baseline_sample=np.array(pd.read_excel('frequencies.xlsx'))  
-indexes=np.array(np.random.choice(baseline_sample[:,0], size=p.N, replace=True, p=baseline_sample[:,5]),dtype=np.int32)  
-final_sample= baseline_sample[:,1:-1][indexes]  
+# baseline_sample=np.array(pd.read_excel('frequencies.xlsx'))  
+# indexes=np.array(np.random.choice(baseline_sample[:,0], size=p.N, replace=True, p=baseline_sample[:,5]),dtype=np.int32)  
+# final_sample= baseline_sample[:,1:-1][indexes]  
   
-treated=np.repeat(final_sample[:,0][:,None],p.T,axis=1).T 
-agei=np.repeat(final_sample[:,1][:,None],p.T,axis=1).T 
-agef=np.repeat((final_sample[:,1]+final_sample[:,3]-final_sample[:,2])[:,None],p.T,axis=1).T 
-year=(np.cumsum(np.ones(p.T))-1)[:,None]-agei+np.repeat(final_sample[:,2][:,None],p.T,axis=1).T 
-age=(np.cumsum(np.ones((p.N,p.T)),axis=1)-1).T 
-treatment=((age>=3)  & (year>=2001)) 
-after_treatment=((age>=3)  & (year>=2001)) 
+# treated=np.repeat(final_sample[:,0][:,None],p.T,axis=1).T 
+# agei=np.repeat(final_sample[:,1][:,None],p.T,axis=1).T 
+# agef=np.repeat((final_sample[:,1]+final_sample[:,3]-final_sample[:,2])[:,None],p.T,axis=1).T 
+# year=(np.cumsum(np.ones(p.T))-1)[:,None]-agei+np.repeat(final_sample[:,2][:,None],p.T,axis=1).T 
+# age=(np.cumsum(np.ones((p.N,p.T)),axis=1)-1).T 
+# treatment=((age>=3)  & (year>=2001)) 
+# after_treatment=((age>=3)  & (year>=2001)) 
  
-#Define initial point (xc) and boundaries (xl,xu) 
+# #Define initial point (xc) and boundaries (xl,xu) 
 
 
-
-#standard points and assets
-xc=np.array([0.00126437, 0.22947651, 0.37898169, 0.76212245])#emp noon marg. Everything a bit too small (e 0.05)
-xc=np.array([-0.00826078,0.21767231, 0.37321266, 0.79408308])# marg. Everything a bit too small (e 0.053) 
-
-
-xc=np.array([-0.10422124,  0.08149951,  0.79798631,  0.93944979])
-#points
-xl=np.array([-0.45,-0.2,0.001, 0.0])
-xu=np.array([0.5, 0.8, 1.01, 1.8])
-
-
-xc=np.array([0.4, 0.49,1.1,  0.13944979])
-
-
-xc=np. array([0.46485606, 0.47728812, 0.54342061, 0.46041831])#4-== (20) very balanced
-#xc=np.array([0.40502379, 0.46378861, 0.49917271, 0.3227968 ])#4-== (23) less balanced
-
-
-xc=np.array([0.47286147, 0.47788508, 0.54271563, 0.4808238 ])
-
-
-#points
-xl=np.array([0.0,0.0,0.001, 0.0])
-xu=np.array([0.8, 0.8, 3.01, 1.2])
  
+baseline_sample = np.array([ 
+    [0, 1981, 7051.6918], 
+    [1, 1982, 7388.0949], 
+    [2, 1983, 5569.5051], 
+    [3, 1984, 6784.1683], 
+    [4, 1985, 7075.0722], 
+    [5, 1986, 7494.654], 
+    [6, 1987, 7474.4081], 
+    [7, 1988, 16049.141], 
+    [8, 1989, 8315.3082], 
+    [9, 1990, 8069.842], 
+    [10, 1998, 6921.9224] 
+]) 
+ 
+#transform frequency in probabilites that sums up to 1  
+baseline_sample[:,-1]=baseline_sample[:,-1]/baseline_sample[:,-1].sum() 
+ 
+indexes=np.array(np.random.choice(baseline_sample[:,0], size=p.N, replace=True, p=baseline_sample[:,2]),dtype=np.int32)   
+final_sample= baseline_sample[:,1:-1][indexes][:,0] 
+age=(np.cumsum(np.ones((p.N,p.T)),axis=1)-1).T  
+year=final_sample+age
 
-xc=np.array([0.01912604, 0.31876837, 0.45822005, 0.53074946]) 
- 
- 
+
 #GREAT BELOW!!!
 xc=np.array([0.1310856 , 0.3202975 , 0.4121633 , 0.98693138])
 
+#Updated with real effect, not did
+xc=np.array([0.17592452, 0.3555737,  0.43904321, 0.78818227])
+
+#xc=np.array([-0.06775778,  0.16516238,  0.32015753,  1.92032006])
+
+xc=np.array([-0.0529766 ,  0.18276247,  0.3285415 ,  1.8103877 ])
+
 xl=np.array([-0.15,0.001,0.001, 0.0]) 
-xu=np.array([0.5, 0.8, 1.01, 1.5]) 
+xu=np.array([0.5, 0.8, 1.01, 3.5]) 
 
-# #old
-# xc=np.array([0.06825989, 0.13707109, 0.39572032, 0.64277352]) 
- 
-
-# xc=np.array( [0.33089248, 0.68195221, 1.99,       0.90004967])
-# xl=np.array([0.01, 0.01, 0.01, 0.0]) 
-# xu=np.array([0.8 , 1.2, 3.99, 1.5]) 
  
 #Function to minimize 
 def q(pt,additional_tests=False): 
@@ -127,105 +124,130 @@ def q(pt,additional_tests=False):
     #Baseline 
     SB= sim.simNoUncer_interp(p,ModB,Years=year,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw) 
  
-    #Pension reform 
-    ini_treated=p.T-np.cumsum(treatment==True,axis=0)[-1,:]#first child age at which women are treated 
-    SP= sim.simNoUncer_interp(p,ModP,Years=year,Tstart=ini_treated,Astart=SB['A'],Pstart=SB['pb3'],izstart=SB['iz']) 
-    
-    #create unique dictionary for relevant simulated data 
-    S=dict() 
-    for i in ['h','wh','pb2','pb','c']: 
-        S[i]=np.zeros((p.T,p.N)) 
-        S[i][after_treatment] =SP[i][after_treatment] 
-        S[i][~after_treatment]=SB[i][~after_treatment] 
+    #Pension reform  
+    ini_treated=np.ones(p.N,dtype=np.int32)*3 
+    ini_treated[final_sample!=1998]=np.zeros(p.N,dtype=np.int32)[final_sample!=1998]+11 
+    #p.T-np.cumsum(treatment==True,axis=0)[-1,:]#first child age at which women are treated  
+    SP= sim.simNoUncer_interp(p,ModP,Years=year,Tstart=ini_treated,Astart=SB['A'],Pstart=SB['pb'],izstart=SB['iz'])  
+     
+    #create unique dictionary for relevant simulated data  
+    S=dict()  
+    for i in ['h','wh','pb2','pb','c']:  
+        S[i]=np.zeros((p.T,p.N))  
+        S[i][age>=ini_treated] =SP[i][age>=ini_treated]  
+        S[i][age<ini_treated]=SB[i][age<ini_treated]  
          
     ################################################### 
     #Average labor supply in 2000 for treatment group # 
     ################################################### 
-    sh_part=np.mean(S['h'][((year==2000) & (age>=3) & (age<=10))]==2) 
-    sh_full=np.mean(S['h'][((year==2000) & (age>=3) & (age<=10))]>=3) 
-    sh_min=np.mean(S['h'][((year==2000) & (age>=3) & (age<=10))]==1) 
-    mean_earnings=np.mean(S['wh'][((year==2000) & (age>=3) & (age<=10))])*p.scale 
-    mean_points=np.mean(S['pb'][((year==2000) & (age>=3) & (age<=10))]) 
-     
-    ##################################### 
-    #Difference in differences analysis 
-    ##################################### 
-     
-    #Relevant variables not yet creted 
-    age_3_10=np.zeros((p.T,p.N)) 
-    age_3_10[(age>=3) & (age<=10)]=1 
-    after_2000=np.array(year>=2001) 
+
+    subset=((age>=3) & (age<=10))# & (age>=ini_treated))
+    sh_part=np.mean(S['h'][subset]==2) 
+    sh_full=np.mean(S['h'][subset]>=3) 
+    sh_min=np.mean(S['h'][subset]==1) 
     
-    b2001_2003=np.array((year>=2001) & (year<=2003))
-    b2004_2006=np.array((year>=2004) & (year<=2006))
-    hours = co.hours_value(p,S,0,p.T) 
-    employed=np.array(S['h']>0,dtype=np.float64) 
-    not_marginal=np.array(S['h']>1,dtype=np.float64) 
-    marginal=np.array(S['h']==1,dtype=np.float64) 
-    full=np.array(S['h']>=3,dtype=np.float64) 
-    earnings=S['wh']*p.scale 
-    points=S['pb'] 
-    points_behavioral=S['pb2'] 
+    print(sh_part,sh_full,sh_min)
+    
+    mean_earnings=np.mean(S['wh'][subset])*p.scale 
+    mean_points=np.mean(S['pb'][subset]) 
+     
+    #####################################  
+    #Event study analysis  
+    #####################################  
      
      
-    #isolate rich mothers 
-    years_risk=(year<=2000) & (age>=3)  & (age<=10)# & (age>=agei) & (age<=agef) 
-    rich= years_risk & (points>=1) 
+    #Covariates 
+    hours = co.hours_value(p,S,0,p.T)  
+    employed=np.array(S['h']>0,dtype=np.float64)  
+    not_marginal=np.array(S['h']>1,dtype=np.float64)  
+    marginal=np.array(S['h']==1,dtype=np.float64)  
+    full=np.array(S['h']>=3,dtype=np.float64)  
+    earnings=S['wh']*p.scale  
+    points=S['pb']  
+    points_behavioral=S['pb2']  
+    event_time=age.copy() 
+    event_time[age>=8]=8 
+    treat_group=(np.repeat((final_sample==1998)[:,None],p.T,axis=1).T)  
+    idd=np.repeat(np.cumsum(np.ones(p.N))[:,None],p.T,axis=1).T 
+    event_time_PER_treat=event_time*treat_group 
      
-    select_rich= (np.sum(rich,axis=0)==np.sum(years_risk,axis=0)) & (np.sum(rich,axis=0)>0) 
-    keep_rich=np.repeat(select_rich[None,:],p.T,axis=0) 
+    #Sample 
+    subset=(age<=8) 
+ 
+    # Combine into a DataFrame 
+    df = pd.DataFrame({ 
+        "hours":hours[subset], 
+        "employed":employed[subset], 
+        "not_marginal":not_marginal[subset], 
+        "marginal":marginal[subset], 
+        "full":full[subset], 
+        "earnings":earnings[subset], 
+        "points":points[subset], 
+        "points_behavioral":points_behavioral[subset], 
+        "event_time":event_time[subset], 
+        "idd":idd[subset], 
+        "age":age[subset], 
+        "event_time_PER_treat":event_time_PER_treat[subset] 
+    }) 
      
-     
-    start=age==ini_treated 
-    no_retroactive_points=np.repeat((SB['p'][start]==SB['pb3'][start])[None,:],p.T,axis=0) 
-     
-    sample=(((age>=3)  & (age<=10)) |\
-           ((age>=15) & (age<=20) & no_retroactive_points  )) & (age>=agei) & (age<=agef)  
-     
-    df=np.array(np.stack((year.flatten(),   
-                                age.flatten(),    
-                                age_3_10.flatten(),    
-                                after_2000.flatten(), 
-                                b2001_2003.flatten(),
-                                b2004_2006.flatten(),
-                                hours.flatten(), 
-                                employed.flatten(), 
-                                not_marginal.flatten(), 
-                                marginal.flatten(), 
-                                full.flatten(), 
-                                earnings.flatten(), 
-                                sample.flatten(), 
-                                points_behavioral.flatten(), 
-                                points.flatten()), 
-                                axis=0).T,dtype=np.float64)         
    
-    dfa=pd.DataFrame(data=df,columns=['year','age','age_3_10','after_2000','b2001_2003','b2004_2006','hours','employed','not_marginal','marginal','full','earnings','sample','points_behavioral','points'])         
-                             
-    formula='age_3_10*after_2000+age_3_10+after_2000+C(age)' 
-    param='age_3_10:after_2000'
-    
-    formula='age_3_10*b2001_2003+age_3_10*b2004_2006+age_3_10+C(year)+C(age)' 
-    param='age_3_10:b2004_2006'
-    
-    eff_h   =smf.ols(formula='hours ~'+formula,data = dfa[dfa['sample']==1]).fit().params[param] 
-    eff_e   =smf.ols(formula='employed ~'+formula,data = dfa[dfa['sample']==1]).fit().params[param] 
-    eff_nme   =smf.ols(formula='not_marginal ~'+formula,data = dfa[dfa['sample']==1]).fit().params[param] 
-    eff_full=smf.ols(formula='full ~'+formula,data = dfa[(dfa['sample']==1) & (dfa['employed']==1)]).fit().params[param] 
-    eff_marg=smf.ols(formula='marginal ~'+formula,data = dfa[(dfa['sample']==1) & (dfa['employed']==1)]).fit().params[param] 
-    eff_earn=smf.ols(formula='earnings ~'+formula,data = dfa[(dfa['sample']==1)]).fit().params[param] 
-    eff_points=smf.ols(formula='points ~'+formula,data = dfa[(dfa['sample']==1)]).fit().params[param] 
-    eff_points_behavioral=smf.ols(formula='points_behavioral ~'+formula,data = dfa[(dfa['sample']==1)]).fit().params[param] 
+ 
+    reference_value=2 
+    event_cats = sorted(df['event_time'].unique()) 
+    if reference_value in event_cats: 
+        event_cats.remove(reference_value) 
+        event_cats = [reference_value] + event_cats 
          
-    # years=np.array(range(1995,2007)) 
-    # import matplotlib.pyplot as plt 
-    # pars=smf.ols(formula='hours ~ age_3_10*C(year,Treatment(reference=2000))+age_3_10+C(age)+C(year,Treatment(reference=2000))',data = dfa[dfa['sample']==1]).fit().params 
+    event_cats = sorted(df['event_time_PER_treat'].unique()) 
+    if reference_value in event_cats: 
+        event_cats.remove(reference_value) 
+        event_cats = [reference_value] + event_cats 
+         
      
-    # pars_array=np.array([pars['age_3_10:C(year, Treatment(reference=2000))[T.'+str(i)+'.0]'] for i in np.delete(years,5)]) 
-    # plt.plot(np.delete(years,5),pars_array) 
+     
+    # Example: your data frame 
+    # df must contain columns: y, x1, x2, firm, year, region 
+     
+    # Step 1: Create the fixed effects structure 
+    fe_df = df[['idd', 'event_time']].astype('category') 
+     
+    # Step 2: Create the HDFE projector 
+    hdfe = create(fe_df) 
+     
+    # Create categorical with this ordering 
+    df['event_cat'] = pd.Categorical(df['event_time_PER_treat'], categories=event_cats) 
+ 
+    # Create dummies, drop_first will now drop your reference group 
+    event_dummies = pd.get_dummies(df['event_cat'], prefix='event', drop_first=True) 
+     
+    # Residualize both y and X 
+    y_resid = hdfe.residualize(df[['hours']].values) 
+    X_resid = hdfe.residualize(event_dummies.values) 
+     
+    # OLS on residuals 
+    model = sm.OLS(y_resid, X_resid) 
+    results = model.fit() 
+     
+     
+    eff_h=sm.OLS(hdfe.residualize(df[['hours']].values), X_resid).fit().params[2:].mean() 
+    eff_e=sm.OLS(hdfe.residualize(df[['employed']].values), X_resid).fit().params[2:].mean() 
+    eff_nme=sm.OLS(hdfe.residualize(df[['not_marginal']].values), X_resid).fit().params[2:].mean() 
+    eff_full=sm.OLS(hdfe.residualize(df[['full']].values), X_resid).fit().params[2:].mean() 
+    eff_marg=sm.OLS(hdfe.residualize(df[['marginal']].values), X_resid).fit().params[2:].mean() 
+    eff_earn=sm.OLS(hdfe.residualize(df[['earnings']].values), X_resid).fit().params[2:].mean() 
+    eff_points=sm.OLS(hdfe.residualize(df[['points']].values), X_resid).fit().params[2:].mean() 
+    eff_points_behavioral=sm.OLS(hdfe.residualize(df[['points_behavioral']].values), X_resid).fit().params[2:].mean() 
+ 
+     
+     
+     
     
-    #True effects below
-    group=(age>=3)  & (age<=10) & (year>=2001)
+     
+    #True effects below 
+    group=(age>=3)  & (age<=8) & (treat_group) 
+    
     eff_ht=(co.hours_value(p,SP,0,p.T)[group]-co.hours_value(p,SB,0,p.T)[group]).mean()
+    eff_nmet=(SP['h'][group]>1).mean()-(SB['h'][group]>1).mean()
     eff_et=(SP['h'][group]>0).mean()-(SB['h'][group]>0).mean()
     eff_earnt=(SP['wh'][group].mean()-SB['wh'][group].mean())*p.scale 
     eff_fullt=(SP['h'][group]>=3).mean()-(SB['h'][group]>=3).mean()
@@ -359,8 +381,8 @@ def q(pt,additional_tests=False):
     # return [((sh_full-.1984)/0.0058),((sh_part-.1986)/0.00589),((sh_min-.256)/0.00644),((eff_h- 2.84)/0.822),((eff_e-.0772)/.0257)]         
     
              
-    print(np.array([((sh_full-.197)/.197)**2,((sh_part-.188)/.188)**2,((sh_min-.259)/.259)**2,(((eff_nme-0.103)/0.103))**2]).sum())   
-    return [((sh_full-.197)/.197),((sh_part-.188)/.188),((sh_min-.259)/.259),((eff_nme-0.103)/0.103)]             
+    print(np.array([((sh_full-.197)/.197)**2,((sh_part-.188)/.188)**2,((sh_min-.259)/.259)**2,(((eff_h-2.0)/2.0))**2]).sum())   
+    return [((sh_full-.197)/.197),((sh_part-.188)/.188),((sh_min-.259)/.259),((eff_h-2.0)/2.0)]             
   
     
 # [ 0.40706012  0.03525281 -0.51941101  0.00186123  1.60048109  0.03695673] first tentative σ=0.0005 
@@ -374,30 +396,30 @@ import numpy as np
 if __name__ == '__main__': 
      
  
-    # computation_options = { "num_workers" :7,        # use four processes in parallel 
-    #                         "working_dir" : "working" # where to save results in progress (in case interrupted) 
-    #                         } 
+    computation_options = { "num_workers" :7,        # use four processes in parallel 
+                            "working_dir" : "working" # where to save results in progress (in case interrupted) 
+                            } 
      
-    # global_search_options = { "num_points" : 12}  # number of points in global pre-test 
+    global_search_options = { "num_points" : 10}  # number of points in global pre-test 
      
-    # local_search_options = {  "algorithm"    : "dfols", # local search algorithm 
-    #                                                       # can be either BOBYQA from NLOPT or NelderMead from scipy 
-    #                           "num_restarts" : 28,      # how many local searches to do 
-    #                           "shrink_after" : 28,       # after the first [shrink_after] restarts we begin searching 
-    #                                                       # near the best point we have found so far 
-    #                           "xtol_rel"     : 1e-6,     # relative tolerance on x 
-    #                           "ftol_rel"     : 1e-6     # relative tolerance on f 
-    #                         } 
+    local_search_options = {  "algorithm"    : "dfols", # local search algorithm 
+                                                          # can be either BOBYQA from NLOPT or NelderMead from scipy 
+                              "num_restarts" : 7,      # how many local searches to do 
+                              "shrink_after" : 7,       # after the first [shrink_after] restarts we begin searching 
+                                                          # near the best point we have found so far 
+                              "xtol_rel"     : 1e-6,     # relative tolerance on x 
+                              "ftol_rel"     : 1e-6     # relative tolerance on f 
+                            } 
      
-    # opt = TikTak.TTOptimizer(computation_options, global_search_options, local_search_options, skip_global=False
-    #                           ) 
-    # x,fx = opt.minimize(q,xl,xu) 
-    # print(f'The minimizer is {x}') 
-    # print(f'The objective value at the min is {fx}') 
+    opt = TikTak.TTOptimizer(computation_options, global_search_options, local_search_options, skip_global=False
+                              ) 
+    x,fx = opt.minimize(q,xl,xu) 
+    print(f'The minimizer is {x}') 
+    print(f'The objective value at the min is {fx}') 
      
      
-    res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=250, bounds=(xl,xu), 
-                    npt=len(xc)+5,scaling_within_bounds=True,  
-                    user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
-                                  'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 
-                    objfun_has_noise=False) 
+    # res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=250, bounds=(xl,xu), 
+    #                 npt=len(xc)+5,scaling_within_bounds=True,  
+    #                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
+    #                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 
+    #                 objfun_has_noise=False) 
