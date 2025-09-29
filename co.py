@@ -15,7 +15,7 @@ class setup():
       
         # Size of gridpoints: 
         self.nq = 4   #fixed points, preference for working 
-        self.NA = 35  #assets gridpoints 
+        self.NA = 55  #assets gridpoints 
         self.NP = 21    #pension points gridpoints 
         self.nwls = 4  #hours choice 
          
@@ -35,7 +35,7 @@ class setup():
                            #84 in 2019 https://tradingeconomics.com/germany/life-expectancy-at-birth-female-years-wb-data.html
         self.R = 36       # Retirement period  age 65
         self.r = 0.015     # Interest rate  //https://www.bundesbank.de/dynamic/action/en/statistics/time-series-databases/time-series-databases/745616/745616?listId=www_skms_realzinsen&tsTab=1&statisticType=BBK_ITS&startDate=1995&tsId=BBSEI.M.ERZ.GVB.DE._Z.R10XX&endDate=2024&id=0
-        self.σ=0.0001        #Size of taste shock  
+        self.σ=0.0000001        #Size of taste shock  
          
         self.α= 1#1.20152824 
         
@@ -54,7 +54,7 @@ class setup():
            
         #Pension 
         self.E_bar_now = 27740.65230618203/self.scale  # Average earnings: ttps://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256, exchange rate 1.9569471624266144 
-        self.ρ =353.768/self.scale      #Dollar value of points:https://de.wikipedia.org/wiki/Aktueller_Rentenwert 
+        self.ρ =303.768/self.scale      #Dollar value of points:https://de.wikipedia.org/wiki/Aktueller_Rentenwert 
         self.Pmax = 1               #Threshold for pension points reform 
         self.add_points=1.5         #point multiplicator during reform 
         self.add_points_exp=1.0
@@ -126,7 +126,7 @@ class setup():
             for iw in range(self.nw): 
                 for iq in range(self.nq): 
                      
-                    self.q_grid[iq,il,iw]= self.q_gridt[iq]*(il==1)+self.q[il] 
+                    self.q_grid[iq,il,iw]= self.q_gridt[iq]+self.q[il] 
                      
              
         # Assets  grid    

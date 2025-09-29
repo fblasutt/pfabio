@@ -60,10 +60,22 @@ xc=np. array([0.46485606, 0.47728812, 0.54342061, 0.46041831])#4-== (20) very ba
 #xc=np.array([0.40502379, 0.46378861, 0.49917271, 0.3227968 ])#4-== (23) less balanced
 
 
+xc=np.array([0.47286147, 0.47788508, 0.54271563, 0.4808238 ])
+
+
 #points
 xl=np.array([0.0,0.0,0.001, 0.0])
 xu=np.array([0.8, 0.8, 3.01, 1.2])
  
+
+xc=np.array([0.01912604, 0.31876837, 0.45822005, 0.53074946]) 
+ 
+ 
+#GREAT BELOW!!!
+xc=np.array([0.1310856 , 0.3202975 , 0.4121633 , 0.98693138])
+
+xl=np.array([-0.15,0.001,0.001, 0.0]) 
+xu=np.array([0.5, 0.8, 1.01, 1.5]) 
 
 # #old
 # xc=np.array([0.06825989, 0.13707109, 0.39572032, 0.64277352]) 
@@ -95,7 +107,7 @@ def q(pt,additional_tests=False):
         for iw in range(p.nw): 
             for iq in range(p.nq): 
                  
-                p.q_grid[iq,il,iw]= p.q_gridt[iq]*(il==1)+p.q[il] 
+                p.q_grid[iq,il,iw]= p.q_gridt[iq]+p.q[il] 
     
     # p.q_gridt = np.linspace(1.0-p.qvar,1.0+p.qvar,p.nq)#np.linspace(p.qmean-p.qmean*p.qvar,p.qmean+p.qmean*p.qvar,p.nq)#co.dist_gamma(p.qshape,p.qscale,p.nq)  
   
@@ -117,7 +129,7 @@ def q(pt,additional_tests=False):
  
     #Pension reform 
     ini_treated=p.T-np.cumsum(treatment==True,axis=0)[-1,:]#first child age at which women are treated 
-    SP= sim.simNoUncer_interp(p,ModP,Years=year,Tstart=ini_treated,Astart=SB['A'],Pstart=SB['p'],izstart=SB['iz']) 
+    SP= sim.simNoUncer_interp(p,ModP,Years=year,Tstart=ini_treated,Astart=SB['A'],Pstart=SB['pb3'],izstart=SB['iz']) 
     
     #create unique dictionary for relevant simulated data 
     S=dict() 
@@ -165,7 +177,7 @@ def q(pt,additional_tests=False):
      
      
     start=age==ini_treated 
-    no_retroactive_points=np.repeat((SB['p'][start]==SB['p'][start])[None,:],p.T,axis=0) 
+    no_retroactive_points=np.repeat((SB['p'][start]==SB['pb3'][start])[None,:],p.T,axis=0) 
      
     sample=(((age>=3)  & (age<=10)) |\
            ((age>=15) & (age<=20) & no_retroactive_points  )) & (age>=agei) & (age<=agef)  
@@ -219,6 +231,10 @@ def q(pt,additional_tests=False):
     eff_fullt=(SP['h'][group]>=3).mean()-(SB['h'][group]>=3).mean()
     eff_pointst=(SP['pb']-SB['pb'])[group].mean()
     eff_margt=np.mean(SP['h'][group]==1)-np.mean(SB['h'][group]==1) 
+    
+    #below for paper
+    #(SP['h'][group][(SB['h'][group]==1)]>1).mean()
+    
     if additional_tests:
         
        
@@ -229,18 +245,18 @@ def q(pt,additional_tests=False):
         def p43(x): return str('%4.3f' % x)     
         def p40(x): return str('%4.0f' % x)  
         
-        table=r'\begin{table}[htbp]'+\
+        table=r'\begin{table}[htbp]\centering'+\
                 r'\caption{Model parameters and fit}\label{table:model_param}'+\
-                r'\centering\footnotesize'+\
+                r'\footnotesize'+\
                 r'\begin{tabular}{lcccc}'+\
                 r' \toprule '+\
                 r" Parameter & Value & \multicolumn{3}{c}{Target statistics}  \\\cline{3-5} "+\
                 r" &  &  Name & Data & Model  \\"+\
                 r'\midrule   '+\
-                r' Cost of working - mini ($q_{10}$)   &'+p43(p.q[2])+'& Share mini-jobs           & 0.26 &'+p43(sh_min)+'\\\\'+\
-                r' Cost of working - part ($q_{20}$)   &'+p43(p.q[1])+'& Share part-time           & 0.20 &'+p43(sh_part)+'\\\\'+\
-                r' Cost of working - full ($q_{38.5}$)      &'+p43(p.q[3])+'& Share full time      & 0.20 &'+p43(sh_full)+'\\\\'+\
-                r' Fixed effects distribution ($q_{LIM}$)    &'+p43(p.qvar)+'& Effect of the reform on pension points  & 0.153 & '+p43(eff_points)+'\\\\'+\
+                r' Cost of working - mini ($q_{10}$)   &'+p43(p.q[2])+'& Share mini-jobs           & 0.26 &'+p42(sh_min)+'\\\\'+\
+                r' Cost of working - part ($q_{20}$)   &'+p43(p.q[1])+'& Share part-time           & 0.19 &'+p42(sh_part)+'\\\\'+\
+                r' Cost of working - full ($q_{38.5}$)      &'+p43(p.q[3])+'& Share full time      & 0.20 &'+p42(sh_full)+'\\\\'+\
+                r' Fixed effects distribution ($q_{LIM}$)    &'+p43(p.qvar)+'& Effect of the reform on non-marginal employment  & 0.11 & '+p42(eff_nme)+'\\\\'+\
                 r'  \bottomrule'+\
               """\end{tabular}"""+\
               r'\end{table}' 
@@ -266,7 +282,7 @@ def q(pt,additional_tests=False):
         adjustr = adjust*(1+p.r)**3
          
         #MPE out of pension wealth, using tretroactive credits 
-        SB_retro= sim.simNoUncer_interp(p,ModB,Years=year,Tstart=np.zeros(p.N,dtype=np.int16)+3,Astart=SB['A']+10,Pstart=SB['p'],izstart=SB['iz']) 
+        SB_retro= sim.simNoUncer_interp(p,ModB,Years=year,Tstart=np.zeros(p.N,dtype=np.int16)+3,Astart=SB['A']+1,Pstart=SB['p'],izstart=SB['iz']) 
          
         change_earn  =(np.nanmean((SB_retro['w'][3:11,:]*p.wls[SB_retro['h'][3:11,:]]*adjustr[3:11,:]).sum(axis=0)))-\
                       (np.nanmean((SB['w'][3:11,:]*p.wls[SB['h'][3:11,:]]*adjustr[3:11,:]).sum(axis=0)))
@@ -293,24 +309,25 @@ def q(pt,additional_tests=False):
          
         
         #Finally, the marginal propensity to earn 
-        MPE = change_earn/(change_pweal_furbo*10) 
+        MPE = change_earn/(change_pweal_furbo*1) 
     
         ############################################ 
         #Table with parameters 
         ###########################################      
-        table=r'\begin{table}[htbp]'+\
+        table=r'\begin{table}[htbp]\centering'+\
             r'\begin{threeparttable}'+\
                 r'\caption{Non-targeted moments}\label{table:nontargeted_moments}'+\
-                r'\centering\footnotesize'+\
+                r'\footnotesize'+\
                 r'\begin{tabular}{lcc}'+\
                 r' \toprule '+\
                 r" Effect of the reform on &   Data & Model  \\"+\
                 r'\midrule   '+\
-                r' Behavioral pension points   & 0.10 &'+p43(eff_points_behavioral)+'\\\\'+\
-                r' Work full time    & 0.05 &'+p43(eff_full)+'\\\\'+\
-                r' Marginal employment    & -0.12 &'+p43(eff_marg)+'\\\\'+\
+                r' Pension points   & 0.15 &'+p42(eff_points)+'\\\\'+\
+                r' Behavioral pension points   & 0.10 &'+p42(eff_points_behavioral)+'\\\\'+\
+                r' Work full time    & 0.05 &'+p42(eff_full)+'\\\\'+\
+                r' Marginal employment    & -0.12 &'+p42(eff_marg)+'\\\\'+\
                 r' Non-marginal employment earnings (\euro)    & 2809 &'+p40(eff_earn)+'\\\\'+\
-                r'Employed    & 0.10 &'+p43(eff_e)+'\\\\'+\
+                r'Employed    & 0.10 &'+p42(eff_e)+'\\\\'+\
                 r'\toprule   '+\
                 r" Other moments &   Data & Model  \\"+\
                 r'\midrule   '+\
@@ -342,8 +359,8 @@ def q(pt,additional_tests=False):
     # return [((sh_full-.1984)/0.0058),((sh_part-.1986)/0.00589),((sh_min-.256)/0.00644),((eff_h- 2.84)/0.822),((eff_e-.0772)/.0257)]         
     
              
-    print(np.array([((sh_full-.1974)/.1974)**2,((sh_part-.1884)/.1884)**2,((sh_min-.259)/.259)**2,(((eff_marg+0.087)/0.087))**2]).sum())   
-    return [((sh_full-.1974)/.1974),((sh_part-.1884)/.1884),((sh_min-.259)/.259),((eff_marg+0.087)/0.087)]             
+    print(np.array([((sh_full-.197)/.197)**2,((sh_part-.188)/.188)**2,((sh_min-.259)/.259)**2,(((eff_nme-0.103)/0.103))**2]).sum())   
+    return [((sh_full-.197)/.197),((sh_part-.188)/.188),((sh_min-.259)/.259),((eff_nme-0.103)/0.103)]             
   
     
 # [ 0.40706012  0.03525281 -0.51941101  0.00186123  1.60048109  0.03695673] first tentative σ=0.0005 
@@ -379,7 +396,7 @@ if __name__ == '__main__':
     # print(f'The objective value at the min is {fx}') 
      
      
-    res=dfols.solve(q, xc, rhobeg = 0.1, rhoend=1e-6, maxfun=250, bounds=(xl,xu), 
+    res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=250, bounds=(xl,xu), 
                     npt=len(xc)+5,scaling_within_bounds=True,  
                     user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
                                   'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 
