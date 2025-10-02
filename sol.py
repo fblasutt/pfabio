@@ -38,7 +38,7 @@ def solveEulerEquation(p,model='baseline'):
     return {'A':policyA1,'c':policyC,'V':V,'V1':EV,'p':policyp,'p_exp':policyp_exp,'pr':pr,'model':reform} 
  
 #@profile 
-@njit#(parallel=True) 
+@njit(parallel=True) 
 def solveEulerEquation1(policyA1, policyC, policyp,policyp_exp,V,EV,EVb,pmutil,pr,reform, 
                         r,δ,R,α,q,nwls, 
                         w,income,points,points_exp,agrid,T,NA,nw,σ, 
@@ -156,7 +156,7 @@ def solveEulerEquation1(policyA1, policyC, policyp,policyp_exp,V,EV,EVb,pmutil,p
                                  
                              
         
-@njit#(parallel=True) 
+@njit(parallel=True) 
 def expectation(t,NA,NP,nw,nq,V,EV,EVb,σ,α,pr,E_mutil_c,policyC,Πt):                 
     #Get variables useful for next iteration t-1 
     for ia in prange(NA): 

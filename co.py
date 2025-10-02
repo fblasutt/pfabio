@@ -14,10 +14,12 @@ class setup():
     def __init__(self):  
       
         # Size of gridpoints: 
-        self.nq = 4   #fixed points, preference for working 
+        self.nq = 2   #fixed points, preference for working 
         self.NA = 55  #assets gridpoints 
         self.NP = 21    #pension points gridpoints 
         self.nwls = 4  #hours choice 
+        
+        self.prob_nochoice=0.1
          
         # First estimated parameters 
         self.δ =  1/0.9785-1#1-1/(1+0.02) #0.00983949    # Discount rate 
