@@ -78,8 +78,12 @@ xc=np.array([0.17592452, 0.3555737,  0.43904321, 0.78818227])
 
 xc=np.array([-0.0529766 ,  0.18276247,  0.3285415 ,  1.8103877 ])
 
-xl=np.array([-0.15,0.001,0.001, 0.0]) 
-xu=np.array([0.5, 0.8, 1.01, 3.5]) 
+xc=np.array([0.1529766 ,  0.18276247,  0.3285415 ,  .303877 ])
+
+xc=np.array([0.34560199, 0.49135172, 0.51815277, 0.56695936,0.56695936])
+
+xl=np.array([-0.15,0.001,0.001, 0.0,0.0]) 
+xu=np.array([0.5, 0.8, 1.01, 3.5,3.5]) 
 
  
 #Function to minimize 
@@ -98,13 +102,13 @@ def q(pt,additional_tests=False):
      
     #Disutility from working 
     p.q_grid=np.zeros((p.nq,p.nwls,p.nw)) 
-    p.q_gridt = np.linspace(-p.qvar,p.qvar,p.nq)#np.linspace(p.qmean-p.qmean*p.qvar,p.qmean+p.qmean*p.qvar,p.nq)#co.dist_gamma(p.qshape,p.qscale,p.nq) 
+    p.q_gridt = np.array([-pt[3]*pt[2],0.0,pt[4]*pt[2]])#np.linspace(-p.qvar,p.qvar,p.nzw)#np.linspace(p.qmean-p.qmean*p.qvar,p.qmean+p.qmean*p.qvar,p.nq)#co.dist_gamma(p.qshape,p.qscale,p.nq) 
  
     for il in range(1,p.nwls): 
         for iw in range(p.nw): 
             for iq in range(p.nq): 
                  
-                p.q_grid[iq,il,iw]= p.q_gridt[iq]+p.q[il] 
+                p.q_grid[iq,il,iw]=p.q[il]+ p.q_gridt[iq]  
     
     # p.q_gridt = np.linspace(1.0-p.qvar,1.0+p.qvar,p.nq)#np.linspace(p.qmean-p.qmean*p.qvar,p.qmean+p.qmean*p.qvar,p.nq)#co.dist_gamma(p.qshape,p.qscale,p.nq)  
   
@@ -162,7 +166,7 @@ def q(pt,additional_tests=False):
     not_marginal=np.array(S['h']>1,dtype=np.float64)  
     marginal=np.array(S['h']==1,dtype=np.float64)  
     full=np.array(S['h']>=3,dtype=np.float64)  
-    earnings=S['wh']*p.scale  
+    earnings=np.log(1+S['wh']*p.scale)  
     points=S['pb']  
     points_behavioral=S['pb2']  
     event_time=age.copy() 
@@ -367,7 +371,7 @@ def q(pt,additional_tests=False):
             f.close() 
              
          
-    print("The point is {}, the moments are shfull {}, sh_part {}, sh_min {}, eff_h {} , eff_e {}, eff_full  {}, eff_marg {}, eff_earn {}, eff_points {}, eff nonmarignal employment {} ".format(pt,sh_full,sh_part,sh_min,eff_h,eff_e,eff_full,eff_marg,eff_earn,eff_points,eff_nme))    
+    print("The point is {}, the moments are shfull {}, sh_part {}, sh_min {}, eff_h {} , eff_e {}, eff_full  {}, eff_marg {}, eff_earn {}, eff_points {}, eff_points_behavioral {},  eff nonmarignal employment {} ".format(pt,sh_full,sh_part,sh_min,eff_h,eff_e,eff_full,eff_marg,eff_earn,eff_points,eff_points_behavioral,eff_nme))    
      
      
     # print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.84)/ 2.84)**2,((eff_e-.0772)/.0772)**2]).sum())  
@@ -381,8 +385,8 @@ def q(pt,additional_tests=False):
     # return [((sh_full-.1984)/0.0058),((sh_part-.1986)/0.00589),((sh_min-.256)/0.00644),((eff_h- 2.84)/0.822),((eff_e-.0772)/.0257)]         
     
              
-    print(np.array([((sh_full-.197)/.197)**2,((sh_part-.188)/.188)**2,((sh_min-.259)/.259)**2,(((eff_h-2.0)/2.0))**2]).sum())   
-    return [((sh_full-.197)/.197),((sh_part-.188)/.188),((sh_min-.259)/.259),((eff_h-2.0)/2.0)]             
+    print(np.array([((sh_full-.197)/.197)**2,((sh_part-.188)/.188)**2,((sh_min-.259)/.259)**2,(((eff_nme-.117)/.117))**2,(((eff_points-.1288)/.1288))**2]).sum())   
+    return [((sh_full-.197)/.197),((sh_part-.188)/.188),((sh_min-.259)/.259),((eff_nme-.117)/.117),((eff_points-.1288)/.1288)]             
   
     
 # [ 0.40706012  0.03525281 -0.51941101  0.00186123  1.60048109  0.03695673] first tentative σ=0.0005 
@@ -396,30 +400,30 @@ import numpy as np
 if __name__ == '__main__': 
      
  
-    computation_options = { "num_workers" :7,        # use four processes in parallel 
-                            "working_dir" : "working" # where to save results in progress (in case interrupted) 
-                            } 
+    # computation_options = { "num_workers" :7,        # use four processes in parallel 
+    #                         "working_dir" : "working" # where to save results in progress (in case interrupted) 
+    #                         } 
      
-    global_search_options = { "num_points" : 10}  # number of points in global pre-test 
+    # global_search_options = { "num_points" : 10}  # number of points in global pre-test 
      
-    local_search_options = {  "algorithm"    : "dfols", # local search algorithm 
-                                                          # can be either BOBYQA from NLOPT or NelderMead from scipy 
-                              "num_restarts" : 7,      # how many local searches to do 
-                              "shrink_after" : 7,       # after the first [shrink_after] restarts we begin searching 
-                                                          # near the best point we have found so far 
-                              "xtol_rel"     : 1e-6,     # relative tolerance on x 
-                              "ftol_rel"     : 1e-6     # relative tolerance on f 
-                            } 
+    # local_search_options = {  "algorithm"    : "dfols", # local search algorithm 
+    #                                                       # can be either BOBYQA from NLOPT or NelderMead from scipy 
+    #                           "num_restarts" : 7,      # how many local searches to do 
+    #                           "shrink_after" : 7,       # after the first [shrink_after] restarts we begin searching 
+    #                                                       # near the best point we have found so far 
+    #                           "xtol_rel"     : 1e-6,     # relative tolerance on x 
+    #                           "ftol_rel"     : 1e-6     # relative tolerance on f 
+    #                         } 
      
-    opt = TikTak.TTOptimizer(computation_options, global_search_options, local_search_options, skip_global=False
-                              ) 
-    x,fx = opt.minimize(q,xl,xu) 
-    print(f'The minimizer is {x}') 
-    print(f'The objective value at the min is {fx}') 
+    # opt = TikTak.TTOptimizer(computation_options, global_search_options, local_search_options, skip_global=False
+    #                           ) 
+    # x,fx = opt.minimize(q,xl,xu) 
+    # print(f'The minimizer is {x}') 
+    # print(f'The objective value at the min is {fx}') 
      
      
-    # res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=250, bounds=(xl,xu), 
-    #                 npt=len(xc)+5,scaling_within_bounds=True,  
-    #                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
-    #                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 
-    #                 objfun_has_noise=False) 
+    res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=250, bounds=(xl,xu), 
+                    npt=len(xc)+5,scaling_within_bounds=True,  
+                    user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
+                                  'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 
+                    objfun_has_noise=False) 

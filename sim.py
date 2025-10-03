@@ -11,7 +11,7 @@ def simNoUncer_interp(p, model, Years=np.ones(1), Tstart=0, Astart=0.0, Pstart=0
    
     np.random.seed(2)    
     if Years.shape==(1,):Years=np.repeat(np.array(range(1992,1992+p.T))[:,None],p.N,axis=1) 
-    p.q_sim=np.array(np.random.uniform(0.0,p.nq,size=p.N),dtype=np.int32) 
+    p.q_sim=izstart[0,:]//p.nzw#np.array(np.random.uniform(0.0,p.nq,size=p.N),dtype=np.int32) 
   
       
     #Call the simulator  

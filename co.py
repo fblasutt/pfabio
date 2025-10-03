@@ -14,7 +14,7 @@ class setup():
     def __init__(self):  
       
         # Size of gridpoints: 
-        self.nq = 4   #fixed points, preference for working 
+        self.nq = 3   #fixed points, preference for working 
         self.NA = 55  #assets gridpoints 
         self.NP = 21    #pension points gridpoints 
         self.nwls = 4  #hours choice 
@@ -53,7 +53,7 @@ class setup():
         self.nzw=3;self.nzm=3;self.nw = self.nzw*self.nzm 
            
         #Pension 
-        self.E_bar_now = 27740.65230618203/self.scale  # Average earnings: ttps://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256, exchange rate 1.9569471624266144 
+        self.E_bar_now = 23496.076923076922/self.scale  # Average earnings: ttps://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256, exchange rate 1.9569471624266144 
         self.ρ =303.768/self.scale      #Dollar value of points:https://de.wikipedia.org/wiki/Aktueller_Rentenwert 
         self.Pmax = 1               #Threshold for pension points reform 
         self.add_points=1.5         #point multiplicator during reform 
@@ -306,7 +306,7 @@ def hours_pr(params,data,beg,end):
 def hours_value(params,data,beg,end): 
      
     D=data['h'][beg:end,:] 
-    return (D==1)*10.0+(D==2)*20.0+(D==3)*38.5 
+    return (D==1)*0.0+(D==2)*20.0+(D==3)*38.5 
 
 
  
