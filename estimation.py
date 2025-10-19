@@ -17,6 +17,8 @@ import dfols
 import TikTak 
 import pandas as pd 
 import statsmodels.formula.api as smf 
+
+from consav.grids import nonlinspace
  
 import statsmodels.api as sm 
 from pyhdfe import create
@@ -80,10 +82,47 @@ xc=np.array([-0.0529766 ,  0.18276247,  0.3285415 ,  1.8103877 ])
 
 xc=np.array([0.1529766 ,  0.18276247,  0.3285415 ,  .303877 ])
 
-xc=np.array([0.34560199, 0.49135172, 0.51815277, 0.56695936,0.56695936])
+xc=np.array([0.34560199, 0.52, 0.43,2.5])
 
-xl=np.array([-0.15,0.001,0.001, 0.0,0.0]) 
-xu=np.array([0.5, 0.8, 1.01, 3.5,3.5]) 
+xc=np.array([0.29504107, 0.4849266,  0.44567841, 1.37806935])
+
+xc=np.array([0.34144022, 0.50589427, 0.44879404, 2.19344653])
+
+xc=np.array([0.3535853,  0.51203419, 0.47489412, 1.64679895])
+xc=np.array([0.3535853,  0.51203419, 0.47489412, 1.64679895])
+
+#xc=np.array([0.31870392, 0.48824139, 0.43375664, 3.09494168])
+
+xc=np.array([0.27023343, 0.4760718,  0.55284867, 4.62954094])
+
+xc=np.array([0.22501409, 0.48762826, 0.5971833,  7.4069089])
+
+xc=np.array([0.27992511, 0.48387357, 0.57024019, 3.31312607])
+
+xc=np.array([0.23921454, 0.46522483, 0.52899638, 3.5481326])
+
+xc=np.array([0.23774461, 0.4633808,  0.52856484, 3.27975242])
+
+xc=np.array([0.27416538, 0.46535092, 0.54906985, 2.86587419])
+
+xc=np.array([0.27685536, 0.46364342, 0.541645,   3.18341448])
+
+xc=np.array([0.28340884, 0.46445241, 0.51329834, 4.39689782])
+
+xc=np.array([0.26938113, 0.44570762, 0.4990007,  3.91073213])
+
+xc=np.array([0.26753108, 0.44459888, 0.49707642, 3.98322824])
+
+xc=np.array([0.27074305, 0.44609739, 0.49950347, 4.44674655])
+
+xc=np.array([0.23682466, 0.43099417, 0.47350977, 4.2106033 ])
+
+#Good for 0.99-0.01
+xc=np.array([0.27369009, 0.45786094, 0.50632289, 3.61066082])
+
+
+xl=np.array([-0.15,0.001,0.05,.0001]) 
+xu=np.array([0.5, 0.8, .99,15.0]) 
 
  
 #Function to minimize 
@@ -99,16 +138,31 @@ def q(pt,additional_tests=False):
      
     p.qvar =pt[3]*pt[2] #Fixed cost of pticipation -sd  
     
-     
+    def grid_fat_tails(gmin,gmax,gridpoints):
+        """Create a grid with fat tail, centered and symmetric around gmin+gmax
+        
+        Args: 
+            gmin (float): min of grid
+            gmax(float): max of grids
+            gridpoints(int): number of gridpoints (odd number)
+        
+        """ 
+        odd_num = np.mod(gridpoints,2)
+        mid=(gmax+gmin)/2.0
+        summ=gmin+gmax
+        first_part = mid-np.flip(nonlinspace(gmin,mid,(gridpoints+odd_num)//2,1.3))+gmin#nonlinspace(gmin,mid,(gridpoints+odd_num)//2,1.3)
+        last_part = nonlinspace(mid,gmax,(gridpoints+odd_num)//2 ,1.3)[1:]#np.flip(summ - nonlinspace(gmin,mid,(gridpoints-odd_num)//2 + 1,1.3))[1:]
+        return np.append(first_part,last_part)
+
     #Disutility from working 
     p.q_grid=np.zeros((p.nq,p.nwls,p.nw)) 
-    p.q_gridt = np.array([-pt[3]*pt[2],0.0,pt[4]*pt[2]])#np.linspace(-p.qvar,p.qvar,p.nzw)#np.linspace(p.qmean-p.qmean*p.qvar,p.qmean+p.qmean*p.qvar,p.nq)#co.dist_gamma(p.qshape,p.qscale,p.nq) 
+    p.q_gridt = np.linspace(-p.qvar,p.qvar,p.nzw)#grid_fat_tails(-p.qvar,p.qvar,p.nzw)# np.linspace(p.qmean-p.qmean*p.qvar,p.qmean+p.qmean*p.qvar,p.nq)#co.dist_gamma(p.qshape,p.qscale,p.nq) 
  
     for il in range(1,p.nwls): 
         for iw in range(p.nw): 
             for iq in range(p.nq): 
                  
-                p.q_grid[iq,il,iw]=p.q[il]+ p.q_gridt[iq]  
+                p.q_grid[iq,il,iw]=p.q[il]+ p.q_gridt[iq]
     
     # p.q_gridt = np.linspace(1.0-p.qvar,1.0+p.qvar,p.nq)#np.linspace(p.qmean-p.qmean*p.qvar,p.qmean+p.qmean*p.qvar,p.nq)#co.dist_gamma(p.qshape,p.qscale,p.nq)  
   
@@ -132,7 +186,7 @@ def q(pt,additional_tests=False):
     ini_treated=np.ones(p.N,dtype=np.int32)*3 
     ini_treated[final_sample!=1998]=np.zeros(p.N,dtype=np.int32)[final_sample!=1998]+11 
     #p.T-np.cumsum(treatment==True,axis=0)[-1,:]#first child age at which women are treated  
-    SP= sim.simNoUncer_interp(p,ModP,Years=year,Tstart=ini_treated,Astart=SB['A'],Pstart=SB['pb'],izstart=SB['iz'])  
+    SP= sim.simNoUncer_interp(p,ModP,Years=year,Tstart=ini_treated,Astart=SB['A'],Pstart=SB['p'],izstart=SB['iz'])  
      
     #create unique dictionary for relevant simulated data  
     S=dict()  
@@ -145,7 +199,7 @@ def q(pt,additional_tests=False):
     #Average labor supply in 2000 for treatment group # 
     ################################################### 
 
-    subset=((age>=3) & (age<=10))# & (age>=ini_treated))
+    subset=((age>=3) & (age<=10) & (age>=ini_treated))
     sh_part=np.mean(S['h'][subset]==2) 
     sh_full=np.mean(S['h'][subset]>=3) 
     sh_min=np.mean(S['h'][subset]==1) 
@@ -374,20 +428,14 @@ def q(pt,additional_tests=False):
     print("The point is {}, the moments are shfull {}, sh_part {}, sh_min {}, eff_h {} , eff_e {}, eff_full  {}, eff_marg {}, eff_earn {}, eff_points {}, eff_points_behavioral {},  eff nonmarignal employment {} ".format(pt,sh_full,sh_part,sh_min,eff_h,eff_e,eff_full,eff_marg,eff_earn,eff_points,eff_points_behavioral,eff_nme))    
      
      
-    # print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.84)/ 2.84)**2,((eff_e-.0772)/.0772)**2]).sum())  
-    # return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.84)/ 2.84),((eff_e-.0772)/.0772)]         
- 
-    # print(np.array([((sh_full-.1984)/.1984)**2,((sh_part-.1986)/.1986)**2,((sh_min-.256)/.256)**2,((eff_h- 2.84)/ 2.84)**2,0*((eff_e-.0772)/.0772)**2]).sum())  
-    # return [((sh_full-.1984)/.1984),((sh_part-.1986)/.1986),((sh_min-.256)/.256),((eff_h- 2.84)/ 2.84),0*((eff_e-.0772)/.0772)]         
- 
- 
-    # print(np.array([((sh_full-.1984)/0.0058)**2,((sh_part-.1986)/0.00589)**2,((sh_min-.256)/0.00644)**2,((eff_h- 2.84)/0.822)**2,((eff_e-.0772)/.0257)**2]).sum())  
-    # return [((sh_full-.1984)/0.0058),((sh_part-.1986)/0.00589),((sh_min-.256)/0.00644),((eff_h- 2.84)/0.822),((eff_e-.0772)/.0257)]         
-    
+
              
-    print(np.array([((sh_full-.197)/.197)**2,((sh_part-.188)/.188)**2,((sh_min-.259)/.259)**2,(((eff_nme-.117)/.117))**2,(((eff_points-.1288)/.1288))**2]).sum())   
-    return [((sh_full-.197)/.197),((sh_part-.188)/.188),((sh_min-.259)/.259),((eff_nme-.117)/.117),((eff_points-.1288)/.1288)]             
-  
+    # print(np.array([((sh_full-.175)/.175)**2,((sh_part-.142)/.142)**2,((sh_min-.30)/.30)**2,((eff_h-2.6))**2]).sum())   
+    # return [((sh_full-.175)/.175),((sh_part-.142)/.142),((sh_min-.30)/.30),((eff_h-2.6))]             
+ 
+    print("The point is {}".format(np.array([((sh_full-.175)/.175)**2,((sh_part-.142)/.142)**2,((sh_min-.3018)/.3018)**2,((eff_earn-1.1))**2]).sum()))
+    return [((sh_full-.175)/.175),((sh_part-.142)/.142),((sh_min-.3018)/.3018),((eff_earn-1.1))]     
+
     
 # [ 0.40706012  0.03525281 -0.51941101  0.00186123  1.60048109  0.03695673] first tentative σ=0.0005 
 # 0.37349381, -0.01739811, -0.6       ,  0.00287586,  1.59080139, 0.03220926] current 

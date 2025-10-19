@@ -5,6 +5,7 @@ set seed 12345
 keep if sex==2
 replace phrf=int(phrf)
 keep if age>=20 & age<65 
+*keep if syear>=1999
 *keep if east_germany==0
 * Create new variable hours_group with the following categories:
 * == 1 if unemployed (pgemplst == 5 meaning not employed)
@@ -14,14 +15,63 @@ keep if age>=20 & age<65
 * == 5 if agreed upon hours is larger than 30
 
 
+* Deflate nominal variables using CPI (Destatis), base year = 2000
+* CPI source: GENESIS 61111-0001, annual averages (2020=100)
+* CPI(2000)=75.5 → Base year 2000 = 100
+
+
+foreach var in pglabgro_p pglabgro w0111a {
+
+    replace `var' = `var' * (75.5/61.9)  if syear== 1992
+    replace `var' = `var' * (75.5/65.0)  if syear== 1993
+    replace `var' = `var' * (75.5/67.9)  if syear== 1994
+    replace `var' = `var' * (75.5/69.7)  if syear== 1995
+    replace `var' = `var' * (75.5/71.0)  if syear== 1996
+    replace `var' = `var' * (75.5/72.0)  if syear== 1997
+    replace `var' = `var' * (75.5/73.4)  if syear== 1998
+    replace `var' = `var' * (75.5/74.0)  if syear== 1999
+    replace `var' = `var' * (75.5/74.5)  if syear== 2000
+    replace `var' = `var' * (75.5/75.5)  if syear== 2001
+    replace `var' = `var' * (75.5/77.0)  if syear== 2002
+    replace `var' = `var' * (75.5/78.1)  if syear== 2003
+    replace `var' = `var' * (75.5/78.9)  if syear== 2004
+    replace `var' = `var' * (75.5/80.2)  if syear== 2005
+    replace `var' = `var' * (75.5/81.5)  if syear== 2006
+    replace `var' = `var' * (75.5/82.8)  if syear== 2007
+    replace `var' = `var' * (75.5/84.7)  if syear== 2008
+    replace `var' = `var' * (75.5/86.9)  if syear== 2009
+    replace `var' = `var' * (75.5/87.2)  if syear== 2010
+    replace `var' = `var' * (75.5/88.1)  if syear== 2011
+    replace `var' = `var' * (75.5/90.0)  if syear== 2012
+    replace `var' = `var' * (75.5/91.7)  if syear== 2013
+    replace `var' = `var' * (75.5/93.1)  if syear== 2014
+    replace `var' = `var' * (75.5/94.0)  if syear== 2015
+    replace `var' = `var' * (75.5/94.5)  if syear== 2016
+    replace `var' = `var' * (75.5/95.0)  if syear== 2017
+    replace `var' = `var' * (75.5/96.4)  if syear== 2018
+    replace `var' = `var' * (75.5/98.1)  if syear== 2019
+    replace `var' = `var' * (75.5/99.5)  if syear== 2020
+    replace `var' = `var' * (75.5/100.0) if syear== 2021
+    replace `var' = `var' * (75.5/103.1) if syear== 2022
+    replace `var' = `var' * (75.5/110.2) if syear== 2023
+    replace `var' = `var' * (75.5/116.7) if syear== 2024
+    replace `var' = `var' * (75.5/119.3) if syear== 2025
+
+}
+
+
 gen couple=0
 replace couple=1 if  parid!=.
+
+
+
 
 
 **# Bookmark #1
 *Model start at age 29, when every women has a kid
 
-gen adjust=15819.30/20317
+gen adjust=1
+*15819.30/20317
 *15819.30/18787.67
 *7694/12582.09
 *15819.30/19029.33
@@ -72,7 +122,7 @@ replace mortgage=1 if hlf0087_h==1
 * Women's pension points
 ********************************************************************************
 gen points = 0
-replace points =  min((earnings / 27740.65230618203),2) if irregular==0
+replace points =  min((earnings / 26642),2) if irregular==0
 
 
 ********************************************************************************
@@ -95,6 +145,8 @@ predict Wdelta,resid
 gen Wcons =_b[_cons]+_b[2000.syear]
 gen Wage  =_b[age]
 gen Wage2 =_b[age_2]
+
+nlsur (log_wage={vint}+(age)*Wage+(age_2)*Wage2) [weight= phrf ] if age<=20
 
 *Produce hidden productivity
 bysort pid (syear): gen d_log_wage=log_wage-log_wage[_n-1] if syear==syear[_n-1]+1
@@ -143,6 +195,7 @@ gen Mage  =_b[age]
 gen Mage2 =_b[age_2]
 predict Mdelta,resid
 
+nlsur (log_earnings_p={vint}+(age)*Mage+(age_2)*Mage2) if age<=20
 
 bysort pid (syear): gen d_log_earnings_p=log_earnings_p-log_earnings_p[_n-1] if syear==syear[_n-1]+1
 reg d_log_earnings_p i.age i.syear i.numberofchildren i.education [weight=phrf]  
@@ -195,19 +248,7 @@ foreach v of varlist Wcons Wage Wage2 sigma02 expect {
 file close myfile
  
 
-********************************************************************************
-*Average earnings
-gen age_3=age^3
-reg earnings_mod age age_2  i.syear [weight=phrf] if  earnings_mod>0
-gen pred35 = _b[_cons]+_b[2000.syear]+_b[age]*35+_b[age_2]*35^2
-*+_b[age_3]*35^3
-sum pred35
 
-*reg earnings_mod i.age  i.syear [weight=phrf] if age>=30 & earnings_mod>0
-*& earnings>0  
-*replace pred35 = _b[_cons]+_b[2000.syear]+_b[35.age]
-*+_b[age_3]*35^3
-*sum pred35
 ********************************************************************************
 
 *keep if syear>=1995 & syear<=2002  & treated==1 & sex==2
@@ -219,21 +260,29 @@ sum pred35
 keep if Wdelta!=. & Mdelta!=.
 
 
-_pctile Wdelta [weight=phrf], p(25 75)
+_pctile Wdelta [weight=phrf], p(1.5625, 10.9375, 34.375 , 65.625 , 89.0625, 98.4375)
 gen pctw=r(r1) if _n==1
 replace pctw=r(r2) if _n==2
+replace pctw=r(r3) if _n==3
+replace pctw=r(r4) if _n==4
+replace pctw=r(r5) if _n==5
+replace pctw=r(r6) if _n==6
 xtile categoryw = Wdelta, cut(pctw)
 
-_pctile Mdelta [weight=phrf], p(25 75)
+_pctile Mdelta [weight=phrf], p(1.5625, 10.9375, 34.375 , 65.625 , 89.0625, 98.4375)
 gen pctm=r(r1) if _n==1
 replace pctm=r(r2) if _n==2
+replace pctm=r(r3) if _n==3
+replace pctm=r(r4) if _n==4
+replace pctm=r(r5) if _n==5
+replace pctm=r(r6) if _n==6
 xtile categorym = Mdelta, cut(pctm)
 
 
 
 *Generate overall categories
 gen category=.
-replace category = (categoryw-1)*3+(categorym-1)
+replace category = (categoryw-1)*7+(categorym-1)
 
 
 * Generate frequencies
@@ -256,14 +305,14 @@ gen ta1=.
 gen ta2=.
 gen acons=.
 
-foreach i of numlist 0/8{
-reg networth age age_2 [weight=phrf] if sex==2 & category==`i'
+foreach i of numlist 1/7{
+reg networth age age_2 [weight=phrf] if sex==2 & categoryw==`i'
 replace acons=_b[_cons]
 replace  ta1=_b[age]
 replace  ta2=_b[age_2]
 
 
-	replace nw_hat=acons+ta1*29+ta2*29^2 if sex==2 & category==`i'
+	replace nw_hat=acons+ta1*29+ta2*29^2 if sex==2 & categoryw==`i'
 	
 
 }
@@ -278,7 +327,7 @@ gen tp1=.
 gen tp2=.
 gen pcons=.
 
-foreach i of numlist 0/8{
+foreach i of numlist 0/48{
 reg points age age_2 [weight=phrf] if sex==2 & category==`i'
 replace pcons=_b[_cons]
 replace  tp1=_b[age]

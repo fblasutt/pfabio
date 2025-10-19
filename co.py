@@ -14,13 +14,13 @@ class setup():
     def __init__(self):  
       
         # Size of gridpoints: 
-        self.nq = 3   #fixed points, preference for working 
-        self.NA = 55  #assets gridpoints 
-        self.NP = 21    #pension points gridpoints 
+        self.nq = 7   #fixed points, preference for working 
+        self.NA = 35#55  #assets gridpoints 
+        self.NP = 15#21    #pension points gridpoints 
         self.nwls = 4  #hours choice 
          
         # First estimated parameters 
-        self.δ =  1/0.9785-1#1-1/(1+0.02) #0.00983949    # Discount rate 
+        self.δ =1/0.98-1#1/0.9785-1#1/0.99-1#1-1/(1+0.02) #0.00983949    # Discount rate 
     
         self.q =np.array([0.0,0.46358235*0.54436517, 0.47591268*0.54436517, 0.54436517])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
@@ -48,13 +48,13 @@ class setup():
         self.wls=np.array([0.0,10.0, 20.0, 38.5])/38.5 #From GSOEP hrs/week = (10/ 20 / 38.5 )  
          
         # income of men and women: sd of income shocks in t=0 and after that 
-        self.σzw=0.1171;self.σ0zw= 0.42883;self.σzm=0.10066;self.σ0zm=0.4386
+        self.σzw=0.1172;self.σ0zw= 0.4329;self.σzm=0.1;self.σ0zm=0.4386
         #self.σzw=0.1121;self.σ0zw=0.43296;self.σzm=0.10066;self.σ0zm=0.4386
-        self.nzw=3;self.nzm=3;self.nw = self.nzw*self.nzm 
+        self.nzw=7;self.nzm=7;self.nw = self.nzw*self.nzm 
            
         #Pension 
-        self.E_bar_now = 23496.076923076922/self.scale  # Average earnings: ttps://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256, exchange rate 1.9569471624266144 
-        self.ρ =303.768/self.scale      #Dollar value of points:https://de.wikipedia.org/wiki/Aktueller_Rentenwert 
+        self.E_bar_now = 26642/self.scale#23496.076923076922/self.scale   # Average earnings: ttps://www.gesetze-im-internet.de/sgb_6/ appendix 1 54256, exchange rate 1.9569471624266144 
+        self.ρ =298.08/self.scale  #298.08    #Dollar value of points:https://de.wikipedia.org/wiki/Aktueller_Rentenwert 
         self.Pmax = 1               #Threshold for pension points reform 
         self.add_points=1.5         #point multiplicator during reform 
         self.add_points_exp=1.0
@@ -94,16 +94,16 @@ class setup():
         for t in range(self.T)  : 
             for iz in range(self.nw):     
                 for i in range(self.nwls): 
-                    self.w[t,i,iz]=np.exp(-0.15967041 +0.10336214*(t+29) -0.00115570  *(t+29)**2 + self.grid_zw[t][iz//self.nzm])/self.scale*38.5*52 
+                    self.w[t,i,iz]=np.exp(-.1613215  +.1033621*(t+29)-.0011557  *(t+29)**2 + self.grid_zw[t][iz//self.nzm])/self.scale*38.5*52 
                     #self.w[t,i,iz]=np.exp(0.25740835  +0.07901640 *(t+29) -0.00090099   *(t+29)**2 + self.grid_zw[t][iz//self.nzm])/self.scale*38.5*52 
                     if i==1:#miniwages are floored at 325*12 euros a year  
-                        self.w[t,i,iz]=np.minimum(325*12/self.scale/self.wls[i],self.w[t,i,iz]) 
+                        self.w[t,i,iz]=np.minimum(400*12/self.scale/self.wls[i],self.w[t,i,iz]) 
                   
  
         self.y_N=np.zeros((self.T,self.nw))#final grid for w's income         
         for t in range(self.T)  : 
             for iz in range(self.nw):     
-                if t<self.R: self.y_N[t,iz]=np.exp(8.58718395+0.07439798*(t+29) -0.00083151 *(t+29)**2 + self.grid_zm[t][iz%self.nzw])/self.scale  
+                if t<self.R: self.y_N[t,iz]=np.exp(8.598973+0.074398*(t+29) -0.0008315 *(t+29)**2 + self.grid_zm[t][iz%self.nzm])/self.scale  
                 else:        self.y_N[t,iz]=self.y_N[self.R-1,iz]*0.4133#39
    
       
@@ -148,14 +148,14 @@ class setup():
         self.startA=np.zeros((self.T,self.N))   
         assets=np.array(data['_networth']) 
         for i in range(self.N):  
-            index=int(i/self.N*9)  
+            index=int(i/self.N*49)  
             self.startA[:,i]=assets[index]/self.scale  
              
         #Initial pension points 
         self.startPd = np.array(data['_points']) 
         self.startP=np.zeros(self.N)  
         for i in range(self.N):  
-            index=int(i/self.N*9)  
+            index=int(i/self.N*49)  
             self.startP[i]=self.startPd[index]#+3.0 
                      
         #Distribution of types in first period and shocks to be used 
@@ -182,6 +182,7 @@ class setup():
 @njit 
 def after_tax_income(tbase,y1g,y2g,y_mean,fraction,τ,p_not_retired,no_retired = True): 
      
+
     y1c = min(y1g*fraction*tbase,2*y_mean) 
     y2c = min(y2g,         2*y_mean) 
      
