@@ -21,6 +21,7 @@ import co # user defined functions
 import sol 
 import sim 
 import numpy as np 
+from scipy import optimize
 #import matplotlib.pyplot as plt 
  
  
@@ -29,21 +30,59 @@ p = co.setup()
  
  
  
-######################################## 
-# solve the model 
-######################################## 
+##########################################
+# solve the model with and without reform
+##########################################
  
-#Models: pension reform (P), baseline (B), lower taxes(τ), pension reform without limit (PN) 
+#Models: pension reform (P), baseline (B),  
 ModP= sol.solveEulerEquation(p,model='pension reform') 
-ModB = sol.solveEulerEquation(p,model='baseline') 
+ModB = sol.solveEulerEquation(p,model='baseline')
+
+SB = sim.simNoUncer_interp(p,  ModB, Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw) 
+SP = sim.simNoUncer_interp(p,  ModP,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw)
+
+#Models : lower taxes(τ), pension reform without limit (PN)
+
+#First, I need to calibrate surpluss such that they are the same of the pension reform 
  
-pτ = co.setup();pτ.tbase[3:11]=p.tbase[3:11]-0.158
+adjust=np.ones(SP['c'].shape)#/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None] 
+surplus_P=-np.nansum(adjust*p.ρ*SP['p']*(SP['ir']==1))+np.nansum(adjust*SP['taxes'])
+surplus_B=-np.nansum(adjust*p.ρ*SB['p']*(SB['ir']==1))+np.nansum(adjust*SB['taxes'])
+
+def equivτ(change):
+
+    pτ = co.setup();pτ.tbase[3:11]=p.tbase[3:11]-change
+    Modτ = sol.solveEulerEquation(pτ,model='baseline') 
+    Sτ = sim.simNoUncer_interp(pτ, Modτ,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw) 
+    surplus_τ=-np.nansum(adjust*pτ.ρ*Sτ['p']*(Sτ['ir']==1))+np.nansum(adjust*Sτ['taxes'])
+    
+    print("Difference in surpluss is {}".format(surplus_τ-surplus_P))
+
+    return surplus_τ-surplus_P
+
+
+def equivPN(change):
+
+    pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=change
+    ModPN = sol.solveEulerEquation(pPN,model='pension reform') 
+    SPN = sim.simNoUncer_interp(pPN, ModPN,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw) 
+    surplus_PN=-np.nansum(adjust*pPN.ρ*SPN['p']*(SPN['ir']==1))+np.nansum(adjust*SPN['taxes'])
+    
+    print("Difference in surpluss is {}".format(surplus_PN-surplus_P))
+
+    return surplus_PN-surplus_P
+
+
+changeτ =optimize.bisect(equivτ ,0.1,0.2,xtol=0.001)#0.16171875000000002
+changePN=optimize.bisect(equivPN,1.0,1.5,xtol=0.001)#1.3310546875#
+
+pτ = co.setup();pτ.tbase[3:11]=p.tbase[3:11]-changeτ#0.158
 Modτ = sol.solveEulerEquation(pτ,model='baseline') 
  
 # pPN = co.setup();pPN.wls_point2=np.array([0.0,0.1,1.0,1.0]);pPN.standard_wls=False
 # ModPN = sol.solveEulerEquation(pPN,model='baseline') 
  
-pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=1.5475#1.55
+pPN = co.setup();pPN.Pmax=1000000;pPN.add_points=changePN#1.5475#1.55
 ModPN = sol.solveEulerEquation(pPN,model='pension reform') 
 
 #pm = co.setup();pm.wls_point=0;pm.add_points=1.543 
@@ -72,14 +111,14 @@ EVP    =np.mean(((np.cumsum((adjustb*SP['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[
 EVτ    =np.mean(((np.cumsum((adjustb*Sτ['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t]) 
 EVPN   =np.mean(((np.cumsum((adjustb*SPN['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t]) 
 #EVm    =np.mean(((np.cumsum((adjustb*Sm['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t]) 
-for i in np.linspace(1.00005,1.0299,100): 
+for i in np.linspace(1.001,1.01,1000): 
      
     St= sim.simNoUncer_interp(p, ModB,cadjust=i,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw) 
     EVt = np.mean(((np.cumsum((adjustb*St['v'])[::-1],axis=0)[::-1])*(1+p.δ)**t)[t])#np.nanmean(EV_time) 
     Pbetter=EVt<EVP 
     τbetter=EVt<EVτ 
     PNbetter=EVt<EVPN 
-    
+    print(i)
      
     if Pbetter: welf_P=i-1 
     if τbetter: welf_τ=i-1 
@@ -98,12 +137,11 @@ for i in np.linspace(1.00005,1.0299,100):
 #2) Govt. budget 
 
  
-#adjusted deficits 
-adjust=np.ones(SP['c'].shape)/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None] 
-deficit_B=np.nansum(adjust*p.ρ*SB['p']*(SB['ir']==1))-np.nansum(adjust*SB['taxes'])#(np.nansum(expe_B*adjust[p.R:,:])  -np.nansum(tax_B*adjust[3:p.R,:])) 
-deficit_P=np.nansum(adjust*p.ρ*SP['p']*(SP['ir']==1))-np.nansum(adjust*SP['taxes'])#(np.nansum(expe_P*adjust[p.R:,:])  -np.nansum(tax_P*adjust[3:p.R,:])) 
-deficit_τ=np.nansum(adjust*pτ.ρ*Sτ['p']*(Sτ['ir']==1))-np.nansum(adjust*Sτ['taxes'])#(np.nansum(expe_τ*adjust[p.R:,:])  -np.nansum(tax_τ*adjust[3:p.R,:])) 
-deficit_PN=np.nansum(adjust*pPN.ρ*SPN['p']*(SPN['ir']==1))-np.nansum(adjust*SPN['taxes'])#(np.nansum(expe_PN*adjust[p.R:,:])-np.nansum(tax_PN*adjust[3:p.R,:])) 
+#adjusted surpluss 
+surplus_B=-np.nansum(adjust*p.ρ*SB['p']*(SB['ir']==1))+np.nansum(adjust*SB['taxes'])#(np.nansum(expe_B*adjust[p.R:,:])  -np.nansum(tax_B*adjust[3:p.R,:])) 
+surplus_P=-np.nansum(adjust*p.ρ*SP['p']*(SP['ir']==1))+np.nansum(adjust*SP['taxes'])#(np.nansum(expe_P*adjust[p.R:,:])  -np.nansum(tax_P*adjust[3:p.R,:])) 
+surplus_τ=-np.nansum(adjust*pτ.ρ*Sτ['p']*(Sτ['ir']==1))+np.nansum(adjust*Sτ['taxes'])#(np.nansum(expe_τ*adjust[p.R:,:])  -np.nansum(tax_τ*adjust[3:p.R,:])) 
+surplus_PN=-np.nansum(adjust*pPN.ρ*SPN['p']*(SPN['ir']==1))+np.nansum(adjust*SPN['taxes'])#(np.nansum(expe_PN*adjust[p.R:,:])-np.nansum(tax_PN*adjust[3:p.R,:])) 
 
 #3) Gender wage gaps in old age 
 ggap_old_B=1.0-(np.nanmean(p.ρ*SB['p'][p.T-1,:]))/np.nanmean(p.y_N[p.R,SB['iz']])
@@ -152,9 +190,7 @@ table=r'\begin{table}[htbp]\centering'+\
        r' Lower income taxes                         &'+p43(ggap_old_τ)  +'&'+p42(WLS_τ)  +'&'+p42(29+ret_τ) +'&'+p43(welf_τ*100)+'\\\\'+\
        r' \bottomrule'+\
        r'\end{tabular}'+\
-       r'\begin{tablenotes}[flushleft]\small\item \textsc{Notes:} The experiments in the last three rows imply the same government deficit.'+\
-       r' Welfare gains = increase in consumption at baseline to be indifferent with the experiment under analysis.'+\
-       r' Reforms are in place while the child is 10 y.o. or younger.''\\\\'+\
+       r'\begin{tablenotes}[flushleft]\footnotesize\item  \textsc{Notes:} The experiments in the last three rows generate the same government revenue. Welfare gains are measured as the percentage increase in baseline consumption that makes women indifferent between the baseline and the policy experiment. Reforms apply while the child is aged 10 or younger.''\\\\'+\
        r'\end{tablenotes}'+\
       r'\end{threeparttable}'+\
       r'\end{table}'  

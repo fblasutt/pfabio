@@ -3,7 +3,7 @@ import co # user defined functions
 import sol
 import sim
 import numpy as np
-
+from scipy import optimize
 
 # set up parameters
 p = co.setup()
@@ -17,11 +17,33 @@ end=11
 # is left constant*
 #######################################################################
 
+
+#Elasticities are 1.973 and 2.4686
+
 adjust=np.ones((p.T,p.N))/((1+p.r)**(np.cumsum(np.ones(p.T))-1.0))[:,None]
 
+def equiv(increase):
+
+    p.tax[beg:end] = -increase;p.wls_point=np.array([0.0,0.0,1.0,1.0]);p.wls_point2=np.array([0.0,0.0,1.0,1.0]);ModB = sol.solveEulerEquation(p,model='baseline')
+    SB= sim.simNoUncer_interp(p,ModB,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw)
+    
+    p1 = co.setup()
+    p1.wls_point=np.array([0.0,0.0,1.0,1.0]);p1.wls_point2=np.array([0.0,0.5,1.5,1.5]);ModB1 = sol.solveEulerEquation(p1,model='baseline')
+    SB1= sim.simNoUncer_interp(p1,ModB1,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p1.startA,Pstart=np.ones((p1.T,p1.N))*p1.startP,izstart=p1.tw)
+    
+    
+    income_pre_retirement =np.sum(adjust*SB['income_mod'])#how much more pre ret income in 1)?
+    income_post_retirement=np.sum(adjust*SB1['income_mod'])#avg income you get per pension point
+    
+    
+    print("Income pre-post retirement is {}".format(income_pre_retirement-income_post_retirement))
+
+    return income_pre_retirement-income_post_retirement
 
 
-increase=0.077#0.067
+
+increase=optimize.bisect(equiv,0.06,0.085,xtol=0.001)
+
 p.tax[beg:end] = -increase;p.wls_point=np.array([0.0,0.0,1.0,1.0]);p.wls_point2=np.array([0.0,0.0,1.0,1.0]);ModB = sol.solveEulerEquation(p,model='baseline')
 SB= sim.simNoUncer_interp(p,ModB,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw)
 
@@ -55,8 +77,8 @@ Sτ= sim.simNoUncer_interp(pτ,Modτ,Tstart=np.zeros(p.N,dtype=np.int16),Astart=
 
 
 #3) Compute elasticities associated with 1) and 2)
-ϵρ = (co.hours_value(pρ,Sρ,beg,end).mean()/co.hours_value(p,SB,beg,end).mean()-1)/increase
-ϵτ = (co.hours_value(pτ,Sτ,beg,end).mean()/co.hours_value(p,SB,beg,end).mean()-1)/increase
+ϵρ = (co.hours(pρ,Sρ,beg,end)/co.hours(p,SB,beg,end)-1)/increase
+ϵτ = (co.hours(pτ,Sτ,beg,end)/co.hours(p,SB,beg,end)-1)/increase
 
 
 

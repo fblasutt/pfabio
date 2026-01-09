@@ -9,32 +9,35 @@ from scipy.integrate import quad
 from scipy.stats import gamma 
 import pandas as pd 
  
+
 class setup():  
       
     def __init__(self):  
       
         # Size of gridpoints: 
-        self.nq = 7   #fixed points, preference for working 
+        self.nq = 4   #fixed points, preference for working 
         self.NA = 35#55  #assets gridpoints 
         self.NP = 15#21    #pension points gridpoints 
         self.nwls = 4  #hours choice 
          
         # First estimated parameters 
-        self.δ =1/0.98-1#1/0.9785-1#1/0.99-1#1-1/(1+0.02) #0.00983949    # Discount rate 
+        self.δ =1/0.99-1#1/0.9785-1#1-1/(1+0.02) #0.00983949    # Discount rate 
     
-        self.q =np.array([0.0,0.46358235*0.54436517, 0.47591268*0.54436517, 0.54436517])  #Fixed cost of pticipation - mean 
+        self.q =np.array([0.0,0.49312763*0.26654699,0.45306594*0.49312763,0.49312763])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
         self.ρq =0.0#-0.4#0.00195224 
     
         self.qmean =0.40299779
-        self.qvar =  0.45794473*0.54436517
+        self.qvar =  4.31518404*0.49312763
                  
         # Economic Environment: set pameters  
         #np.linspace(0,100,101)+29
         self.T = 56        # Number of time periods - 29+52.91 -https://www-genesis.destatis.de/genesis//online?operation=table&code=12621-0002&bypass=true&levelindex=0&levelid=1728670528126#abreadcrumb
                            #84 in 2019 https://tradingeconomics.com/germany/life-expectancy-at-birth-female-years-wb-data.html
         self.R = 36       # Retirement period  age 65
-        self.r = 0.015     # Interest rate  //https://www.bundesbank.de/dynamic/action/en/statistics/time-series-databases/time-series-databases/745616/745616?listId=www_skms_realzinsen&tsTab=1&statisticType=BBK_ITS&startDate=1995&tsId=BBSEI.M.ERZ.GVB.DE._Z.R10XX&endDate=2024&id=0
+                         
+        self.r = 0.01    #interest rate 5 year https://www.bundesbank.de/dynamic/action/en/statistics/time-series-databases/time-series-databases/745582/745582?treeAnchor=GELD&listId=www_skms_realzinsen&tsId=BBSEI.M.ERZ.GVB.DE._Z.R05XX&statisticType=BBK_ITS&dateSelect=2025
+                         # Interest rate 10 years  //https://www.bundesbank.de/dynamic/action/en/statistics/time-series-databases/time-series-databases/745616/745616?listId=www_skms_realzinsen&tsTab=1&statisticType=BBK_ITS&startDate=1995&tsId=BBSEI.M.ERZ.GVB.DE._Z.R10XX&endDate=2024&id=0
         self.σ=0.0000001        #Size of taste shock  
          
         self.α= 1#1.20152824 
@@ -283,8 +286,8 @@ def compute_atax_income_points(beg,end,etax,tbase,T,R,nwls,nw,NP,τ,add_points,a
                         if (ret==0):  
                              
                             etaxx=(1-etax[t]) 
-                            income[t,i,iw,ip,ret], total_taxes[t,i,iw,ip,ret]  = after_tax_income(tbase[t],w[t,i,iw]*wls[i],y_N[t,iw],E_bar_now,wls_point[i],tax,p_not_retired) 
-                            income_mod[t,i,iw,ip,ret], a  = after_tax_income(tbase[t],w[t,i,iw]*wls[i]*etaxx,y_N[t,iw],E_bar_now,wls_point[i],tax,p_not_retired) 
+                            income[t,i,iw,ip,ret], total_taxes[t,i,iw,ip,ret]  = after_tax_income(tbase[t],w[t,i,iw]*wls[i]      ,y_N[t,iw],E_bar_now,wls_point[i],tax,p_not_retired) 
+                            income_mod[t,i,iw,ip,ret], a                       = after_tax_income(tbase[t],w[t,i,iw]*wls[i]*etaxx,y_N[t,iw],E_bar_now,wls_point[i],tax,p_not_retired) 
                             #income_mod[t,i,iw,ip,ret]=w[t,i,iw]*wls[i]*etaxx#income_mod[t,i,iw,ip,ret]#+ a                         
                         else:             
                              

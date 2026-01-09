@@ -11,7 +11,7 @@ def simNoUncer_interp(p, model, Years=np.ones(1), Tstart=0, Astart=0.0, Pstart=0
    
     np.random.seed(2)    
     if Years.shape==(1,):Years=np.repeat(np.array(range(1992,1992+p.T))[:,None],p.N,axis=1) 
-    p.q_sim=izstart[0,:]//p.nzw#np.array(np.random.uniform(0.0,p.nq,size=p.N),dtype=np.int32) ##
+    p.q_sim=np.array(np.random.uniform(0.0,p.nq,size=p.N),dtype=np.int32) ##izstart[0,:]//p.nzw#
   
       
     #Call the simulator  
@@ -115,8 +115,8 @@ def fast_simulate(beg,end,Years,Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agr
                
                 wpath[t, n] = w[t,i,iz[t,n]]#!!! not sure if useful  
                 epath[t, n] =( w[t,i,iz[t,n]]*wls[i] if wls_point[i]>0.0 else 0.0) if ir[t,n]==0 else np.interp(ppath[t, n],pgrid,income[t,i,iz[t,n],:,ir[t,n]])  
-                eataxpath[t, n] = taxes[t,i,iz[t,n],0,ir[t,n]] if ir[t,n]==0 else      np.interp(ppath[t, n]     ,pgrid,taxes[t,i,iz[t,n],:,ir[t,n]])  
-                epath_mod[t, n] =  income_mod[t,i,iz[t,n],0,ir[t,n]] if ir[t,n]==0 else np.interp(ppath_exp[t, n],pgrid,income[t,i,iz[t,n],:,ir[t,n]])
+                eataxpath[t, n] = taxes[t,i,iz[t,n],0,ir[t,n]]       if ir[t,n]==0 else      np.interp(ppath[t, n]     ,pgrid,taxes[t,i,iz[t,n],:,ir[t,n]])  
+                epath_mod[t, n] =  income_mod[t,i,iz[t,n],0,ir[t,n]] if ir[t,n]==0 else               np.interp(ppath_exp[t, n],pgrid,income[t,i,iz[t,n],:,ir[t,n]])
                  
                   
                 evpath[t, n] = linear_interp.interp_2d(agrid,pgrid,V1[t,:,:,iz[t,n],iq,ir[t,n]],apath[t,n],ppath[t,n])#+σ*np.euler_gamma-σ*np.log(prs[i])              
