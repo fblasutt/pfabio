@@ -15,7 +15,7 @@ class setup():
     def __init__(self):  
       
         # Size of gridpoints: 
-        self.nq = 4   #fixed points, preference for working 
+        self.nq = 8   #fixed points, preference for working 
         self.NA = 35#55  #assets gridpoints 
         self.NP = 15#21    #pension points gridpoints 
         self.nwls = 4  #hours choice 
@@ -23,12 +23,16 @@ class setup():
         # First estimated parameters 
         self.δ =1/0.99-1#1/0.9785-1#1-1/(1+0.02) #0.00983949    # Discount rate 
     
-        self.q =np.array([0.0,0.49312763*0.26654699,0.45306594*0.49312763,0.49312763])  #Fixed cost of pticipation - mean 
+        self.q =np.array([0.0,0.56036584*0.26121912,0.56036584*0.43998146,0.56036584])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
         self.ρq =0.0#-0.4#0.00195224 
     
         self.qmean =0.40299779
-        self.qvar =  4.31518404*0.49312763
+        self.qvar = 0.56036584*0.12762648
+        
+         
+
+           
                  
         # Economic Environment: set pameters  
         #np.linspace(0,100,101)+29
@@ -49,6 +53,10 @@ class setup():
              
         # Hours choice 
         self.wls=np.array([0.0,10.0, 20.0, 38.5])/38.5 #From GSOEP hrs/week = (10/ 20 / 38.5 )  
+         
+        # self.wls=np.array([0.0,11, 21, 37.5])/37.5 #From GSOEP hrs/week = (10/ 20 / 38.5 )  
+        
+        # self.wls=np.array([0.0,11, 21, 30])/30 #From GSOEP hrs/week = (10/ 20 / 38.5 )  
          
         # income of men and women: sd of income shocks in t=0 and after that 
         self.σzw=0.1172;self.σ0zw= 0.4329;self.σzm=0.1;self.σ0zm=0.4386

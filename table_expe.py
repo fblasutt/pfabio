@@ -187,10 +187,10 @@ table=r'\begin{table}[htbp]\centering'+\
        r' Baseline                                   &'+p43(ggap_old_B)  +'&'+p42(WLS_B)  +'&'+p42(29+ret_B) +'& 0.0\\\\'+\
        r' Caregiver credits                          &'+p43(ggap_old_P)  +'&'+p42(WLS_P)  +'&'+p42(29+ret_P) +'&'+p43(welf_P*100)+'\\\\'+\
        r' Caregiver credits, no threshold            &'+p43(ggap_old_PN) +'&'+p42(WLS_PN) +'&'+p42(29+ret_PN)+'&'+p43(welf_PN*100)+'\\\\'+\
-       r' Lower income taxes                         &'+p43(ggap_old_τ)  +'&'+p42(WLS_τ)  +'&'+p42(29+ret_τ) +'&'+p43(welf_τ*100)+'\\\\'+\
+       r' Income tax deduction                       &'+p43(ggap_old_τ)  +'&'+p42(WLS_τ)  +'&'+p42(29+ret_τ) +'&'+p43(welf_τ*100)+'\\\\'+\
        r' \bottomrule'+\
        r'\end{tabular}'+\
-       r'\begin{tablenotes}[flushleft]\footnotesize\item  \textsc{Notes:} The experiments in the last three rows generate the same government revenue. Welfare gains are measured as the percentage increase in baseline consumption that makes women indifferent between the baseline and the policy experiment. Reforms apply while the child is aged 10 or younger.''\\\\'+\
+       r'\begin{tablenotes}[flushleft]\footnotesize\item  \textsc{Notes:} The experiments in the last three rows generate the same government revenue. Welfare gains are measured as the percentage increase in baseline consumption that makes women indifferent between the baseline and the policy experiment. Reforms apply while the child is aged 3-10.''\\\\'+\
        r'\end{tablenotes}'+\
       r'\end{threeparttable}'+\
       r'\end{table}'  

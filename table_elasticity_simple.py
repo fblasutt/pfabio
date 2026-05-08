@@ -42,7 +42,7 @@ def equiv(increase):
 
 
 
-increase=optimize.bisect(equiv,0.06,0.085,xtol=0.001)
+increase=optimize.bisect(equiv,0.06,0.09,xtol=0.001)
 
 p.tax[beg:end] = -increase;p.wls_point=np.array([0.0,0.0,1.0,1.0]);p.wls_point2=np.array([0.0,0.0,1.0,1.0]);ModB = sol.solveEulerEquation(p,model='baseline')
 SB= sim.simNoUncer_interp(p,ModB,Tstart=np.zeros(p.N,dtype=np.int16),Astart=p.startA,Pstart=np.ones((p.T,p.N))*p.startP,izstart=p.tw)
