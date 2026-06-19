@@ -316,7 +316,7 @@ def q(pt,additional_tests=False):
         ###########################################################################
         
         #Sample 
-        subset=(age<=8) & (S['h']>=1)
+        subset=(age<=9) & (S['h']>=1)
      
         # Combine into a DataFrame 
         df = pd.DataFrame({ 
@@ -509,8 +509,8 @@ def q(pt,additional_tests=False):
         # print("The point is {}".format(np.array([((sh_full-0.2517)/0.2517)**2,((sh_part-0.194798)/0.194798)**2,((sh_min-.199)/.199)**2,((eff_earn-1.158))**2]).sum()))
         # return [((sh_full-0.2517)/0.2517),((sh_part-0.194798)/0.194798),((sh_min-.199)/.199),((eff_earn-1.158))]  
     
-        print("The point is {}".format(np.array([((sh_full-0.26605)/0.26605)**2,((sh_part-0.18144)/0.18144)**2,((sh_min-0.23357)/0.23357)**2,((eff_earn-1.095))**2]).sum()))
-        return [((sh_full-0.26605)/0.26605),((sh_part-0.18144)/0.18144),((sh_min-0.23357)/0.23357),((eff_earn-1.095))] 
+        print("The point is {}".format(np.array([((sh_full-0.26605)/0.26605)**2,((sh_part-0.18144)/0.18144)**2,((sh_min-0.23357)/0.23357)**2,((eff_nme-0.15))**2]).sum()))
+        return [((sh_full-0.26605)/0.26605),((sh_part-0.18144)/0.18144),((sh_min-0.23357)/0.23357),((eff_nme-0.15))] 
 
         #39418/(101861)*.565224
         #
