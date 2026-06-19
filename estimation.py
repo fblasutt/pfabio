@@ -60,6 +60,22 @@ baseline_sample = np.array([
     [9, 1990, 8069.842], 
     [10, 1998, 6921.9224] 
 ]) 
+
+
+baseline_sample = np.array([ 
+    [0, 1981, 7642.0], 
+    [1, 1982, 7220.0], 
+    [2, 1983, 5958.0], 
+    [3, 1984, 6397.0], 
+    [4, 1985, 6150.0], 
+    [5, 1986, 9219.0], 
+    [6, 1987, 9244.0], 
+    [7, 1988, 10954.0], 
+    [8, 1989, 10366.0], 
+    [9, 1990, 10727.0],
+    [10, 1998,11965.0] 
+    
+])
  
 #transform frequency in probabilites that sums up to 1  
 baseline_sample[:,-1]=baseline_sample[:,-1]/baseline_sample[:,-1].sum() 
@@ -78,6 +94,7 @@ xc=np.array([0.53105991, 0.63044294, 0.93068272, 0.69548054])
 #nq 10 [((sh_full-0.26605)/0.26605),((sh_part-0.18144)/0.18144),((sh_min-0.23357)/0.23357),((eff_earn-1.158))] 
 xc=np.array([0.26121912, 0.43998146, 0.56036584, 0.12762648])
 
+xc=np.array([0.25780812, 0.43512935, 0.55609651, 0.173532  ])
 
 xl=np.array([-0.15,0.001,0.05,.0001]) 
 xu=np.array([0.8, 0.9, 1.9,15.0]) 
@@ -160,6 +177,10 @@ def q(pt,additional_tests=False):
         # sh_part=np.mean(S['h'][subset]==2) 
         # sh_full=np.mean(S['h'][subset]>=3) 
         # sh_min=np.mean((S['h'][subset]==1)) 
+        
+        #$9\%$ of women previously not working would prefer employment post-reform
+        #samp_transition=((age>=3) & (age<=10) & (age>=ini_treated))
+        #np.mean((SB['h'][((age>=3) & (age<=10) & (age>=ini_treated))]==0) & (SP['h'][((age>=3) & (age<=10) & (age>=ini_treated))]>0))/(SB['h'][((age>=3) & (age<=10) & (age>=ini_treated))]==0).mean()
         
         
         
@@ -441,11 +462,11 @@ def q(pt,additional_tests=False):
                     r'\toprule '+\
                     r'Effect of reform on: & Data, value & Data, Std. Error & Model \\'+\
                     r'\midrule '+\
-                    r'Pension points & 0.146 & (0.027) & '+p53(eff_points)+r'\\'+\
-                    r'Behavioral pension points & 0.075 & (0.022) & '+p53(eff_points_behavioral)+r'\\'+\
-                    r'Log earnings (cond. on regular empl.) & 0.053 & (0.163) & '+p53(eff_earn_cond)+r'\\'+\
-                    r'Employed & 0.118 & (0.039) & '+p53(eff_nme)+r'\\'+\
-                    r'Hours worked & 2.489 & (1.229) & '+p53(eff_h)+r'\\'+\
+                    r'Pension points & 0.200 & (0.035) & '+p53(eff_points)+r'\\'+\
+                    r'Behavioral pension points & 0.103 & (0.033) & '+p53(eff_points_behavioral)+r'\\'+\
+                    r'Log earnings (cond. on regular empl.) & 0.162 & (0.148) & '+p53(eff_earn_cond)+r'\\'+\
+                    r'Regular employment & 0.109 & (0.050) & '+p53(eff_nme)+r'\\'+\
+                    r'Hours worked in regular empl. & 2.278 & (1.646) & '+p53(eff_h)+r'\\'+\
                     r'\midrule '+\
                     r'\multicolumn{4}{l}{Additional moments:} \\'+\
                     r'\midrule '+\
@@ -488,9 +509,14 @@ def q(pt,additional_tests=False):
         # print("The point is {}".format(np.array([((sh_full-0.2517)/0.2517)**2,((sh_part-0.194798)/0.194798)**2,((sh_min-.199)/.199)**2,((eff_earn-1.158))**2]).sum()))
         # return [((sh_full-0.2517)/0.2517),((sh_part-0.194798)/0.194798),((sh_min-.199)/.199),((eff_earn-1.158))]  
     
-        print("The point is {}".format(np.array([((sh_full-0.26605)/0.26605)**2,((sh_part-0.18144)/0.18144)**2,((sh_min-0.23357)/0.23357)**2,((eff_earn-1.158))**2]).sum()))
-        return [((sh_full-0.26605)/0.26605),((sh_part-0.18144)/0.18144),((sh_min-0.23357)/0.23357),((eff_earn-1.158))] 
+        print("The point is {}".format(np.array([((sh_full-0.26605)/0.26605)**2,((sh_part-0.18144)/0.18144)**2,((sh_min-0.23357)/0.23357)**2,((eff_earn-1.095))**2]).sum()))
+        return [((sh_full-0.26605)/0.26605),((sh_part-0.18144)/0.18144),((sh_min-0.23357)/0.23357),((eff_earn-1.095))] 
 
+        #39418/(101861)*.565224
+        #
+        #
+        
+        
         #(10603/16466)*0.3627275
         #20288/45337*.5945386
         #20288/45337*(1-.5945386)
@@ -534,9 +560,9 @@ if __name__ == '__main__':
     # print(f'The minimizer is {x}') 
     # print(f'The objective value at the min is {fx}') 
      
-    #q(xc)
-    res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=250, bounds=(xl,xu), 
-                    npt=len(xc)+5,scaling_within_bounds=True,  
-                    user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
-                                  'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 
-                    objfun_has_noise=False) 
+    q(xc,additional_tests=True)
+    # res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=250, bounds=(xl,xu), 
+    #                 npt=len(xc)+5,scaling_within_bounds=True,  
+    #                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
+    #                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 
+    #                 objfun_has_noise=False) 

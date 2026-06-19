@@ -22,13 +22,15 @@ class setup():
          
         # First estimated parameters 
         self.δ =1/0.99-1#1/0.9785-1#1-1/(1+0.02) #0.00983949    # Discount rate 
+        
+
     
-        self.q =np.array([0.0,0.56036584*0.26121912,0.56036584*0.43998146,0.56036584])  #Fixed cost of pticipation - mean 
+        self.q =np.array([0.0,0.55609651*0.25780812,0.55609651*0.43512935,0.55609651])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
         self.ρq =0.0#-0.4#0.00195224 
     
         self.qmean =0.40299779
-        self.qvar = 0.56036584*0.12762648
+        self.qvar = 0.55609651*0.173532
         
          
 

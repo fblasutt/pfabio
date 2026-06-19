@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.10.4)  16 JAN 2026 17:49
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.10.4)  5 JUN 2026 14:53
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -508,7 +508,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 1--1
  []
 
 
-Overfull \hbox (56.24402pt too wide) in paragraph at lines 1--1
+Overfull \hbox (50.10504pt too wide) in paragraph at lines 1--1
  [] 
  []
 
@@ -532,7 +532,7 @@ Here is how much of TeX's memory you used:
  34528 multiletter control sequences out of 15000+600000
  563032 words of font info for 53 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 84i,11n,89p,1088b,387s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,11n,89p,1089b,387s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb><c:/texl
 ive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb><c:/texlive/2023
 /texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb><c:/texlive/2023/texmf-dis
@@ -541,12 +541,11 @@ pe1/public/amsfonts/cm/cmr10.pfb><c:/texlive/2023/texmf-dist/fonts/type1/public
 /amsfonts/cm/cmr12.pfb><c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmr17.pfb><c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pf
 b><c:/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb><c:/texli
-ve/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb><c:/texlive/2023/tex
-mf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb>
-Output written on visual_tables.pdf (2 pages, 123723 bytes).
+ve/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb>
+Output written on visual_tables.pdf (2 pages, 115444 bytes).
 PDF statistics:
- 69 PDF objects out of 1000 (max. 8388607)
- 42 compressed objects within 1 object stream
+ 64 PDF objects out of 1000 (max. 8388607)
+ 39 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  13 words of extra memory for PDF output out of 10000 (max. 10000000)
 
