@@ -73,7 +73,7 @@ def equivPN(change):
     return surplus_PN-surplus_P
 
 
-changeτ =optimize.bisect(equivτ ,0.1,0.2,xtol=0.001)#0.16171875000000002
+changeτ =optimize.bisect(equivτ ,0.05,0.4,xtol=0.001)#0.16171875000000002
 changePN=optimize.bisect(equivPN,1.0,1.5,xtol=0.001)#1.3310546875#
 
 pτ = co.setup();pτ.tbase[3:11]=p.tbase[3:11]-changeτ#0.158
@@ -179,21 +179,21 @@ table=r'\begin{table}[htbp]\centering'+\
       r'\begin{threeparttable}'+\
        r'\caption{Lifecycle model: counterfactual experiments}\label{table:experiments}'+\
        r'\footnotesize'+\
-       r'\begin{tabular}{lcccc}'+\
+       r'\begin{tabular}{lccc}'+\
        r' \toprule '+\
-       r"& Pension & Women's labor & Average age &  Welfare gains  \\"+\
-       r"&gender gap &hours &   at retirement  & wrt baseline (\%)  \\"+\
+       r"& Pension & Women's labor &  Welfare gains  \\"+\
+       r"&gender gap &hours & wrt baseline (\%)  \\"+\
        r'\midrule   '+\
-       r' Baseline                                   &'+p43(ggap_old_B)  +'&'+p42(WLS_B)  +'&'+p42(29+ret_B) +'& 0.0\\\\'+\
-       r' Caregiver credits                          &'+p43(ggap_old_P)  +'&'+p42(WLS_P)  +'&'+p42(29+ret_P) +'&'+p43(welf_P*100)+'\\\\'+\
-       r' Caregiver credits, no threshold            &'+p43(ggap_old_PN) +'&'+p42(WLS_PN) +'&'+p42(29+ret_PN)+'&'+p43(welf_PN*100)+'\\\\'+\
-       r' Income tax deduction                       &'+p43(ggap_old_τ)  +'&'+p42(WLS_τ)  +'&'+p42(29+ret_τ) +'&'+p43(welf_τ*100)+'\\\\'+\
+       r' Baseline                                   &'+p43(ggap_old_B)  +'&'+p42(WLS_B)  +'& 0.0\\\\'+\
+       r' Caregiver credits                          &'+p43(ggap_old_P)  +'&'+p42(WLS_P)  +'&'+p43(welf_P*100)+'\\\\'+\
+       r' Caregiver credits, no threshold            &'+p43(ggap_old_PN) +'&'+p42(WLS_PN) +'&'+p43(welf_PN*100)+'\\\\'+\
+       r' Income tax deduction                       &'+p43(ggap_old_τ)  +'&'+p42(WLS_τ)  +'&'+p43(welf_τ*100)+'\\\\'+\
        r' \bottomrule'+\
        r'\end{tabular}'+\
        r'\begin{tablenotes}[flushleft]\footnotesize\item  \textsc{Notes:} The experiments in the last three rows generate the same government revenue. Welfare gains are measured as the percentage increase in baseline consumption that makes women indifferent between the baseline and the policy experiment. Reforms apply while the child is aged 3-10.''\\\\'+\
        r'\end{tablenotes}'+\
       r'\end{threeparttable}'+\
-      r'\end{table}'  
+      r'\end{table}'
         
 #Write table to tex file  
 with open('C:/Users/32489/Dropbox/occupation/model/pfabio/output/table_expe.tex', 'w') as f:

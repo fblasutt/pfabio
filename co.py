@@ -24,13 +24,15 @@ class setup():
         self.δ =1/0.99-1#1/0.9785-1#1-1/(1+0.02) #0.00983949    # Discount rate 
         
 
-    
-        self.q =np.array([0.0,0.55609651*0.25780812,0.55609651*0.43512935,0.55609651])  #Fixed cost of pticipation - mean 
+
+
+        
+        #earn
+        self.q =np.array([0.0, 0.58400487*0.24240547, 0.58400487*0.44920413, 0.58400487])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
-        self.ρq =0.0#-0.4#0.00195224 
-    
+        self.ρq =0.0#-0.4#0.00195224  
         self.qmean =0.40299779
-        self.qvar = 0.55609651*0.173532
+        self.qvar =  0.58400487*0.10623608
         
          
 
@@ -38,9 +40,9 @@ class setup():
                  
         # Economic Environment: set pameters  
         #np.linspace(0,100,101)+29
-        self.T = 56        # Number of time periods - 29+52.91 -https://www-genesis.destatis.de/genesis//online?operation=table&code=12621-0002&bypass=true&levelindex=0&levelid=1728670528126#abreadcrumb
+        self.T = 60       # model 2 for women here give 22 life expectancy at 67 https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Sterbefaelle-Lebenserwartung/Publikationen/Downloads-Sterbefaelle/statistischer-bericht-kohortensterbetafeln-5126101239005.html
                            #84 in 2019 https://tradingeconomics.com/germany/life-expectancy-at-birth-female-years-wb-data.html
-        self.R = 36       # Retirement period  age 65
+        self.R = 38      # Retirement period  age 65
                          
         self.r = 0.01    #interest rate 5 year https://www.bundesbank.de/dynamic/action/en/statistics/time-series-databases/time-series-databases/745582/745582?treeAnchor=GELD&listId=www_skms_realzinsen&tsId=BBSEI.M.ERZ.GVB.DE._Z.R05XX&statisticType=BBK_ITS&dateSelect=2025
                          # Interest rate 10 years  //https://www.bundesbank.de/dynamic/action/en/statistics/time-series-databases/time-series-databases/745616/745616?listId=www_skms_realzinsen&tsTab=1&statisticType=BBK_ITS&startDate=1995&tsId=BBSEI.M.ERZ.GVB.DE._Z.R10XX&endDate=2024&id=0
@@ -61,7 +63,8 @@ class setup():
         # self.wls=np.array([0.0,11, 21, 30])/30 #From GSOEP hrs/week = (10/ 20 / 38.5 )  
          
         # income of men and women: sd of income shocks in t=0 and after that 
-        self.σzw=0.1172;self.σ0zw= 0.4329;self.σzm=0.1;self.σ0zm=0.4386
+        #self.σzw=0.1172;self.σ0zw= 0.27;self.σzm=0.1;self.σ0zm=0.4386
+        self.σzw=0.1172;self.σ0zw= 0.307;self.σzm=0.1;self.σ0zm=0.4264
         #self.σzw=0.1121;self.σ0zw=0.43296;self.σzm=0.10066;self.σ0zm=0.4386
         self.nzw=7;self.nzm=7;self.nw = self.nzw*self.nzm 
            
@@ -81,7 +84,8 @@ class setup():
          
         #penalty/bonuses for early retirement, statutory, see https://frank-leenders.github.io/LW_LCScar.pdf  
         self.age_ret = np.array([34,35,36,37,38,39,40,41],dtype=np.int32) #possible ages at retirement  
-        self.points_mult = np.array([1-0.036*2,1-0.036*1,1.0,1+0.06,1+2*0.06,1+3*0.06,1+4*0.06,1+5*0.06]) # point multiplier for early / late retirement  
+        #self.points_mult = np.array([1-0.036*2,1-0.036*1,1.0,1+0.06,1+2*0.06,1+3*0.06,1+4*0.06,1+4*0.06]) # point multiplier for early / late retirement  
+        self.points_mult = np.array([1-0.036*4,1-0.036*3,1.0-0.036*2,1-0.036,1,1+1*0.06,1+2*0.06,1+3*0.06]) # point multiplier for early / late retirement  
         #self.points_mult[-1]=1.0  
           
          
@@ -94,8 +98,8 @@ class setup():
         ############### 
          
         # uncertainty 
-        self.grid_zw,self.Π_zw, self.Π_zw0 =rouw_nonst(self.T,self.σzw,self.σ0zw,self.nzw) 
-        self.grid_zm,self.Π_zm, self.Π_zm0 =rouw_nonst(self.T,self.σzm,self.σ0zm,self.nzm) 
+        self.grid_zw,self.Π_zw, self.Π_zw0 =addaco_nonst(self.T,self.σzw,self.σ0zw,self.nzw) 
+        self.grid_zm,self.Π_zm, self.Π_zm0 =addaco_nonst(self.T,self.σzm,self.σ0zm,self.nzm) 
          
  
         self.Π=[np.kron(self.Π_zw[t],self.Π_zm[t]) for t in range(self.T-1)] # couples trans matrix     

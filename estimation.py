@@ -46,20 +46,6 @@ p = co.setup()
 # #Define initial point (xc) and boundaries (xl,xu) 
 
 
- 
-baseline_sample = np.array([ 
-    [0, 1981, 7051.6918], 
-    [1, 1982, 7388.0949], 
-    [2, 1983, 5569.5051], 
-    [3, 1984, 6784.1683], 
-    [4, 1985, 7075.0722], 
-    [5, 1986, 7494.654], 
-    [6, 1987, 7474.4081], 
-    [7, 1988, 16049.141], 
-    [8, 1989, 8315.3082], 
-    [9, 1990, 8069.842], 
-    [10, 1998, 6921.9224] 
-]) 
 
 
 baseline_sample = np.array([ 
@@ -87,18 +73,17 @@ year=final_sample+age
 
 
 
+xc=np.array([0.23280037, 0.44267844, 0.58238751, 0.17123147])
 
-#Good for nq 4, [((sh_full-0.2299)/0.2299),((sh_part-.1766)/.1766),((sh_min-0.2318)/0.2318),((eff_nme-.118))]  
-xc=np.array([0.53105991, 0.63044294, 0.93068272, 0.69548054])
 
-#nq 10 [((sh_full-0.26605)/0.26605),((sh_part-0.18144)/0.18144),((sh_min-0.23357)/0.23357),((eff_earn-1.158))] 
-xc=np.array([0.26121912, 0.43998146, 0.56036584, 0.12762648])
+xc=np.array([0.23538174, 0.44385089, 0.58628458, 0.05261463])
 
-xc=np.array([0.25780812, 0.43512935, 0.55609651, 0.173532  ])
+xc=np.array([0.24570411, 0.44924242, 0.58082491, 0.08909446])
+
+
+xc=np.array([0.24240547, 0.44920413, 0.58400487, 0.10623608])#->1.9310249551718228
 
 xl=np.array([-0.15,0.001,0.05,.0001]) 
-xu=np.array([0.8, 0.9, 1.9,15.0]) 
-
 xu=np.array([0.9, 1.0, 2.5,9.0]) 
 
  
@@ -179,8 +164,8 @@ def q(pt,additional_tests=False):
         # sh_min=np.mean((S['h'][subset]==1)) 
         
         #$9\%$ of women previously not working would prefer employment post-reform
-        #samp_transition=((age>=3) & (age<=10) & (age>=ini_treated))
-        #np.mean((SB['h'][((age>=3) & (age<=10) & (age>=ini_treated))]==0) & (SP['h'][((age>=3) & (age<=10) & (age>=ini_treated))]>0))/(SB['h'][((age>=3) & (age<=10) & (age>=ini_treated))]==0).mean()
+        samp_transition=((age>=3) & (age<=10) & (age>=ini_treated))
+        np.mean((SB['h'][((age>=3) & (age<=10) & (age>=ini_treated))]==0) & (SP['h'][((age>=3) & (age<=10) & (age>=ini_treated))]>0))/(SB['h'][((age>=3) & (age<=10) & (age>=ini_treated))]==0).mean()
         
         
         
@@ -195,14 +180,15 @@ def q(pt,additional_tests=False):
         #Covariates 
         hours = co.hours_value(p,S,0,p.T)  
         employed=np.array(S['h']>0,dtype=np.float64)  
-        not_marginal=np.array(S['h']>1,dtype=np.float64)  
+        not_marginal=np.array(S['h']>1,dtype=np.float64) 
         marginal=np.array(S['h']==1,dtype=np.float64)  
         full=np.array(S['h']>=3,dtype=np.float64)  
         earnings=np.log(1+S['wh']*p.scale)  
+        learnings=S['wh']*p.scale
         points=S['pb']  
         points_behavioral=S['pb2']  
         event_time=age.copy() 
-        event_time[age>=8]=8 
+        event_time[age>=9]=9 
         treat_group=(np.repeat((final_sample==1998)[:,None],p.T,axis=1).T)  
         idd=np.repeat(np.cumsum(np.ones(p.N))[:,None],p.T,axis=1).T 
         event_time_PER_treat=event_time*treat_group 
@@ -213,14 +199,17 @@ def q(pt,additional_tests=False):
         ###########################################################################
         
         #Sample 
-        subset=(age<=8) 
+        subset=(age<=9) 
      
         # Combine into a DataFrame 
         df = pd.DataFrame({ 
             "hours":hours[subset], 
+            "full":full[subset], 
             "employed":employed[subset], 
             "not_marginal":not_marginal[subset], 
+            "marginal":marginal[subset], 
             "earnings":earnings[subset], 
+            "learnings":learnings[subset], 
             "points":points[subset], 
             "points_behavioral":points_behavioral[subset], 
             "event_time":event_time[subset], 
@@ -264,14 +253,15 @@ def q(pt,additional_tests=False):
         eff_earn=sm.OLS(hdfe.residualize(df[['earnings']].values), X_resid).fit().params[2:].mean() 
         eff_points=sm.OLS(hdfe.residualize(df[['points']].values), X_resid).fit().params[2:].mean() 
         eff_points_behavioral=sm.OLS(hdfe.residualize(df[['points_behavioral']].values), X_resid).fit().params[2:].mean() 
-    
+        eff_marg=sm.OLS(hdfe.residualize(df[['marginal']].values), X_resid).fit().params[2:].mean() 
+   
     
         ###########################################################################
         # Case where everyone is working in regualr employment
         ###########################################################################
         
         #Sample 
-        subset=(age<=8) & (S['h']>1)
+        subset=(age<=9) & (S['h']>1)
      
         # Combine into a DataFrame 
         df = pd.DataFrame({ 
@@ -351,13 +341,13 @@ def q(pt,additional_tests=False):
         X_resid = hdfe.residualize(event_dummies.values) 
          
         # OLS on residuals      
-        eff_marg=sm.OLS(hdfe.residualize(df[['marginal']].values), X_resid).fit().params[2:].mean() 
+        #eff_marg=sm.OLS(hdfe.residualize(df[['marginal']].values), X_resid).fit().params[2:].mean() 
     
         
 
          
         # #True effects below 
-        # group=(age>=3)  & (age<=8) & (treat_group) 
+        # group=(age>=3)  & (age<=9) & (treat_group) 
         
         # eff_ht=(co.hours_value(p,SP,0,p.T)[group]-co.hours_value(p,SB,0,p.T)[group]).mean()
         # eff_nmet=(SP['h'][group]>1).mean()-(SB['h'][group]>1).mean()
@@ -379,7 +369,7 @@ def q(pt,additional_tests=False):
         
         
             #Table with parameters + targeted moments  
-            def p53(x): return str('%5.3f' % x)  
+            def p53(x): return str('%6.4f' % x)  
             def p43(x): return str('%4.3f' % x)     
             def p40(x): return str('%4.0f' % x)  
             
@@ -394,7 +384,7 @@ def q(pt,additional_tests=False):
                     r' Cost of working - mini ($q_{10}$)   &'+p43(p.q[1])+'& Share mini-jobs           & 0.234 &'+p53(sh_min)+'\\\\'+\
                     r' Cost of working - part ($q_{20}$)   &'+p43(p.q[2])+'& Share part-time           & 0.181 &'+p53(sh_part)+'\\\\'+\
                     r' Cost of working - full ($q_{38.5}$)      &'+p43(p.q[3])+'& Share full time      & 0.267 &'+p53(sh_full)+'\\\\'+\
-                    r' Fixed effects distribution ($q_{LIM}$)    &'+p43(p.qvar)+'& Effect of the reform on non-marginal log earnings  & 1.158 & '+p53(eff_earn)+'\\\\'+\
+                    r' Fixed effects distribution ($q_{LIM}$)    &'+p43(p.qvar)+'& Effect of the reform on non-marginal hours  & 4.464 & '+p53(eff_h)+'\\\\'+\
                     r'  \bottomrule'+\
                   """\end{tabular}"""+\
                   r'\end{table}' 
@@ -420,7 +410,7 @@ def q(pt,additional_tests=False):
             adjustr = adjust*(1+p.r)**3
              
             #MPE out of pension wealth, using tretroactive credits 
-            SB_retro= sim.simNoUncer_interp(p,ModB,Years=year,Tstart=np.zeros(p.N,dtype=np.int16)+3,Astart=SB['A']+0.1,Pstart=SB['p'],izstart=SB['iz']) 
+            SB_retro= sim.simNoUncer_interp(p,ModB,Years=year,Tstart=np.zeros(p.N,dtype=np.int16)+3,Astart=SB['A']+10,Pstart=SB['p'],izstart=SB['iz']) 
              
             change_earn  =(np.nanmean((SB_retro['w'][3:11,:]*p.wls[SB_retro['h'][3:11,:]]*adjustr[3:11,:]).sum(axis=0)))-\
                           (np.nanmean((SB['w'][3:11,:]*p.wls[SB['h'][3:11,:]]*adjustr[3:11,:]).sum(axis=0)))
@@ -447,7 +437,7 @@ def q(pt,additional_tests=False):
              
             
             #Finally, the marginal propensity to earn 
-            MPE = change_earn/(change_pweal_s*0.1) 
+            MPE = change_earn/(change_pweal_s*10) 
         
             ############################################ 
             #Table with parameters 
@@ -462,16 +452,15 @@ def q(pt,additional_tests=False):
                     r'\toprule '+\
                     r'Effect of reform on: & Data, value & Data, Std. Error & Model \\'+\
                     r'\midrule '+\
-                    r'Pension points & 0.200 & (0.035) & '+p53(eff_points)+r'\\'+\
-                    r'Behavioral pension points & 0.103 & (0.033) & '+p53(eff_points_behavioral)+r'\\'+\
+                    r'Pension points & 0.206 & (0.021) & '+p53(eff_points)+r'\\'+\
+                    r'Behavioral pension points & 0.134 & (0.019) & '+p53(eff_points_behavioral)+r'\\'+\
                     r'Log earnings (cond. on regular empl.) & 0.162 & (0.148) & '+p53(eff_earn_cond)+r'\\'+\
-                    r'Regular employment & 0.109 & (0.050) & '+p53(eff_nme)+r'\\'+\
-                    r'Hours worked in regular empl. & 2.278 & (1.646) & '+p53(eff_h)+r'\\'+\
+                    r'Non-marginal log earnings  & 1.521 & (0.251) & '+p53(eff_earn)+r'\\'+\
+                    r'Regular employment & 0.150 & (0.027) & '+p53(eff_nme)+r'\\'+\
                     r'\midrule '+\
                     r'\multicolumn{4}{l}{Additional moments:} \\'+\
                     r'\midrule '+\
-                    r'Reform effect on full employment (cond. on regular empl.) & --- & --- & '+p53(eff_full)+r'\\'+\
-                    r'Reform effect on marginal employment (cond. on working) & --- & --- & '+p53(eff_marg)+r'\\'+\
+                    r'Reform effect on marginal employment  & --- & --- & '+p53(eff_marg)+r'\\'+\
                     r'Marginal propensity to earn (MPE) & -$0.54$ & --- & '+p53(MPE)+r'\\'+\
                     r'\bottomrule '+\
                     r'\end{tabular}'+\
@@ -509,8 +498,11 @@ def q(pt,additional_tests=False):
         # print("The point is {}".format(np.array([((sh_full-0.2517)/0.2517)**2,((sh_part-0.194798)/0.194798)**2,((sh_min-.199)/.199)**2,((eff_earn-1.158))**2]).sum()))
         # return [((sh_full-0.2517)/0.2517),((sh_part-0.194798)/0.194798),((sh_min-.199)/.199),((eff_earn-1.158))]  
     
-        print("The point is {}".format(np.array([((sh_full-0.26605)/0.26605)**2,((sh_part-0.18144)/0.18144)**2,((sh_min-0.23357)/0.23357)**2,((eff_nme-0.15))**2]).sum()))
-        return [((sh_full-0.26605)/0.26605),((sh_part-0.18144)/0.18144),((sh_min-0.23357)/0.23357),((eff_nme-0.15))] 
+        # print("The point is {}".format(np.array([((sh_full-0.26605)/0.26605)**2,((sh_part-0.18144)/0.18144)**2,((sh_min-0.23357)/0.23357)**2,((eff_earn-1.521)/1.521)**2]).sum()))
+        # return [((sh_full-0.26605)/0.26605),((sh_part-0.18144)/0.18144),((sh_min-0.23357)/0.23357),((eff_earn-1.521)/1.521)]  
+    
+        print("The point is {}".format(np.array([((sh_full-0.26605)/0.26605)**2,((sh_part-0.18144)/0.18144)**2,((sh_min-0.23357)/0.23357)**2,((eff_h-4.464)/4.464)**2]).sum()))
+        return [((sh_full-0.26605)/0.26605),((sh_part-0.18144)/0.18144),((sh_min-0.23357)/0.23357),((eff_h-4.464)/4.464)]  
 
         #39418/(101861)*.565224
         #
@@ -560,9 +552,9 @@ if __name__ == '__main__':
     # print(f'The minimizer is {x}') 
     # print(f'The objective value at the min is {fx}') 
      
-    q(xc,additional_tests=True)
-    # res=dfols.solve(q, xc, rhobeg = 0.3, rhoend=1e-6, maxfun=250, bounds=(xl,xu), 
-    #                 npt=len(xc)+5,scaling_within_bounds=True,  
-    #                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
-    #                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 
-    #                 objfun_has_noise=False) 
+    #q(xc,additional_tests=True)
+    res=dfols.solve(q, xc, rhobeg = 1e-2, rhoend=1e-5, maxfun=100, bounds=(xl,xu), 
+                    npt=len(xc)+5,scaling_within_bounds=True,  
+                    user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
+                                  'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 
+                    objfun_has_noise=False) 

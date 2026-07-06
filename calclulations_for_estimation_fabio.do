@@ -174,7 +174,7 @@ egen wvar=sd(log_wage) if sex==2,by(age)
 replace wvar=wvar^2
 binscatter wvar age if age>=29 & age<=60 
 
-nlsur (wvar={sigma02}+(age-29)*var_pers) [weight=phrf] if age>=29 & age<=35 & var_pers!=.
+nlsur (wvar={sigma02}+(age-29)*var_pers) [weight=phrf] if age>=29 & age<=50 & var_pers!=.
 gen sigma02=_b[/sigma02]
 
 
@@ -222,7 +222,7 @@ egen wvarm=sd(log_earnings_p) if sex==2,by(age)
 replace wvarm=wvarm^2
 binscatter wvarm age if age>=29 & age<=60 
 
-nlsur (wvarm={sigmam02}+(age-29)*var_persm) [weight=phrf]  if age>=29 & age<=35 & var_persm!=.
+nlsur (wvarm={sigmam02}+(age-29)*var_persm) [weight=phrf]  if age>=29 & age<=50 & var_persm!=.
 gen sigmam02=_b[/sigmam02]
 
 ********************************************************************************
@@ -260,7 +260,8 @@ file close myfile
 keep if Wdelta!=. & Mdelta!=.
 
 
-_pctile Wdelta [weight=phrf], p(1.5625, 10.9375, 34.375 , 65.625 , 89.0625, 98.4375)
+*_pctile Wdelta [weight=phrf], p(1.5625, 10.9375, 34.375 , 65.625 , 89.0625, 98.4375)
+_pctile Wdelta [weight=phrf], p(12.657756, 27.2328  , 42.360328, 57.639672, 72.7672  ,87.342244)
 gen pctw=r(r1) if _n==1
 replace pctw=r(r2) if _n==2
 replace pctw=r(r3) if _n==3
@@ -269,7 +270,9 @@ replace pctw=r(r5) if _n==5
 replace pctw=r(r6) if _n==6
 xtile categoryw = Wdelta, cut(pctw)
 
-_pctile Mdelta [weight=phrf], p(1.5625, 10.9375, 34.375 , 65.625 , 89.0625, 98.4375)
+*_pctile Mdelta [weight=phrf], p(1.5625, 10.9375, 34.375 , 65.625 , 89.0625, 98.4375)
+_pctile Mdelta [weight=phrf], p(13.642215, 28.051772, 42.665511, 57.334489, 71.948228,86.357785)
+
 gen pctm=r(r1) if _n==1
 replace pctm=r(r2) if _n==2
 replace pctm=r(r3) if _n==3
