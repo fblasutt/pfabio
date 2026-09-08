@@ -190,7 +190,7 @@ table=r'\begin{table}[htbp]\centering'+\
        r' Income tax deduction                       &'+p43(ggap_old_τ)  +'&'+p42(WLS_τ)  +'&'+p43(welf_τ*100)+'\\\\'+\
        r' \bottomrule'+\
        r'\end{tabular}'+\
-       r'\begin{tablenotes}[flushleft]\footnotesize\item  \textsc{Notes:} The experiments in the last three rows generate the same government revenue. Welfare gains are measured as the percentage increase in baseline consumption that makes women indifferent between the baseline and the policy experiment. Reforms apply while the child is aged 3-10.''\\\\'+\
+       r'\begin{tablenotes}[flushleft]\footnotesize\item  \textsc{Notes:} The experiments in the last three rows generate the same government revenue. Welfare gains are measured as the percentage increase in baseline consumption that equates womens expected life-cycle utility at $t=0$ under the policy experiment to its baseline level. Reforms apply while the child is aged 3--10; hours worked are averaged over the periods preceding the opening of the retirement window.''\\\\'+\
        r'\end{tablenotes}'+\
       r'\end{threeparttable}'+\
       r'\end{table}'

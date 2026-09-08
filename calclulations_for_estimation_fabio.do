@@ -260,8 +260,8 @@ file close myfile
 keep if Wdelta!=. & Mdelta!=.
 
 
-*_pctile Wdelta [weight=phrf], p(1.5625, 10.9375, 34.375 , 65.625 , 89.0625, 98.4375)
-_pctile Wdelta [weight=phrf], p(12.657756, 27.2328  , 42.360328, 57.639672, 72.7672  ,87.342244)
+_pctile Wdelta [weight=phrf], p(1.5625, 10.9375, 34.375 , 65.625 , 89.0625, 98.4375)
+*_pctile Wdelta [weight=phrf], p(12.657756, 27.2328  , 42.360328, 57.639672, 72.7672  ,87.342244)
 gen pctw=r(r1) if _n==1
 replace pctw=r(r2) if _n==2
 replace pctw=r(r3) if _n==3
@@ -270,8 +270,8 @@ replace pctw=r(r5) if _n==5
 replace pctw=r(r6) if _n==6
 xtile categoryw = Wdelta, cut(pctw)
 
-*_pctile Mdelta [weight=phrf], p(1.5625, 10.9375, 34.375 , 65.625 , 89.0625, 98.4375)
-_pctile Mdelta [weight=phrf], p(13.642215, 28.051772, 42.665511, 57.334489, 71.948228,86.357785)
+_pctile Mdelta [weight=phrf], p(1.5625, 10.9375, 34.375 , 65.625 , 89.0625, 98.4375)
+*_pctile Mdelta [weight=phrf], p(13.642215, 28.051772, 42.665511, 57.334489, 71.948228,86.357785)
 
 gen pctm=r(r1) if _n==1
 replace pctm=r(r2) if _n==2

@@ -62,6 +62,23 @@ baseline_sample = np.array([
     [10, 1998,11965.0] 
     
 ])
+
+baseline_sample = np.array([
+    [ 0, 1982,  7220.0],
+    [ 1, 1983,  5958.0],
+    [ 2, 1984,  6397.0],
+    [ 3, 1985,  6150.0],
+    [ 4, 1986,  9219.0],
+    [ 5, 1987,  9244.0],
+    [ 6, 1988, 10954.0],
+    [ 7, 1989, 10366.0],
+    [ 8, 1990, 10727.0],
+    [ 9, 1991, 10100.0],
+    [10, 1992,  7730.0],
+    [11, 1993,  8158.0],
+    [12, 1994,  6605.0],
+    [13, 1998, 11956.0],
+])
  
 #transform frequency in probabilites that sums up to 1  
 baseline_sample[:,-1]=baseline_sample[:,-1]/baseline_sample[:,-1].sum() 
@@ -73,15 +90,12 @@ year=final_sample+age
 
 
 
-xc=np.array([0.23280037, 0.44267844, 0.58238751, 0.17123147])
 
+#Old demographics, fin not very good yet.
+#xc=np.array([0.2840053 , 0.45342764, 0.63720888, 0.30161577])
 
-xc=np.array([0.23538174, 0.44385089, 0.58628458, 0.05261463])
-
-xc=np.array([0.24570411, 0.44924242, 0.58082491, 0.08909446])
-
-
-xc=np.array([0.24240547, 0.44920413, 0.58400487, 0.10623608])#->1.9310249551718228
+#New demographics
+xc=np.array([0.06602993, 0.27825441, 0.46412178, 2.34700186])
 
 xl=np.array([-0.15,0.001,0.05,.0001]) 
 xu=np.array([0.9, 1.0, 2.5,9.0]) 
@@ -146,15 +160,13 @@ def q(pt,additional_tests=False):
         ################################################### 
         treat_group=(np.repeat((final_sample==1998)[:,None],p.T,axis=1).T)  
         #subset=((age>3) & (age<=10) & ~(treat_group))# (age>=ini_treated))
-        subset=((age>=3) & (age<=15))# (age>=ini_treated))
-        subset2=((age>=3) & (age<=15) & (year>=1999))# (age>=ini_treated))
+        subset=((age>=3) & (age<=15) & (year>=1999))# (age>=ini_treated))
         sh_part=np.mean(S['h'][subset]==2) 
         sh_full=np.mean(S['h'][subset]>=3) 
-        sh_min=np.mean((S['h'][subset2]==1)) 
+        sh_min=np.mean((S['h'][subset]==1)) 
         
-        sh_mint=np.mean((S['h'][subset]==1)) 
-        
-        print(sh_part,sh_full,sh_mint)
+
+        print(sh_part,sh_full,sh_min)
         
         
         # treat_group=(np.repeat((final_sample==1998)[:,None],p.T,axis=1).T)  
@@ -199,7 +211,7 @@ def q(pt,additional_tests=False):
         ###########################################################################
         
         #Sample 
-        subset=(age<=9) 
+        subset=(age<=7) 
      
         # Combine into a DataFrame 
         df = pd.DataFrame({ 
@@ -261,7 +273,7 @@ def q(pt,additional_tests=False):
         ###########################################################################
         
         #Sample 
-        subset=(age<=9) & (S['h']>1)
+        subset=(age<=7) & (S['h']>1)
      
         # Combine into a DataFrame 
         df = pd.DataFrame({ 
@@ -306,7 +318,7 @@ def q(pt,additional_tests=False):
         ###########################################################################
         
         #Sample 
-        subset=(age<=9) & (S['h']>=1)
+        subset=(age<=7) & (S['h']>=1)
      
         # Combine into a DataFrame 
         df = pd.DataFrame({ 
@@ -384,7 +396,7 @@ def q(pt,additional_tests=False):
                     r' Cost of working - mini ($q_{10}$)   &'+p43(p.q[1])+'& Share mini-jobs           & 0.234 &'+p53(sh_min)+'\\\\'+\
                     r' Cost of working - part ($q_{20}$)   &'+p43(p.q[2])+'& Share part-time           & 0.181 &'+p53(sh_part)+'\\\\'+\
                     r' Cost of working - full ($q_{38.5}$)      &'+p43(p.q[3])+'& Share full time      & 0.267 &'+p53(sh_full)+'\\\\'+\
-                    r' Fixed effects distribution ($q_{LIM}$)    &'+p43(p.qvar)+'& Effect of the reform on non-marginal hours  & 4.464 & '+p53(eff_h)+'\\\\'+\
+                    r' Fixed effects distribution ($q_{LIM}$)    &'+p43(p.qvar)+'& Effect of the reform on non-marginal hours  & 2.266& '+p53(eff_h)+'\\\\'+\
                     r'  \bottomrule'+\
                   """\end{tabular}"""+\
                   r'\end{table}' 
@@ -452,11 +464,12 @@ def q(pt,additional_tests=False):
                     r'\toprule '+\
                     r'Effect of reform on: & Data, value & Data, Std. Error & Model \\'+\
                     r'\midrule '+\
-                    r'Pension points & 0.206 & (0.021) & '+p53(eff_points)+r'\\'+\
-                    r'Behavioral pension points & 0.134 & (0.019) & '+p53(eff_points_behavioral)+r'\\'+\
-                    r'Log earnings (cond. on regular empl.) & 0.162 & (0.148) & '+p53(eff_earn_cond)+r'\\'+\
-                    r'Non-marginal log earnings  & 1.521 & (0.251) & '+p53(eff_earn)+r'\\'+\
-                    r'Regular employment & 0.150 & (0.027) & '+p53(eff_nme)+r'\\'+\
+                    r'Pension points & 0.171 & (0.018) & '+p53(eff_points)+r'\\'+\
+                    r'Behavioral pension points & 0.096 & (0.016) & '+p53(eff_points_behavioral)+r'\\'+\
+                    r'Log earnings (cond. on regular empl.) & 0.176 & (0.114) & '+p53(eff_earn_cond)+r'\\'+\
+                    r'Non-marginal log earnings  & 0.853 & (0.236) & '+p53(eff_earn)+r'\\'+\
+                    r'Regular employment & 0.079 & (0.026) & '+p53(eff_nme)+r'\\'+\
+                    r'Regular hours worked & 2.266 & (0.826) & '+p53(eff_h)+r'\\'+\
                     r'\midrule '+\
                     r'\multicolumn{4}{l}{Additional moments:} \\'+\
                     r'\midrule '+\
@@ -501,8 +514,12 @@ def q(pt,additional_tests=False):
         # print("The point is {}".format(np.array([((sh_full-0.26605)/0.26605)**2,((sh_part-0.18144)/0.18144)**2,((sh_min-0.23357)/0.23357)**2,((eff_earn-1.521)/1.521)**2]).sum()))
         # return [((sh_full-0.26605)/0.26605),((sh_part-0.18144)/0.18144),((sh_min-0.23357)/0.23357),((eff_earn-1.521)/1.521)]  
     
-        print("The point is {}".format(np.array([((sh_full-0.26605)/0.26605)**2,((sh_part-0.18144)/0.18144)**2,((sh_min-0.23357)/0.23357)**2,((eff_h-4.464)/4.464)**2]).sum()))
-        return [((sh_full-0.26605)/0.26605),((sh_part-0.18144)/0.18144),((sh_min-0.23357)/0.23357),((eff_h-4.464)/4.464)]  
+        # print("The point is {}".format(np.array([((sh_full-0.26605)/0.26605)**2,((sh_part-0.18144)/0.18144)**2,((sh_min-0.23357)/0.23357)**2,((eff_h-4.464)/4.464)**2]).sum()))
+        # return [((sh_full-0.26605)/0.26605),((sh_part-0.18144)/0.18144),((sh_min-0.23357)/0.23357),((eff_h-4.464)/4.464)]  
+
+        print("The point is {}".format(np.array([((sh_full-0.22017)/0.22017)**2,((sh_part-0.178622)/0.178622)**2,((sh_min-0.239676)/0.239676)**2,((eff_h-2.266)/2.266)**2]).sum()))
+        return [((sh_full-0.22017)/0.22017),((sh_part-0.178622)/0.178622),((sh_min-0.239676)/0.239676),((eff_h-2.266)/2.266)]  
+
 
         #39418/(101861)*.565224
         #
@@ -531,30 +548,30 @@ import numpy as np
 if __name__ == '__main__': 
      
  
-    # computation_options = { "num_workers" :1,        # use four processes in parallel 
-    #                         "working_dir" : "working" # where to save results in progress (in case interrupted) 
-    #                         } 
+    computation_options = { "num_workers" :7,        # use four processes in parallel 
+                            "working_dir" : "working" # where to save results in progress (in case interrupted) 
+                            } 
      
-    # global_search_options = { "num_points" : 10}  # number of points in global pre-test 
+    global_search_options = { "num_points" : 10}  # number of points in global pre-test 
      
-    # local_search_options = {  "algorithm"    : "dfols", # local search algorithm 
-    #                                                       # can be either BOBYQA from NLOPT or NelderMead from scipy 
-    #                           "num_restarts" : 7,      # how many local searches to do 
-    #                           "shrink_after" : 7,       # after the first [shrink_after] restarts we begin searching 
-    #                                                       # near the best point we have found so far 
-    #                           "xtol_rel"     : 1e-6,     # relative tolerance on x 
-    #                           "ftol_rel"     : 1e-6     # relative tolerance on f 
-    #                         } 
+    local_search_options = {  "algorithm"    : "dfols", # local search algorithm 
+                                                          # can be either BOBYQA from NLOPT or NelderMead from scipy 
+                              "num_restarts" : 7,      # how many local searches to do 
+                              "shrink_after" : 7,       # after the first [shrink_after] restarts we begin searching 
+                                                          # near the best point we have found so far 
+                              "xtol_rel"     : 1e-6,     # relative tolerance on x 
+                              "ftol_rel"     : 1e-6     # relative tolerance on f 
+                            } 
      
-    # opt = TikTak.TTOptimizer(computation_options, global_search_options, local_search_options, skip_global=False)
+    opt = TikTak.TTOptimizer(computation_options, global_search_options, local_search_options, skip_global=False)
                                
     # x,fx = opt.minimize(q,xl,xu) 
     # print(f'The minimizer is {x}') 
     # print(f'The objective value at the min is {fx}') 
      
     #q(xc,additional_tests=True)
-    res=dfols.solve(q, xc, rhobeg = 1e-2, rhoend=1e-5, maxfun=100, bounds=(xl,xu), 
-                    npt=len(xc)+5,scaling_within_bounds=True,  
-                    user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
-                                  'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 
-                    objfun_has_noise=False) 
+    # res=dfols.solve(q, xc, rhobeg = 1e-2, rhoend=1e-5, maxfun=100, bounds=(xl,xu), 
+    #                 npt=len(xc)+5,scaling_within_bounds=True,  
+    #                 user_params={'tr_radius.gamma_dec':0.98,'tr_radius.gamma_inc':1.0, 
+    #                               'tr_radius.alpha1':0.9,'tr_radius.alpha2':0.95}, 
+    #                 objfun_has_noise=False) 

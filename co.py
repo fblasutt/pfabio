@@ -26,13 +26,14 @@ class setup():
 
 
 
-        
+        xc=np.array([0.23678734, 0.44085085, 0.59851641, 0.15748209])
+
         #earn
-        self.q =np.array([0.0, 0.58400487*0.24240547, 0.58400487*0.44920413, 0.58400487])  #Fixed cost of pticipation - mean 
+        self.q =np.array([0.0, 0.59851641*0.23678734, 0.59851641*0.44085085, 0.59851641])  #Fixed cost of pticipation - mean 
         self.σq =0.25623355   #Fixed cost of pticipation -sd  
         self.ρq =0.0#-0.4#0.00195224  
         self.qmean =0.40299779
-        self.qvar =  0.58400487*0.10623608
+        self.qvar =  0.59851641*0.15748209
         
          
 
@@ -40,9 +41,9 @@ class setup():
                  
         # Economic Environment: set pameters  
         #np.linspace(0,100,101)+29
-        self.T = 60       # model 2 for women here give 22 life expectancy at 67 https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Sterbefaelle-Lebenserwartung/Publikationen/Downloads-Sterbefaelle/statistischer-bericht-kohortensterbetafeln-5126101239005.html
+        self.T = 56       # model 2 for women here give 22 life expectancy at 67 https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Sterbefaelle-Lebenserwartung/Publikationen/Downloads-Sterbefaelle/statistischer-bericht-kohortensterbetafeln-5126101239005.html
                            #84 in 2019 https://tradingeconomics.com/germany/life-expectancy-at-birth-female-years-wb-data.html
-        self.R = 38      # Retirement period  age 65
+        self.R = 36      # Retirement period  age 65
                          
         self.r = 0.01    #interest rate 5 year https://www.bundesbank.de/dynamic/action/en/statistics/time-series-databases/time-series-databases/745582/745582?treeAnchor=GELD&listId=www_skms_realzinsen&tsId=BBSEI.M.ERZ.GVB.DE._Z.R05XX&statisticType=BBK_ITS&dateSelect=2025
                          # Interest rate 10 years  //https://www.bundesbank.de/dynamic/action/en/statistics/time-series-databases/time-series-databases/745616/745616?listId=www_skms_realzinsen&tsTab=1&statisticType=BBK_ITS&startDate=1995&tsId=BBSEI.M.ERZ.GVB.DE._Z.R10XX&endDate=2024&id=0
@@ -86,6 +87,7 @@ class setup():
         self.age_ret = np.array([34,35,36,37,38,39,40,41],dtype=np.int32) #possible ages at retirement  
         #self.points_mult = np.array([1-0.036*2,1-0.036*1,1.0,1+0.06,1+2*0.06,1+3*0.06,1+4*0.06,1+4*0.06]) # point multiplier for early / late retirement  
         self.points_mult = np.array([1-0.036*4,1-0.036*3,1.0-0.036*2,1-0.036,1,1+1*0.06,1+2*0.06,1+3*0.06]) # point multiplier for early / late retirement  
+        self.points_mult = np.array([1-0.036*2,1-0.036*1,1.0,1+0.06,1+2*0.06,1+3*0.06,1+4*0.06,1+5*0.06]) # point multiplier for early / late retirement  
         #self.points_mult[-1]=1.0  
           
          
@@ -98,8 +100,8 @@ class setup():
         ############### 
          
         # uncertainty 
-        self.grid_zw,self.Π_zw, self.Π_zw0 =addaco_nonst(self.T,self.σzw,self.σ0zw,self.nzw) 
-        self.grid_zm,self.Π_zm, self.Π_zm0 =addaco_nonst(self.T,self.σzm,self.σ0zm,self.nzm) 
+        self.grid_zw,self.Π_zw, self.Π_zw0 =rouw_nonst(self.T,self.σzw,self.σ0zw,self.nzw) 
+        self.grid_zm,self.Π_zm, self.Π_zm0 =rouw_nonst(self.T,self.σzm,self.σ0zm,self.nzm) 
          
  
         self.Π=[np.kron(self.Π_zw[t],self.Π_zm[t]) for t in range(self.T-1)] # couples trans matrix     
