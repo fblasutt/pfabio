@@ -22,7 +22,7 @@ def simNoUncer_interp(p, model, Years=np.ones(1), Tstart=0, Astart=0.0, Pstart=0
       
     return {'wh':epath,'p':ppath,'pexp':ppath_exp,'c':cpath,'A':apath,'h':hpath,'pb':pepath, 'pb2':pepath2,'pb3':pepath3, 'v':vpath,'ev':evpath,'w':wpath,'wls_pr':w_pr_path,'v_pr':v_pr_path,'taxes':eataxpath,'income_mod':eataxpath_mod,'iz':iz,'ir':ir}  
       
-@njit(parallel=True)  
+@njit#(parallel=True)  
 def fast_simulate(beg,end,Years,Tstart,Astart,Pstart,izstart,Vstart,amax,T,N,agrid,pgrid,w,E_bar_now,Pmax,add_points,add_points_exp,tw,ts,wls,nwls,δ,q,σ,taxes,income_mod,income,Π,shock_z,  
                   policyA1,policyC,policyP,policyP_exp,pr,V,V1,reform,cadjust,wls_point,wls_point2,standard_wls,q_sim,points_base,R,r,y_N,τ,age_ret,ρ):  
   
